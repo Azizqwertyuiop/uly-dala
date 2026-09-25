@@ -29,6 +29,26 @@ const ru = {
     ru: "Русский",
     en: "English",
   },
+  menu: {
+    title: "Меню",
+    open: "Меню",
+    close: "Закрыть меню",
+    chapters: "Главы",
+    pages: "Страницы",
+    settings: "Настройки",
+    sound: "Звук",
+    soundHint: "Записи ветра, травы и огня с фазенды.",
+    briefMode: "Режим «Коротко»",
+    briefModeHint: "Те же тексты и статичные кадры, без анимации.",
+    on: "Вкл.",
+    off: "Выкл.",
+  },
+  horizon: {
+    label: "Главы сайта",
+  },
+  whatsapp: {
+    label: "Написать в WhatsApp",
+  },
   footer: {
     navLabel: "Разделы сайта",
     chapters: "Главы",

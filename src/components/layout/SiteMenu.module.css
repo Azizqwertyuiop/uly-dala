@@ -1,0 +1,154 @@
+.trigger {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Полноэкранный диалог. Анимируются только opacity и transform. */
+.dialog {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dialog[open] {
+  animation: menu-in var(--duration-base) var(--ease-steppe);
+}
+
+.dialog::backdrop {
+  background: var(--indigo);
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-8);
+  padding-block: 0 var(--space-10);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+}
+
+.close {
+  composes: trigger;
+}
+
+.columns {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+  }
+}
+
+@media (min-width: 1280px) {
+  .columns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.group {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.chapterLinks {
+  display: grid;
+  gap: var(--space-1);
+  list-style: none;
+  counter-reset: chapter;
+}
+
+.chapterLinks a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding-block: 4px;
+  font-family: var(--font-family-heading);
+  font-size: clamp(28px, 3vw, 44px);
+  line-height: 1.1;
+  text-decoration: none;
+}
+
+.links {
+  display: grid;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.links a,
+.languages a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.languages ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  list-style: none;
+}
+
+.languages a[aria-current="page"] {
+  font-weight: 600;
+}
+
+.toggle {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px var(--space-2);
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: var(--space-1) 0;
+  border: 0;
+  border-bottom: 1px solid var(--tone-line);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toggleState {
+  font-variant-numeric: tabular-nums;
+  color: var(--tone-muted);
+}
+
+.toggle[aria-pressed="true"] .toggleState {
+  color: inherit;
+  font-weight: 600;
+}
+
+.toggleHint {
+  grid-column: 1 / -1;
+}

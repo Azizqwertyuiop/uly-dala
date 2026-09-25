@@ -26,6 +26,26 @@ const en: Messages = {
     ru: "Русский",
     en: "English",
   },
+  menu: {
+    title: "Menu",
+    open: "Menu",
+    close: "Close menu",
+    chapters: "Chapters",
+    pages: "Pages",
+    settings: "Settings",
+    sound: "Sound",
+    soundHint: "Recordings of wind, grass and fire from the venue.",
+    briefMode: "Short mode",
+    briefModeHint: "The same texts and still frames, no animation.",
+    on: "On",
+    off: "Off",
+  },
+  horizon: {
+    label: "Site chapters",
+  },
+  whatsapp: {
+    label: "Message us on WhatsApp",
+  },
   footer: {
     navLabel: "Site sections",
     chapters: "Chapters",

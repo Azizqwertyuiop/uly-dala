@@ -8,6 +8,24 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Якоря и фокус не прячутся под хедером и нижними элементами (WCAG 2.4.11). */
+  scroll-padding-top: 88px;
+  scroll-padding-bottom: calc(var(--bottom-ui, 0px) + 88px);
+  --horizon-height: 40px;
+}
+
+/* На главной внизу — навигация-горизонт: резервируем под неё место. */
+html:has([data-horizon]) {
+  --bottom-ui: var(--horizon-height);
+}
+
+html:has([data-horizon]) body {
+  padding-bottom: calc(var(--horizon-height) + env(safe-area-inset-bottom));
+}
+
+/* Открытое меню блокирует прокрутку страницы под ним. */
+html[data-menu-open] {
+  overflow: hidden;
 }
 
 body {

@@ -1,6 +1,14 @@
 .header {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: var(--z-ui);
+  transition: transform var(--duration-base) var(--ease-steppe);
+}
+
+/* Скрытие — только transform. Фокус внутри возвращает хедер (навигация с клавиатуры). */
+.header[data-hidden="true"]:not(:focus-within) {
+  transform: translateY(-100%);
+  transition: transform var(--duration-quick) var(--ease-exit);
 }
 
 .bar {
@@ -27,10 +35,8 @@
   gap: var(--space-3);
 }
 
-.menu {
-  min-height: 48px;
-  display: inline-flex;
-  align-items: center;
+.actions :where(a, button) {
+  white-space: nowrap;
 }
 
 @media (min-width: 768px) {
@@ -39,18 +45,13 @@
   }
 }
 
-.actions :where(a) {
-  white-space: nowrap;
-}
-
 /* Узкие экраны: три элемента хедера помещаются в одну строку. */
 @media (max-width: 479px) {
   .actions {
     gap: var(--space-2);
-    font-size: 15px;
   }
 
-  .actions :where(a) {
+  .actions :where(a, button) {
     font-size: 15px;
   }
 

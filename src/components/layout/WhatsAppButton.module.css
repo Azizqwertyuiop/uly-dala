@@ -1,0 +1,42 @@
+/* Только мобильные, в зоне большого пальца — справа внизу, над горизонтом. */
+.button {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .button {
+    position: fixed;
+    right: var(--space-2);
+    bottom: calc(var(--space-2) + var(--bottom-ui, 0px) + env(safe-area-inset-bottom));
+    z-index: var(--z-ui);
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--indigo);
+    color: var(--kumys);
+    border: 1px solid color-mix(in srgb, var(--kumys) 40%, var(--indigo));
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity var(--duration-base) var(--ease-steppe),
+      transform var(--duration-base) var(--ease-steppe);
+  }
+
+  .button[data-visible="false"] {
+    opacity: 0;
+    transform: translateY(16px);
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity var(--duration-quick) var(--ease-exit),
+      transform var(--duration-quick) var(--ease-exit),
+      visibility 0s linear var(--duration-quick);
+  }
+}
+
+.icon {
+  width: 26px;
+  height: 26px;
+}

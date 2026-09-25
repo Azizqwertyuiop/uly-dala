@@ -1,0 +1,150 @@
+/*
+ * Навигация-горизонт (CLAUDE.md, раздел 8): тонкая линия внизу, точка-солнце = прогресс,
+ * отметки глав. Высота полосы — --horizon-height; под неё резервируется место внизу страницы.
+ */
+.nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-ui);
+  height: calc(var(--horizon-height) + env(safe-area-inset-bottom));
+  padding: 0 var(--grid-margin) env(safe-area-inset-bottom);
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--indigo) 92%, transparent),
+    color-mix(in srgb, var(--indigo) 0%, transparent)
+  );
+  color: var(--kumys);
+  pointer-events: none;
+}
+
+.track {
+  position: relative;
+  height: var(--horizon-height);
+}
+
+/* Линия и солнце идут от центра первой отметки до центра последней. */
+.line,
+.sunPath {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+}
+
+.line {
+  height: 1px;
+  background: color-mix(in srgb, var(--kumys) 45%, transparent);
+}
+
+.sunPath {
+  height: 0;
+  transform: translateX(0);
+  transition: transform var(--duration-base) var(--ease-steppe);
+  will-change: transform;
+}
+
+/* Солнце — единственный акцент на экране (≤ 2% площади). */
+.sun {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ember);
+}
+
+.marks {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+}
+
+.mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+
+.mark::before {
+  content: "";
+  width: 1px;
+  height: 8px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.mark[aria-current="step"]::before {
+  opacity: 1;
+  height: 12px;
+}
+
+/* Название главы видно при наведении и фокусе; для экранных читалок — всегда. */
+.label {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  padding: 4px 8px;
+  background: var(--indigo);
+  color: var(--kumys);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity var(--duration-quick) var(--ease-steppe),
+    transform var(--duration-quick) var(--ease-steppe);
+  pointer-events: none;
+}
+
+.marks li:first-child .label {
+  left: 0;
+  transform: translate(0, 4px);
+}
+
+.marks li:last-child .label {
+  left: auto;
+  right: 0;
+  transform: translate(0, 4px);
+}
+
+.mark:focus-visible .label {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.marks li:first-child .mark:focus-visible .label,
+.marks li:last-child .mark:focus-visible .label {
+  transform: none;
+}
+
+@media (hover: hover) {
+  .mark:hover .label {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  .marks li:first-child .mark:hover .label,
+  .marks li:last-child .mark:hover .label {
+    transform: none;
+  }
+}
+
+.sentinel {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  visibility: hidden;
+}

@@ -24,13 +24,20 @@
   transition: transform var(--duration-quick) var(--ease-steppe);
 }
 
-.button:hover::after,
 .button:focus-visible::after {
   transform: scaleX(1.2);
 }
 
+@media (hover: hover) {
+  .button:hover::after {
+    transform: scaleX(1.2);
+  }
+}
+
+/* Нажатие — 120 мс. */
 .button:active {
   transform: translateY(1px);
+  transition-duration: var(--duration-instant);
 }
 
 .secondary {
