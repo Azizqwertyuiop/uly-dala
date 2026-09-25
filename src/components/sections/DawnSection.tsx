@@ -15,10 +15,18 @@ export async function DawnSection() {
     <Chapter id="dawn" time={t("time")} name={chapters("dawn")}>
       <div className={styles.hero}>
         <div className={styles.heroText}>
-          <h1 id="dawn-title" className={type.heroTitle}>
+          {/* Первый экран — вариант «glow»: текст сразу виден, свет проходит поверх. */}
+          <h1
+            id="dawn-title"
+            className={type.heroTitle}
+            data-reveal="glow"
+            data-reveal-text={t("title")}
+          >
             {t("title")}
           </h1>
-          <p className={type.lead}>{t("subtitle")}</p>
+          <p className={type.lead} data-reveal="glow" data-reveal-text={t("subtitle")}>
+            {t("subtitle")}
+          </p>
           <p className={type.proof}>{t("proof")}</p>
           <div className={layout.actions}>
             <ButtonLink href="/#brief">{t("ctaPrimary")}</ButtonLink>

@@ -1,37 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { hasChapters, onChapterChange } from "@/motion/progress";
 import layout from "@/components/ui/layout.module.css";
 import styles from "./WhatsAppButton.module.css";
 
 type Props = {
   href: string;
   label: string;
-  /** id главы, после которой появляется кнопка. Без него — видна сразу. */
-  showAfter?: string;
+  /** Номер главы (с 0), начиная с которой кнопка видна. По умолчанию — после главы 2. */
+  fromChapter?: number;
 };
 
 /*
  * Плавающая кнопка WhatsApp: только на мобильных, после главы 2 (CLAUDE.md, раздел 8).
- * Появление — через IntersectionObserver: кнопка видна, когда глава целиком ушла вверх.
+ * Видимость — от текущей главы из progress. На страницах без глав — видна сразу.
  */
-export function WhatsAppButton({ href, label, showAfter }: Props) {
-  const [visible, setVisible] = useState(!showAfter);
+export function WhatsAppButton({ href, label, fromChapter = 2 }: Props) {
+  const [visible, setVisible] = useState(false);
 
-  useEffect(() => {
-    if (!showAfter) return;
-    const target = document.getElementById(showAfter);
-    if (!target) {
-      // На страницах без этой главы кнопка видна сразу.
-      const frame = requestAnimationFrame(() => setVisible(true));
-      return () => cancelAnimationFrame(frame);
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry) setVisible(!entry.isIntersecting && entry.boundingClientRect.top < 0);
-    });
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [showAfter]);
+  useEffect(
+    () =>
+      onChapterChange((index) => {
+        setVisible(!hasChapters() || index >= fromChapter);
+      }),
+    [fromChapter],
+  );
 
   return (
     <a

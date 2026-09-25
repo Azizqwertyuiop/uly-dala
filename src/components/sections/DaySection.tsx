@@ -27,10 +27,12 @@ export async function DaySection() {
   return (
     <Chapter id="day" time={t("time")} name={chapters("day")}>
       <div className={chapterStyles.head}>
-        <h2 id="day-title" className={type.chapterTitle}>
+        <h2 id="day-title" className={type.chapterTitle} data-reveal="">
           {t("title")}
         </h2>
-        <p className={type.lead}>{t("lead")}</p>
+        <p className={type.lead} data-reveal="">
+          {t("lead")}
+        </p>
       </div>
       <FormatTabs label={t("tabsLabel")} formatPageLabel={t("formatPage")} items={items} />
     </Chapter>

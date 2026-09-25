@@ -17,7 +17,7 @@ export async function ReturnSection() {
   return (
     <Chapter id="return" time={t("time")} name={chapters("return")}>
       <div className={chapterStyles.head}>
-        <h2 id="return-title" className={type.chapterTitle}>
+        <h2 id="return-title" className={type.chapterTitle} data-reveal="">
           {t("title")}
         </h2>
       </div>
@@ -32,7 +32,9 @@ export async function ReturnSection() {
         <h3 id="brief-title" className={type.subTitle}>
           {brief.copy.variants.brief.title}
         </h3>
-        <p className={type.lead}>{brief.copy.variants.brief.lead}</p>
+        <p className={type.lead} data-reveal="">
+          {brief.copy.variants.brief.lead}
+        </p>
         <BriefForm variant="brief" withSentence {...brief} />
       </section>
     </Chapter>

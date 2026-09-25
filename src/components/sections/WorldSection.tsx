@@ -26,10 +26,12 @@ export async function WorldSection() {
     <Chapter id="world" time={t("time")} name={chapters("world")}>
       <div className={styles.split}>
         <div className={`${styles.textBlock} ${styles.splitText}`}>
-          <h2 id="world-title" className={type.chapterTitle}>
+          <h2 id="world-title" className={type.chapterTitle} data-reveal="">
             {t("title")}
           </h2>
-          <p className={type.lead}>{t("lead")}</p>
+          <p className={type.lead} data-reveal="">
+            {t("lead")}
+          </p>
           <p className={type.body}>{t("location")}</p>
         </div>
         <SceneImage

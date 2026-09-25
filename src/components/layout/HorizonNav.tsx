@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { onChapterChange, progress } from "@/motion/progress";
+import { Spring } from "@/motion/spring";
+import { chapterTempo } from "@/motion/tokens";
+import { ticker } from "@/motion/ticker";
 import styles from "./HorizonNav.module.css";
 
 type Props = {
@@ -8,83 +12,42 @@ type Props = {
   chapters: { id: string; name: string }[];
 };
 
-/** Сколько меток прогресса внутри каждой главы. */
-const STEPS = 10;
-
 /*
  * Навигация-горизонт — единственный индикатор прогресса (CLAUDE.md, раздел 8).
  * Это <nav> со списком ссылок на главы: работает без JS и с клавиатуры;
  * клик по следующей отметке = «пропустить сцену».
  *
- * Прогресс без пересчёта layout в кадре: в каждую главу добавляются невидимые метки
- * (0%, 10%, … 90% высоты). IntersectionObserver с областью «всё выше середины экрана»
- * (верхнее поле огромное, нижнее −50%) сообщает, какие метки уже прошли середину —
- * даже при прыжке по якорю. Прогресс = последняя прошедшая метка.
- * Солнце двигается только transform; позиция пишется напрямую в style, без ререндера.
+ * Солнце — от progress.horizon через критически демпфированную пружину (фаза damping),
+ * позиция пишется в style.transform в фазе render, только если изменилась. Без ререндера React.
+ * В reduced motion пружины нет — солнце сразу на месте.
  */
 export function HorizonNav({ label, chapters }: Props) {
   const [current, setCurrent] = useState(0);
   const sunRef = useRef<HTMLSpanElement>(null);
 
+  useEffect(() => onChapterChange((index) => setCurrent(index)), []);
+
   useEffect(() => {
-    const last = Math.max(1, chapters.length - 1);
-    const sentinels: HTMLElement[] = [];
-    const passed = new Array<boolean>(chapters.length * STEPS).fill(false);
-    let atEnd = false;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const spring = new Spring(progress.horizon, chapterTempo.assembly.cameraSmoothing);
+    let written = -1;
 
-    const update = () => {
-      // Конец страницы: последняя глава может быть короче экрана и не дойти до середины.
-      const order = atEnd ? (chapters.length - 1) * STEPS : passed.lastIndexOf(true);
-      if (order < 0) return;
-      const ratio = Math.min(1, order / STEPS / last);
-      if (sunRef.current) sunRef.current.style.transform = `translateX(${ratio * 100}%)`;
-      setCurrent(Math.floor(order / STEPS));
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          passed[Number((entry.target as HTMLElement).dataset.order)] = entry.isIntersecting;
-        }
-        update();
-      },
-      { rootMargin: "1000000px 0px -50% 0px" },
-    );
-
-    const end = document.createElement("span");
-    end.className = styles.sentinel ?? "";
-    end.setAttribute("aria-hidden", "true");
-    end.style.position = "static";
-    end.style.display = "block";
-    document.body.appendChild(end);
-    const endObserver = new IntersectionObserver(([entry]) => {
-      atEnd = Boolean(entry?.isIntersecting);
-      update();
+    const offDamping = ticker.add("damping", (dt) => {
+      spring.target = progress.horizon;
+      if (reduced.matches) spring.snap();
+      else spring.update(dt);
     });
-    endObserver.observe(end);
-
-    chapters.forEach(({ id }, index) => {
-      const section = document.getElementById(id);
-      if (!section) return;
-      for (let step = 0; step < STEPS; step++) {
-        const sentinel = document.createElement("span");
-        sentinel.className = styles.sentinel ?? "";
-        sentinel.setAttribute("aria-hidden", "true");
-        sentinel.dataset.order = String(index * STEPS + step);
-        sentinel.style.top = `${(step / STEPS) * 100}%`;
-        section.appendChild(sentinel);
-        sentinels.push(sentinel);
-        observer.observe(sentinel);
-      }
+    const offRender = ticker.add("render", () => {
+      const percent = Math.round(spring.value * 10000) / 100;
+      if (percent === written || !sunRef.current) return;
+      written = percent;
+      sunRef.current.style.transform = `translateX(${percent}%)`;
     });
-
     return () => {
-      observer.disconnect();
-      endObserver.disconnect();
-      end.remove();
-      sentinels.forEach((s) => s.remove());
+      offDamping();
+      offRender();
     };
-  }, [chapters]);
+  }, []);
 
   return (
     <nav aria-label={label} className={styles.nav} data-horizon="">

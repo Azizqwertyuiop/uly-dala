@@ -137,7 +137,9 @@ export function FormatTabs({ label, formatPageLabel, items: allItems }: Props) {
               <h3 id={`${panelId(item.slug)}-title`} className={type.subTitle}>
                 {item.title}
               </h3>
-              <p className={type.lead}>{item.phrase}</p>
+              <p className={type.lead} data-reveal="">
+                {item.phrase}
+              </p>
               <ul className={type.list}>
                 {item.facts.map((fact) => (
                   <li key={fact}>{fact}</li>

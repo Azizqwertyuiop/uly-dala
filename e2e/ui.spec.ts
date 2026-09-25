@@ -2,6 +2,19 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { chapterIds } from "./pages";
 
+/** Дождаться, пока плавная прокрутка (Lenis) доедет: scrollY перестал меняться. */
+async function waitScrollSettled(page: Page) {
+  let last = -1;
+  await expect
+    .poll(async () => {
+      const y = await page.evaluate(() => window.scrollY);
+      const settled = y === last;
+      last = y;
+      return settled;
+    })
+    .toBe(true);
+}
+
 const menuButton = (page: Page) => page.locator('header button[aria-haspopup="dialog"]');
 const dialog = (page: Page) => page.getByRole("dialog");
 
@@ -22,10 +35,12 @@ test.describe("хедер", () => {
     const header = page.locator("header");
     await expect(header).toHaveAttribute("data-hidden", "false");
     await page.mouse.wheel(0, 1200);
+    await waitScrollSettled(page);
     await expect(header).toHaveAttribute("data-hidden", "true");
     const transform = await header.evaluate((el) => getComputedStyle(el).transform);
     expect(transform).not.toBe("none");
     await page.mouse.wheel(0, -300);
+    await waitScrollSettled(page);
     await expect(header).toHaveAttribute("data-hidden", "false");
   });
 

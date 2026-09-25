@@ -5,13 +5,16 @@ import { BriefModal } from "@/components/brief/BriefModal";
 import { getBriefProps } from "@/components/brief/briefProps";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { MotionBootstrap } from "@/components/layout/MotionBootstrap";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { UiBootstrap } from "@/components/layout/UiBootstrap";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { contacts, whatsappHref } from "@/content/contacts";
 import { resolveLocale } from "@/lib/intl/locale";
 import { routing } from "@/lib/intl/routing";
+import { REVEAL_HEAD_SCRIPT } from "@/motion/reveal-head";
 import { fontVariables } from "@/styles/fonts";
+import "lenis/dist/lenis.css";
 import "@/styles/tokens.css";
 import "../globals.css";
 
@@ -35,7 +38,11 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   const whatsapp = await getTranslations({ locale, namespace: "whatsapp" });
 
   return (
-    <html lang={locale} className={fontVariables}>
+    <html lang={locale} className={fontVariables} suppressHydrationWarning>
+      <head>
+        {/* Атрибут data-reveal ставится до первой отрисовки — отсюда suppressHydrationWarning. */}
+        <script dangerouslySetInnerHTML={{ __html: REVEAL_HEAD_SCRIPT }} />
+      </head>
       <body>
         {/* Клиенту передаётся только язык (для ссылок), тексты рендерятся на сервере. */}
         <NextIntlClientProvider messages={null}>
@@ -44,14 +51,11 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           {children}
           <SiteFooter />
           {contacts.whatsapp && (
-            <WhatsAppButton
-              href={whatsappHref(contacts.whatsapp)}
-              label={whatsapp("label")}
-              showAfter="assembly"
-            />
+            <WhatsAppButton href={whatsappHref(contacts.whatsapp)} label={whatsapp("label")} />
           )}
           <BriefModal {...getBriefProps(locale)} />
           <UiBootstrap />
+          <MotionBootstrap />
         </NextIntlClientProvider>
       </body>
     </html>

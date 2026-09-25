@@ -47,8 +47,12 @@ export default async function RequestPage({ params }: PageProps<"/[locale]/reque
     <PageShell>
       <div className={layout.grid}>
         <div className={`${pageStyles.head} ${layout.narrow}`}>
-          <h1 className={type.chapterTitle}>{variant.title}</h1>
-          <p className={type.lead}>{variant.lead}</p>
+          <h1 className={type.chapterTitle} data-reveal="">
+            {variant.title}
+          </h1>
+          <p className={type.lead} data-reveal="">
+            {variant.lead}
+          </p>
           <BriefForm variant={kind} {...brief} />
         </div>
       </div>

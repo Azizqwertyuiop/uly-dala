@@ -45,8 +45,12 @@ export default async function ServicePage({ params }: PageProps<"/[locale]/servi
     <PageShell>
       <div className={layout.grid}>
         <div className={`${pageStyles.head} ${layout.main}`}>
-          <h1 className={type.chapterTitle}>{t(`${key}.title`)}</h1>
-          <p className={type.lead}>{t(`${key}.phrase`)}</p>
+          <h1 className={type.chapterTitle} data-reveal="">
+            {t(`${key}.title`)}
+          </h1>
+          <p className={type.lead} data-reveal="">
+            {t(`${key}.phrase`)}
+          </p>
           <p className={type.body}>{t(`${key}.lead`)}</p>
         </div>
       </div>

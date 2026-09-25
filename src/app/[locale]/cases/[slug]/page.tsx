@@ -46,8 +46,12 @@ export default async function CasePage({ params }: PageProps<"/[locale]/cases/[s
       <div className={layout.grid}>
         <div className={`${pageStyles.head} ${layout.main}`}>
           <p className={type.eyebrow}>{t("label")}</p>
-          <h1 className={type.chapterTitle}>{text.title}</h1>
-          <p className={type.lead}>{text.summary}</p>
+          <h1 className={type.chapterTitle} data-reveal="">
+            {text.title}
+          </h1>
+          <p className={type.lead} data-reveal="">
+            {text.summary}
+          </p>
           {format && (
             <p className={type.body}>
               {t("format")}:{" "}

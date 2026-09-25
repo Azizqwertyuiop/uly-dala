@@ -40,8 +40,8 @@
 
 .sunPath {
   height: 0;
+  /* Позиция — из ticker (пружина), без CSS-перехода. */
   transform: translateX(0);
-  transition: transform var(--duration-base) var(--ease-steppe);
   will-change: transform;
 }
 
@@ -138,13 +138,4 @@
   .marks li:last-child .mark:hover .label {
     transform: none;
   }
-}
-
-.sentinel {
-  position: absolute;
-  left: 0;
-  width: 1px;
-  height: 1px;
-  pointer-events: none;
-  visibility: hidden;
 }

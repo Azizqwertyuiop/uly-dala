@@ -10,7 +10,9 @@ export default function NotFound() {
   return (
     <PageShell tone="dark">
       <div className={pageStyles.head}>
-        <h1 className={type.chapterTitle}>{t("title")}</h1>
+        <h1 className={type.chapterTitle} data-reveal="">
+          {t("title")}
+        </h1>
         <div>
           <ButtonLink href="/">{common("backHome")}</ButtonLink>
         </div>

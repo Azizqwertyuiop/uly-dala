@@ -2,45 +2,34 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Tone } from "@/components/sections/chapters";
+import { progress } from "@/motion/progress";
+import { ticker } from "@/motion/ticker";
 import styles from "./SiteHeader.module.css";
 
 /** Хедер прячется только после этой прокрутки, px. */
 const HIDE_AFTER = 120;
-/** Шум прокрутки (инерция тачпада), px. */
-const JITTER = 6;
 /** Линия, по которой определяется секция под хедером: середина хедера, px от верха. */
 const PROBE_Y = 36;
 
 /*
  * Хедер (CLAUDE.md, раздел 8): скрывается при прокрутке вниз, возвращается при прокрутке вверх —
- * только через transform. Тон (контраст) — по data-tone секции под хедером, через
- * IntersectionObserver. В кадре читается только scrollY — без пересчёта layout.
+ * только через transform. Направление — из progress (ticker, фаза render), атрибут пишется
+ * в DOM только при изменении, без ререндера React.
+ * Тон (контраст) — по data-tone секции под хедером, через IntersectionObserver.
  * Фокус внутри хедера всегда возвращает его (CSS :focus-within).
  */
 export function HeaderShell({ children }: { children: React.ReactNode }) {
-  const [hidden, setHidden] = useState(false);
   const [tone, setTone] = useState<Tone>("dark");
-  const lastY = useRef(0);
-  const frame = useRef(0);
+  const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    lastY.current = window.scrollY;
-    const onScroll = () => {
-      if (frame.current) return;
-      frame.current = requestAnimationFrame(() => {
-        frame.current = 0;
-        const y = window.scrollY;
-        const delta = y - lastY.current;
-        if (Math.abs(delta) < JITTER) return;
-        setHidden(y > HIDE_AFTER && delta > 0);
-        lastY.current = y;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(frame.current);
-    };
+    let hidden = false;
+    return ticker.add("render", () => {
+      const next = progress.scrollY > HIDE_AFTER && progress.direction === 1;
+      if (next === hidden || !ref.current) return;
+      hidden = next;
+      ref.current.dataset.hidden = String(hidden);
+    });
   }, []);
 
   useEffect(() => {
@@ -80,7 +69,7 @@ export function HeaderShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <header className={styles.header} data-tone={tone} data-hidden={hidden}>
+    <header ref={ref} className={styles.header} data-tone={tone} data-hidden="false">
       {children}
     </header>
   );

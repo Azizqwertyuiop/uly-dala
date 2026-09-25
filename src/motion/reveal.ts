@@ -1,0 +1,89 @@
+import { duration } from "./tokens";
+import { ticker } from "./ticker";
+
+/*
+ * «Проявление светом» (CLAUDE.md, раздел 5) — фирменный приём вместо выезда строк из маски.
+ * Текст уже отрисован (приглушён, не opacity: 0), по нему слева направо за 900 мс
+ * проходит градиент света (background-clip: text, анимируется позиция градиента).
+ *
+ * - Запуск — по попаданию в зону видимости, не по позиции скролла.
+ * - Страховка: через 1,5 с после запуска текст принудительно полностью виден.
+ * - Если скрипт приложения не загрузился за 1,5 с — CSS показывает всё сам.
+ * - prefers-reduced-motion и режим «Коротко»: ничего не приглушается, текст сразу виден.
+ *
+ * Состояния элемента [data-reveal]: без атрибута — приглушён (только при html[data-reveal="on"]),
+ * data-reveal-state="run" — идёт свет, "done" — обычный текст.
+ * Вариант data-reveal="glow" (первый экран): текст не приглушается — свет проходит поверх,
+ * чтобы не задерживать LCP.
+ */
+
+export const REVEAL_MS = 900;
+export const REVEAL_SAFETY_S = 1.5;
+
+export function startReveal(): () => void {
+  const html = document.documentElement;
+  const elements = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
+  const finish = (el: HTMLElement) => {
+    el.dataset.revealState = "done";
+  };
+
+  // Анимация выключена или скрипт опоздал дольше страховки — показываем всё.
+  const late = performance.now() > REVEAL_SAFETY_S * 1000 + duration.scene;
+  if (html.dataset.reveal !== "on" || late) {
+    elements.forEach(finish);
+    delete html.dataset.reveal;
+    return () => {};
+  }
+  html.dataset.revealJs = "";
+
+  const pending = new Map<HTMLElement, number>();
+  let offTimer: (() => void) | null = null;
+
+  // Страховка — по времени ticker (приостанавливается вместе со скрытой вкладкой).
+  const ensureTimer = () => {
+    if (offTimer) return;
+    offTimer = ticker.add("render", (_dt, time) => {
+      pending.forEach((deadline, el) => {
+        if (time >= deadline) {
+          finish(el);
+          pending.delete(el);
+        }
+      });
+      if (pending.size === 0) {
+        offTimer?.();
+        offTimer = null;
+      }
+    });
+  };
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const el = entry.target as HTMLElement;
+        observer.unobserve(el);
+        el.dataset.revealState = "run";
+        el.addEventListener("animationend", () => finish(el), { once: true });
+        pending.set(el, ticker.time + REVEAL_SAFETY_S);
+        ensureTimer();
+      }
+    },
+    { threshold: 0.15 },
+  );
+  elements.forEach((el) => observer.observe(el));
+
+  // Смена режима на «Коротко» — сразу показать всё.
+  const modeObserver = new MutationObserver(() => {
+    if (html.dataset.mode === "brief") {
+      elements.forEach(finish);
+      observer.disconnect();
+    }
+  });
+  modeObserver.observe(html, { attributes: true, attributeFilter: ["data-mode"] });
+
+  return () => {
+    observer.disconnect();
+    modeObserver.disconnect();
+    offTimer?.();
+  };
+}

@@ -25,10 +25,12 @@ export async function AssemblySection() {
     <Chapter id="assembly" time={t("time")} name={chapters("assembly")}>
       <div className={styles.split}>
         <div className={`${styles.textBlock} ${styles.splitText}`}>
-          <h2 id="assembly-title" className={type.chapterTitle}>
+          <h2 id="assembly-title" className={type.chapterTitle} data-reveal="">
             {t("title")}
           </h2>
-          <p className={type.lead}>{t("manifest")}</p>
+          <p className={type.lead} data-reveal="">
+            {t("manifest")}
+          </p>
         </div>
         <SceneImage
           className={styles.splitMedia}

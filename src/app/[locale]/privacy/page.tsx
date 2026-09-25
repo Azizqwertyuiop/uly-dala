@@ -25,7 +25,9 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
       <div className={layout.grid}>
         <div className={`${layout.stackLarge} ${layout.narrow}`}>
           <div className={pageStyles.head}>
-            <h1 className={type.chapterTitle}>{t("title")}</h1>
+            <h1 className={type.chapterTitle} data-reveal="">
+              {t("title")}
+            </h1>
             <p className={type.pending}>{t("draftNote")}</p>
           </div>
           {sections.map((section) => (

@@ -30,8 +30,12 @@ export default async function FazendaPage({ params }: PageProps<"/[locale]/fazen
     <PageShell tone="dark">
       <div className={layout.grid}>
         <div className={`${pageStyles.head} ${layout.main}`}>
-          <h1 className={type.chapterTitle}>{t("title")}</h1>
-          <p className={type.lead}>{t("lead")}</p>
+          <h1 className={type.chapterTitle} data-reveal="">
+            {t("title")}
+          </h1>
+          <p className={type.lead} data-reveal="">
+            {t("lead")}
+          </p>
           <p className={type.body}>{world("location")}</p>
         </div>
       </div>

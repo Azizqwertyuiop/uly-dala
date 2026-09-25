@@ -89,6 +89,7 @@ ol {
 [data-tone="dark"] {
   background: var(--indigo);
   color: var(--kumys);
+  --tone-fg: var(--kumys);
   --tone-muted: color-mix(in srgb, var(--kumys) 72%, var(--indigo));
   --tone-line: color-mix(in srgb, var(--kumys) 24%, var(--indigo));
   --tone-surface: color-mix(in srgb, var(--kumys) 6%, var(--indigo));
@@ -97,9 +98,83 @@ ol {
 [data-tone="light"] {
   background: var(--felt);
   color: var(--indigo);
+  --tone-fg: var(--indigo);
   --tone-muted: var(--willow);
   --tone-line: color-mix(in srgb, var(--indigo) 20%, var(--felt));
   --tone-surface: color-mix(in srgb, var(--kumys) 60%, var(--felt));
+}
+
+/* ---------- Проявление светом (CLAUDE.md, раздел 5; src/motion/reveal.ts) ----------
+ * Текст отрисован приглушённым (не opacity: 0), по нему слева направо проходит свет.
+ * Включается скриптом в <head> только с JS и без prefers-reduced-motion / режима «Коротко». */
+html[data-reveal="on"] [data-reveal=""]:not([data-reveal-state="done"]) {
+  --reveal-dim: color-mix(in srgb, var(--tone-fg) 32%, transparent);
+  --reveal-glow: color-mix(in srgb, var(--ember) 30%, var(--tone-fg));
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--tone-fg) 0%,
+    var(--tone-fg) 40%,
+    var(--reveal-glow) 50%,
+    var(--reveal-dim) 60%,
+    var(--reveal-dim) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+html[data-reveal="on"] [data-reveal=""][data-reveal-state="run"] {
+  animation: reveal-light 900ms var(--ease-steppe) forwards;
+}
+
+/*
+ * Первый экран: текст сразу в полном цвете (он же LCP — браузер не считает отрисованным текст,
+ * показанный через background-clip), а свет проходит поверх — по копии текста в ::after,
+ * видимой только в полосе света. Копия скрыта от экранных читалок (content: … / "").
+ */
+html[data-reveal="on"] [data-reveal="glow"] {
+  position: relative;
+}
+
+html[data-reveal="on"] [data-reveal="glow"][data-reveal-state="run"]::after {
+  content: attr(data-reveal-text) / "";
+  position: absolute;
+  inset: 0;
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 38%,
+    color-mix(in srgb, var(--ember) 45%, var(--kumys)) 50%,
+    transparent 62%,
+    transparent 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  pointer-events: none;
+  animation: reveal-light 900ms var(--ease-steppe) forwards;
+}
+
+@keyframes reveal-light {
+  to {
+    background-position: 0% 0;
+  }
+}
+
+/* Страховка: если скрипт приложения не запустился за 1,5 с — текст виден полностью. */
+html[data-reveal="on"]:not([data-reveal-js]) [data-reveal=""] {
+  animation: reveal-safety 0s linear 1.5s forwards;
+}
+
+@keyframes reveal-safety {
+  to {
+    -webkit-text-fill-color: currentColor;
+    background-image: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
