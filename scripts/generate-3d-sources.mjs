@@ -71,10 +71,13 @@ class MeshBuilder {
     return this;
   }
   /** Поверхность вращения: профиль [радиус, высота][], развёртка UV по окружности и профилю. */
-  lathe(profile, segments = 48) {
+  /** Тело вращения; gap — угловой проём [от, до] в радианах (дверной проём). */
+  lathe(profile, segments = 48, gap = null) {
     const base = this.positions.length / 3;
+    const from = gap ? gap[1] : 0;
+    const span = gap ? Math.PI * 2 - (gap[1] - gap[0]) : Math.PI * 2;
     for (let i = 0; i <= segments; i++) {
-      const a = (i / segments) * Math.PI * 2;
+      const a = from + (i / segments) * span;
       const cos = Math.cos(a),
         sin = Math.sin(a);
       for (const [j, [r, y]] of profile.entries()) {
@@ -227,12 +230,17 @@ async function yurt() {
     WALL = 1.6,
     CROWN_Y = 3.1,
     CROWN_R = 0.6;
+  // Дверной проём — спереди (+Z, к камере): решётки и войлока там нет.
+  const DOOR = Math.PI / 2;
+  const DOOR_HALF = 0.17; // рад, ~1 м по стене
+  const inDoor = (a) => Math.abs(Math.atan2(Math.sin(a - DOOR), Math.cos(a - DOOR))) < DOOR_HALF;
 
   // Кереге — решётчатые стены: косые рейки по кругу.
   const kerege = new MeshBuilder();
   const lattice = 72;
   for (let i = 0; i < lattice; i++) {
     const a = (i / lattice) * Math.PI * 2;
+    if (inDoor(a)) continue;
     const c = [Math.cos(a) * R, WALL / 2, Math.sin(a) * R];
     for (const tilt of [0.6, -0.6])
       kerege
@@ -268,15 +276,23 @@ async function yurt() {
   );
   root.addChild(addMesh(doc, buffer, "shanyrak", shanyrak, wood));
 
-  // Кийиз — войлок поверх каркаса (стены и купол, с отверстием под шаңырақ).
-  const kiiz = new MeshBuilder().lathe(
-    [
-      [R + 0.05, 0],
-      [R + 0.05, WALL + 0.02],
-      [CROWN_R + 0.1, CROWN_Y + 0.02],
-    ],
-    64,
-  );
+  // Кийиз — войлок поверх каркаса: стены (с дверным проёмом) и купол (с отверстием под шаңырақ).
+  const kiiz = new MeshBuilder()
+    .lathe(
+      [
+        [R + 0.05, 0],
+        [R + 0.05, WALL + 0.02],
+      ],
+      64,
+      [DOOR - DOOR_HALF, DOOR + DOOR_HALF],
+    )
+    .lathe(
+      [
+        [R + 0.05, WALL + 0.02],
+        [CROWN_R + 0.1, CROWN_Y + 0.02],
+      ],
+      64,
+    );
   root.addChild(addMesh(doc, buffer, "kiiz", kiiz, kiizMat));
 
   // Есік — дверь.
