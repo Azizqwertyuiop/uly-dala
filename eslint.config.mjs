@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "test-results/**",
     "playwright-report/**",
     "blob-report/**",
+    // Сторонний транскодер KTX2 (копия из three/examples, см. scripts/optimize-assets.mjs).
+    "public/assets/decoders/**",
   ]),
 ]);
 

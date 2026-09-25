@@ -24,8 +24,8 @@ export type CameraKey = {
 export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
   // Рассвет: 60 см над землёй, 135 мм, конь на правой трети у горизонта.
   dawn: { position: [0, 0.6, 12], target: [3, 1.1, -40], focal: 135, focus: 52 },
-  // Сборка: юрта встаёт, 50 мм; в конце — внутрь, 24 мм.
-  assembly: { position: [-5, 1.6, 11], target: [0, 1.6, 0], focal: 24, focus: 11 },
+  // Сборка: юрта встаёт справа от текста, 35 мм (внутрь юрты, 24 мм, — в конце главы 2, шаг 10).
+  assembly: { position: [-8, 1.6, 16], target: [-3.6, 1.5, 0], focal: 35, focus: 17 },
   // День: мир готов, 50 мм.
   day: { position: [7, 1.7, 13], target: [0, 1.2, 0], focal: 50, focus: 14 },
   // Огонь: над дастарханом, взгляд вниз (орто — позже, в главе 4).

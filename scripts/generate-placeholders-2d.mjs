@@ -1,6 +1,6 @@
 /*
  * Кадры-заглушки на месте будущих 3D-сцен и фотографий (CLAUDE.md, раздел 0).
- * Запуск: node assets-src/placeholders.mjs → public/assets/placeholders/*.svg
+ * Запуск: node scripts/generate-placeholders-2d.mjs → public/assets/placeholders/*.svg
  * Горизонт — на 72% высоты кадра, как в сцене первого экрана.
  */
 import { mkdirSync, writeFileSync } from "node:fs";

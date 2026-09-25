@@ -18,6 +18,7 @@ export const stageStats = {
   textures: 0,
   pixelRatio: 1,
   resolutionScale: 1,
+  post: "",
   camera: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, fov: 0 },
 };
 

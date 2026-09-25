@@ -72,9 +72,10 @@ describe("камера: путь по всему сайту", () => {
     }
   });
 
-  it("оптика: 135 мм снаружи, 24 мм внутри юрты", () => {
+  it("оптика: 135 мм снаружи, 35–50 мм в движении", () => {
     expect(path.focal(0)).toBe(135);
-    expect(path.focal(path.keyT(1))).toBe(24);
+    expect(path.focal(path.keyT(1))).toBe(35);
+    expect(path.focal(path.keyT(2))).toBe(50);
     expect(focalToFov(135)).toBeCloseTo(10.2, 1);
     expect(focalToFov(50)).toBeCloseTo(27, 0);
   });

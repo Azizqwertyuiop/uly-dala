@@ -1,27 +1,24 @@
 "use client";
 
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { palette } from "@/styles/tokens";
+import { Model } from "./Model";
 import { SceneGroup } from "./primitives";
 import type { SceneProps } from "./registry";
 
-/* Примитив-заглушка главы «fire». Огонь: очаг и дастархан (вид сверху). TODO(assets): настоящая сцена. */
-export default function FireScene({ anchor }: SceneProps) {
+/* Глава «Огонь»: дастархан (dastarkhan_left/right/table) и очаг-заглушка. */
+export default function FireScene({ anchor, data }: SceneProps) {
   return (
     <SceneGroup anchor={anchor}>
-      <>
-        <mesh position={[0, 0.4, 0]} rotation-x={-Math.PI / 2}>
-          <torusGeometry args={[0.8, 0.12, 12, 48]} />
-          <meshStandardMaterial
-            color={palette.ember}
-            emissive={palette.ember}
-            emissiveIntensity={0.6}
-          />
-        </mesh>
-        <mesh position={[0, 0.05, 0]}>
-          <boxGeometry args={[4, 0.1, 1.2]} />
-          <meshStandardMaterial color={palette.willow} />
-        </mesh>
-      </>
+      <Model gltf={data as GLTF} />
+      <mesh position={[2.8, 0.2, 0]} rotation-x={-Math.PI / 2}>
+        <torusGeometry args={[0.5, 0.1, 12, 48]} />
+        <meshStandardMaterial
+          color={palette.ember}
+          emissive={palette.ember}
+          emissiveIntensity={2}
+        />
+      </mesh>
     </SceneGroup>
   );
 }

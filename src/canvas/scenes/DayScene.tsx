@@ -1,17 +1,15 @@
 "use client";
 
-import { palette } from "@/styles/tokens";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { Model } from "./Model";
 import { SceneGroup } from "./primitives";
 import type { SceneProps } from "./registry";
 
-/* Примитив-заглушка главы «day». День: шатёр события. TODO(assets): настоящая сцена. */
-export default function DayScene({ anchor }: SceneProps) {
+/* Глава «День»: LED-стена в шатре (led_frame, led_screen) — не монолит в поле. */
+export default function DayScene({ anchor, data }: SceneProps) {
   return (
     <SceneGroup anchor={anchor}>
-      <mesh position={[2, 1.5, 0]}>
-        <boxGeometry args={[6, 3, 4]} />
-        <meshStandardMaterial color={palette.felt} />
-      </mesh>
+      <Model gltf={data as GLTF} position={[2, 0, -1]} rotation={[0, -0.35, 0]} />
     </SceneGroup>
   );
 }

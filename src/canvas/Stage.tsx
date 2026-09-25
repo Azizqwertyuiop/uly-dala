@@ -1,8 +1,8 @@
 "use client";
 
 import { advance, Canvas, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
-import { AgXToneMapping, type PerspectiveCamera } from "three";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { NoToneMapping, type PerspectiveCamera } from "three";
 import {
   DynamicResolution,
   FirefoxProbe,
@@ -20,8 +20,10 @@ import { chapterTempo } from "@/motion/tokens";
 import { ticker } from "@/motion/ticker";
 import { CameraRigState } from "./camera/rig";
 import { DebugHud, DebugSplines } from "./debug";
+import { configureLoaders } from "./loaders";
+import { PostFX } from "./PostFX";
 import { planScenes } from "./scenes/plan";
-import { sceneRegistry, type SceneProps } from "./scenes/registry";
+import { sceneRegistry, type LoadedScene } from "./scenes/registry";
 import { stageStats } from "./stats";
 import { chapterAnchor, chapterTempoId } from "./world";
 
@@ -64,9 +66,11 @@ export default function Stage(props: Props) {
         camera={{ fov: 10, near: 0.1, far: 600, position: [0, 0.6, 12] }}
         style={{ pointerEvents: "none" }}
         onCreated={({ gl }) => {
-          // Один тонмаппинг на всё (раздел 6): AgX, экспозиция — через таймлайн.
-          gl.toneMapping = AgXToneMapping;
+          // Один тонмаппинг на всё (раздел 6) — AgX в финальном проходе (PostFX), не в рендерере.
+          gl.toneMapping = NoToneMapping;
           gl.setClearColor(0x000000, 0);
+          // Статистику кадра (draw calls) считаем за весь кадр — сцена + пост-процесс.
+          gl.info.autoReset = false;
         }}
       >
         <Runtime {...props} quality={quality} onDowngrade={() => setQuality("medium")} />
@@ -90,7 +94,9 @@ function Runtime({
   const size = useThree((s) => s.size);
   const setDpr = useThree((s) => s.setDpr);
   const rig = useMemo(() => new CameraRigState(chapterTempo.dawn.cameraSmoothing), []);
-  const [scenes, setScenes] = useState<Map<string, ComponentType<SceneProps>>>(() => new Map());
+  const [scenes, setScenes] = useState<Map<string, LoadedScene>>(() => new Map());
+  // Загрузчики (KTX2/meshopt) — до первого плана сцен: им нужен renderer.
+  useState(() => configureLoaders(gl, quality));
   const loading = useRef(new Set<string>());
   const compiled = useRef(new Set<string>());
   const ready = useRef(false);
@@ -146,9 +152,9 @@ function Runtime({
         const entry = sceneRegistry.find((e) => e.id === id);
         if (!entry || loading.current.has(id)) continue;
         loading.current.add(id);
-        void entry.loader().then((mod) => {
+        void entry.loader().then((loaded) => {
           loading.current.delete(id);
-          setScenes((prev) => new Map(prev).set(id, mod.default));
+          setScenes((prev) => new Map(prev).set(id, loaded));
         });
       }
       if (!hasChapters && !ready.current) markReady();
@@ -228,6 +234,7 @@ function Runtime({
       readGpuTime();
       const measure = timer && !query ? ctx.createQuery() : null;
       if (measure && timer) ctx.beginQuery(timer.TIME_ELAPSED_EXT, measure);
+      gl.info.reset();
       const started = performance.now();
       advance(time * 1000);
       stageStats.renderMs = performance.now() - started;
@@ -323,9 +330,12 @@ function Runtime({
       <hemisphereLight args={["#f7f4ee", "#6b4a33", 0.9]} />
       <directionalLight position={[20, 30, 10]} intensity={1.6} />
       {sceneRegistry.map((entry) => {
-        const Scene = scenes.get(entry.id);
-        return Scene ? <Scene key={entry.id} anchor={chapterAnchor(entry.index)} /> : null;
+        const loaded = scenes.get(entry.id);
+        if (!loaded) return null;
+        const Scene = loaded.Component;
+        return <Scene key={entry.id} anchor={chapterAnchor(entry.index)} data={loaded.data} />;
       })}
+      <PostFX msaa={quality === "high"} />
       {debug && <DebugSplines path={rig.path} />}
     </>
   );
