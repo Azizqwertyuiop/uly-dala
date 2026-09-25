@@ -1,4 +1,4 @@
-/* Базовый сброс. Дизайн-токены (палитра, типографика) добавляются на следующем шаге — CLAUDE.md, раздел 4. */
+/* Базовые стили. Токены — src/styles/tokens.css (импортируется в layout раньше этого файла). */
 *,
 *::before,
 *::after {
@@ -13,5 +13,35 @@ html {
 body {
   margin: 0;
   min-height: 100svh;
+  background: var(--indigo);
+  color: var(--kumys);
+  font-family: var(--font-family-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  letter-spacing: var(--tracking-body);
   -webkit-font-smoothing: antialiased;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-weight: 500;
+}
+
+p {
+  margin: 0;
+  max-width: var(--measure);
+}
+
+em {
+  font-family: var(--font-family-heading-italic);
+}
+
+p em,
+li em {
+  font-family: inherit;
 }

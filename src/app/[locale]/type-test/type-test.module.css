@@ -1,0 +1,93 @@
+.page {
+  min-height: 100svh;
+  padding: var(--space-8) var(--grid-margin) var(--space-16);
+  background: var(--felt);
+  color: var(--indigo);
+}
+
+.header {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-12);
+}
+
+.title {
+  font-size: var(--text-chapter);
+  line-height: var(--leading-chapter);
+  letter-spacing: var(--tracking-chapter);
+}
+
+.intro,
+.lead {
+  font-size: var(--text-lead);
+  line-height: var(--leading-lead);
+}
+
+.section {
+  display: grid;
+  gap: var(--space-6);
+  margin-bottom: var(--space-16);
+}
+
+.sectionTitle {
+  font-family: var(--font-family-body);
+  font-size: var(--text-lead);
+  font-weight: 600;
+}
+
+.specimen {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--wormwood);
+}
+
+.caption {
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  letter-spacing: var(--tracking-caption);
+  color: var(--willow);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero,
+.chapter,
+.bodyLarge,
+.body {
+  max-width: none;
+  overflow-wrap: anywhere;
+}
+
+.hero {
+  font-size: var(--text-hero);
+  line-height: var(--leading-hero);
+  letter-spacing: var(--tracking-hero);
+}
+
+.chapter {
+  font-size: var(--text-chapter);
+  line-height: var(--leading-chapter);
+  letter-spacing: var(--tracking-chapter);
+}
+
+.hero,
+.chapter {
+  font-family: var(--font-family-heading);
+}
+
+.hero[data-style="italic"],
+.chapter[data-style="italic"] {
+  font-family: var(--font-family-heading-italic);
+  font-style: italic;
+}
+
+.bodyLarge {
+  font-size: clamp(40px, 5vw, 88px);
+  line-height: 1.1;
+}
+
+.bodyLarge[data-style="italic"],
+.body[data-style="italic"] {
+  font-style: italic;
+}

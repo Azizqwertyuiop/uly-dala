@@ -1,0 +1,94 @@
+/*
+ * Дизайн-токены ULY DALA — CLAUDE.md, разделы 4 и 5.
+ * TS-копия: src/styles/tokens.ts и src/motion/tokens.ts. Совпадение проверяет src/styles/tokens.test.ts.
+ */
+
+:root {
+  /* ---------- Палитра ---------- */
+  --felt: #ede6da; /* светлый фон — войлок */
+  --wormwood: #8a9283; /* вспомогательный — полынь */
+  --indigo: #1c2230; /* основной тёмный — предрассветное небо */
+  --willow: #6b4a33; /* дерево, кожа */
+  --kumys: #f7f4ee; /* текст на тёмном */
+  /*
+   * Единственный акцент. Занимает НЕ БОЛЕЕ 2% площади экрана:
+   * тонкие линии, точка-солнце, фокус. Не фон, не крупные плашки, не текст абзацев.
+   */
+  --ember: #e0602a;
+
+  /* ---------- Шрифты (переменные --font-heading / --font-body ставит next/font) ---------- */
+  --font-family-heading: var(--font-heading), Georgia, "Times New Roman", serif;
+  --font-family-heading-italic: var(--font-heading-italic), Georgia, "Times New Roman", serif;
+  --font-family-body: var(--font-body), "Helvetica Neue", Arial, sans-serif;
+
+  /* ---------- Типографическая шкала ---------- */
+  --text-hero: clamp(56px, 8vw, 152px); /* заголовок первого экрана */
+  --leading-hero: 0.95;
+  --tracking-hero: -0.02em;
+
+  --text-chapter: clamp(40px, 5vw, 88px); /* заголовок главы */
+  --leading-chapter: 1;
+  --tracking-chapter: -0.015em;
+
+  --text-lead: clamp(19px, 1.4vw, 24px); /* лид */
+  --leading-lead: 1.45;
+  --tracking-lead: 0;
+
+  --text-body: 17px; /* основной текст */
+  --leading-body: 1.6;
+  --tracking-body: 0;
+
+  --text-caption: 13px; /* подписи */
+  --leading-caption: 1.45;
+  --tracking-caption: 0.01em;
+
+  --measure: 62ch; /* длина строки ≤ 62 знаков */
+
+  /* ---------- Сетка ---------- */
+  /* Брейкпоинты (в media нельзя использовать var()): 360, 768, 1280, 1920 — см. tokens.ts */
+  --grid-columns: 12;
+  --grid-margin: clamp(20px, 5vw, 96px);
+  --grid-gutter: 24px;
+
+  /* ---------- Отступы: вертикаль кратна 8px ---------- */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+  --space-12: 96px;
+  --space-16: 128px;
+  --space-20: 160px;
+  --space-block: 12vh; /* между смысловыми блоками внутри главы */
+
+  /* ---------- Z-слои ---------- */
+  --z-canvas: 0;
+  --z-content: 10;
+  --z-ui: 100;
+  --z-modal: 1000;
+
+  /* ---------- Движение (раздел 5). Упругих кривых с отскоком нет и не будет. ---------- */
+  --duration-instant: 120ms;
+  --duration-quick: 240ms;
+  --duration-base: 480ms;
+  --duration-slow: 800ms;
+  --duration-scene: 1200ms;
+  --duration-ritual: 1800ms;
+
+  --ease-steppe: cubic-bezier(0.16, 1, 0.3, 1); /* появление */
+  --ease-horizon: cubic-bezier(0.65, 0, 0.35, 1); /* камера, линии */
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1); /* посадка деталей */
+  --ease-breath: cubic-bezier(0.37, 0, 0.63, 1); /* циклы */
+  --ease-exit: cubic-bezier(0.7, 0, 0.84, 0); /* уход */
+  --ease-ritual: cubic-bezier(0.45, 0, 0.2, 1);
+
+  --stagger-word: 40ms;
+  --stagger-line: 80ms;
+  --stagger-item: 120ms;
+
+  /* Множитель темпа текущей главы; секции переопределяют через data-chapter (позже). */
+  --tempo: 1;
+}
