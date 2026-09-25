@@ -19,6 +19,9 @@ export const stageStats = {
   pixelRatio: 1,
   resolutionScale: 1,
   post: "",
+  /** Средняя энергия поля ветра (чтение с GPU по запросу — для тестов). */
+  windProbe: null as null | (() => number),
+  dawn: { introTime: null as number | null, wave: false, clip: "", textOut: false, fps: 0 },
   camera: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, fov: 0 },
 };
 

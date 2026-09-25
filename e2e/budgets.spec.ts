@@ -62,10 +62,12 @@ for (const [tier, viewport] of [
         window.scrollTo(0, top - window.innerHeight / 2 + 80);
       }, id);
       await expect
-        .poll(() =>
-          page.evaluate(
-            () => (window as unknown as { __stage: { loaded: string[] } }).__stage.loaded,
-          ),
+        .poll(
+          () =>
+            page.evaluate(
+              () => (window as unknown as { __stage: { loaded: string[] } }).__stage.loaded,
+            ),
+          { timeout: 15_000 }, // программный WebGL под параллельной нагрузкой — медленный
         )
         .toContain(id);
       await net.idle();

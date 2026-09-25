@@ -11,6 +11,7 @@ import {
   TextureLoader,
   WebGLRenderTarget,
 } from "three";
+import { chapterBounds, progress } from "@/motion/progress";
 import { ticker } from "@/motion/ticker";
 import { assets } from "./assets";
 import { createPostMaterial, grainFrame } from "./materials/post";
@@ -19,7 +20,17 @@ import { stageStats } from "./stats";
 /*
  * Пост-процесс сцены: рендер в линейный HDR-буфер (MSAA на high) → финальный проход (post.ts).
  * useFrame с приоритетом 1 забирает рендер у R3F — кадр по-прежнему запускает ticker через advance().
+ *
+ * Степь (небо, рельеф, трава, конь) — слой STEPPE_LAYER: рисуется только внутри прямоугольника
+ * секции «Рассвет» на экране (scissor). Следующая секция «наезжает» на степь как обычный блок,
+ * её фон и контраст не меняются. Прямоугольник — из измеренных границ глав, без чтения DOM в кадре.
  */
+
+export const STEPPE_LAYER = 1;
+const STEPPE_CHAPTER = 0;
+
+/** Цветокоррекция кадра: экспозиция — через таймлайн глав (раздел 6). */
+export const grade = { exposure: 1 };
 type Resources = {
   target: WebGLRenderTarget;
   quad: Scene;
@@ -71,10 +82,41 @@ export function PostFX({ msaa }: { msaa: boolean }) {
     const frame = grainFrame(ticker.time);
     u.uGrainSeed!.value = frame % 1024;
     u.uNoiseOffset!.value = [(frame * 23) % 64, (frame * 41) % 64];
+    u.uExposure!.value = grade.exposure;
     gl.setRenderTarget(r.target);
     gl.setClearColor(0x000000, 0);
     gl.clear();
+    const autoClear = gl.autoClear;
+    gl.autoClear = false;
+
+    // 1) Степь — только в прямоугольнике своей секции.
+    const b = chapterBounds()[STEPPE_CHAPTER];
+    if (b && progress.chapterId !== null) {
+      const top = b.top - progress.scrollY;
+      const bottom = Math.min(top + b.height, size.height);
+      const clippedTop = Math.max(top, 0);
+      if (bottom > clippedTop) {
+        const ratio = r.target.height / size.height;
+        gl.setScissorTest(true);
+        r.target.scissorTest = true;
+        r.target.scissor.set(
+          0,
+          (size.height - bottom) * ratio,
+          r.target.width,
+          (bottom - clippedTop) * ratio,
+        );
+        gl.setRenderTarget(r.target);
+        camera.layers.set(STEPPE_LAYER);
+        gl.render(scene, camera);
+        r.target.scissorTest = false;
+        gl.setScissorTest(false);
+        gl.setRenderTarget(r.target);
+      }
+    }
+    // 2) Всё остальное — без ограничений.
+    camera.layers.set(0);
     gl.render(scene, camera);
+    gl.autoClear = autoClear;
     gl.setRenderTarget(null);
     u.tScene!.value = r.target.texture;
     gl.clear();

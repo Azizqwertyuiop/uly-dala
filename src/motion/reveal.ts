@@ -56,21 +56,49 @@ export function startReveal(): () => void {
     });
   };
 
+  const run = (el: HTMLElement) => {
+    el.dataset.revealState = "run";
+    el.addEventListener("animationend", () => finish(el), { once: true });
+    pending.set(el, ticker.time + REVEAL_SAFETY_S);
+    ensureTimer();
+  };
+
   const observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         const el = entry.target as HTMLElement;
         observer.unobserve(el);
-        el.dataset.revealState = "run";
-        el.addEventListener("animationend", () => finish(el), { once: true });
-        pending.set(el, ticker.time + REVEAL_SAFETY_S);
-        ensureTimer();
+        run(el);
       }
     },
     { threshold: 0.15 },
   );
-  elements.forEach((el) => observer.observe(el));
+
+  // Первый экран (data-reveal-wait="intro") ждёт таймлайна интро 3D-сцены (4,2 с, раздел 2).
+  // Если сцены не будет (fallback, «Коротко», выключен холст) — проявляется сразу по видимости.
+  // Текст этих элементов виден всё время: свет у варианта glow проходит поверх.
+  const waiting = elements.filter((el) => el.dataset.revealWait === "intro");
+  let released = waiting.length === 0;
+  const release = () => {
+    if (released) return;
+    released = true;
+    waiting.forEach((el) => observer.observe(el));
+  };
+  const noStage = () =>
+    html.dataset.quality === "fallback" || (html.dataset.quality && html.dataset.canvas === "off");
+  const stageObserver = new MutationObserver(() => {
+    if (noStage()) release();
+  });
+  stageObserver.observe(html, {
+    attributes: true,
+    attributeFilter: ["data-quality", "data-canvas"],
+  });
+  window.addEventListener("uly:intro-text", release, { once: true });
+  const safety = window.setTimeout(release, 8000);
+  if (noStage()) release();
+
+  elements.filter((el) => !waiting.includes(el)).forEach((el) => observer.observe(el));
 
   // Смена режима на «Коротко» — сразу показать всё.
   const modeObserver = new MutationObserver(() => {
@@ -84,6 +112,9 @@ export function startReveal(): () => void {
   return () => {
     observer.disconnect();
     modeObserver.disconnect();
+    stageObserver.disconnect();
+    window.removeEventListener("uly:intro-text", release);
+    window.clearTimeout(safety);
     offTimer?.();
   };
 }

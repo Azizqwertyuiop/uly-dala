@@ -122,8 +122,14 @@ describe("бюджет пикселей и DPR", () => {
 });
 
 describe("динамическое разрешение", () => {
-  it("fps ниже цели за 60 кадров → вниз шагами по 0,1, но не ниже 0,7", () => {
+  it("первые 2 с (прогрев: компиляция шейдеров) не влияют на разрешение", () => {
     const dr = new DynamicResolution(58);
+    for (let i = 0; i < 40; i++) dr.sample(1 / 20); // 2 с по 20 fps
+    expect(dr.scale).toBe(1);
+  });
+
+  it("fps ниже цели за 60 кадров → вниз шагами по 0,1, но не ниже 0,7", () => {
+    const dr = new DynamicResolution(58, 0);
     const second = (fps: number) => {
       for (let i = 0; i < 60; i++) dr.sample(1 / fps);
     };
@@ -133,11 +139,13 @@ describe("динамическое разрешение", () => {
     expect(dr.scale).toBe(RESOLUTION_MIN);
   });
 
-  it("устойчиво выше цели с запасом — обратно вверх до 1", () => {
-    const dr = new DynamicResolution(45);
+  it("три окна подряд на уровне цели — обратно вверх, даже на экране 60 Гц", () => {
+    const dr = new DynamicResolution(58, 0);
     for (let i = 0; i < 60; i++) dr.sample(1 / 30);
     expect(dr.scale).toBe(0.9);
     for (let i = 0; i < 120; i++) dr.sample(1 / 60);
+    expect(dr.scale).toBe(0.9); // два окна — ещё рано
+    for (let i = 0; i < 60; i++) dr.sample(1 / 60);
     expect(dr.scale).toBe(1);
   });
 

@@ -9,22 +9,25 @@ type Props = {
   time: string;
   name: string;
   children: React.ReactNode;
+  /** Дополнительные классы секции и её содержимого (раскладка конкретной главы). */
+  className?: string;
+  innerClassName?: string;
 };
 
 /**
  * Секция-глава: <section aria-labelledby>, data-chapter, data-tone, стабильный id.
  * Заголовок главы — элемент с id `${id}-title` внутри children.
  */
-export function Chapter({ id, time, name, children }: Props) {
+export function Chapter({ id, time, name, children, className, innerClassName }: Props) {
   return (
     <section
       id={id}
       aria-labelledby={`${id}-title`}
       data-chapter={id}
       data-tone={chapterTone[id]}
-      className={styles.chapter}
+      className={[styles.chapter, className].filter(Boolean).join(" ")}
     >
-      <div className={`${layout.container} ${styles.inner}`}>
+      <div className={[layout.container, styles.inner, innerClassName].filter(Boolean).join(" ")}>
         <p className={`${type.eyebrow} ${styles.time}`}>
           <time>{time}</time> · {name}
         </p>

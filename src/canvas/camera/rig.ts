@@ -58,6 +58,8 @@ export class CameraRigState {
   private basePitch = 0;
   private time = 0;
   private t = 0;
+  private offsetPitch = 0;
+  private offsetY = 0;
   private scratchA = new Vector3();
   private scratchB = new Vector3();
   private angles = { yaw: 0, pitch: 0 };
@@ -73,8 +75,8 @@ export class CameraRigState {
   /** Мгновенно в точку t — восстановление после обновления страницы, без облёта. */
   snap(t: number): void {
     this.t = clamp01(t);
-    const p = this.path.position.getPoint(clamp01(t), this.scratchA);
-    const q = this.path.target.getPoint(clamp01(t), this.scratchB);
+    const p = this.path.positionAt(clamp01(t), this.scratchA);
+    const q = this.path.targetAt(clamp01(t), this.scratchB);
     this.position.setTarget([p.x, p.y, p.z]);
     this.target.setTarget([q.x, q.y, q.z]);
     this.position.snap();
@@ -98,16 +100,20 @@ export class CameraRigState {
     pointer: { x: number; y: number },
     smoothTime: number,
     reduced: boolean,
+    /** Сдвиги кадра главы: тангаж (рад, композиция по пропорциям экрана) и высота (м, шаг коня). */
+    offsets: { pitch?: number; y?: number } = {},
   ): RigOutput {
     this.time += dt;
     this.t = clamp01(t);
     this.position.smoothTime = this.target.smoothTime = this.focal.smoothTime = smoothTime;
 
-    const p = this.path.position.getPoint(clamp01(t), this.scratchA);
-    const q = this.path.target.getPoint(clamp01(t), this.scratchB);
+    const p = this.path.positionAt(clamp01(t), this.scratchA);
+    const q = this.path.targetAt(clamp01(t), this.scratchB);
     this.position.setTarget([p.x, p.y, p.z]);
     this.target.setTarget([q.x, q.y, q.z]);
     this.focal.target = this.path.focal(t);
+    this.offsetPitch = offsets.pitch ?? 0;
+    this.offsetY = offsets.y ?? 0;
     const pos = this.position.update(dt);
     const tgt = this.target.update(dt);
     this.focal.update(dt);
@@ -132,7 +138,7 @@ export class CameraRigState {
   private compose(breath: boolean): void {
     const pos = this.position.value;
     const out = this.out;
-    out.position.set(pos[0]!, Math.min(pos[1]!, MAX_CAMERA_HEIGHT), pos[2]!);
+    out.position.set(pos[0]!, Math.min(pos[1]! + this.offsetY, MAX_CAMERA_HEIGHT), pos[2]!);
     out.focal = this.focal.value;
     out.fov = focalToFov(out.focal);
     out.focus = this.path.focus(this.t);
@@ -142,7 +148,7 @@ export class CameraRigState {
         Math.sin((this.time / BREATH_PERIOD) * Math.PI * 2)
       : 0;
     out.yaw = this.baseYaw + this.cursorYaw.value;
-    out.pitch = this.basePitch + this.cursorPitch.value + breathPitch;
+    out.pitch = this.basePitch + this.offsetPitch + this.cursorPitch.value + breathPitch;
     out.roll = 0;
   }
 }

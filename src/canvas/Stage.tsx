@@ -15,10 +15,11 @@ import {
 } from "@/lib/capabilities";
 import { whenIdle } from "@/lib/idle";
 import { input } from "@/motion/input";
-import { progress } from "@/motion/progress";
+import { chapterStartScroll, progress } from "@/motion/progress";
 import { chapterTempo } from "@/motion/tokens";
 import { ticker } from "@/motion/ticker";
 import { CameraRigState } from "./camera/rig";
+import { horizonPitch, stepBob } from "./steppe/dawn";
 import { DebugHud, DebugSplines } from "./debug";
 import { configureLoaders } from "./loaders";
 import { PostFX } from "./PostFX";
@@ -47,6 +48,8 @@ type Props = {
   onFallback: (reason: string) => void;
 };
 
+const DAWN_FOV = 2 * Math.atan(24 / (2 * 135)) * (180 / Math.PI);
+
 /** Сколько ждать восстановления контекста, прежде чем уйти в fallback, с. */
 const CONTEXT_RESTORE_TIMEOUT = 3;
 
@@ -63,7 +66,8 @@ export default function Stage(props: Props) {
           powerPreference: "high-performance",
           preserveDrawingBuffer: false,
         }}
-        camera={{ fov: 10, near: 0.1, far: 600, position: [0, 0.6, 12] }}
+        // Горы — на 14 км, небо — на 18 км (глава 1).
+        camera={{ fov: 10, near: 0.25, far: 20_000, position: [0, 0.6, 12] }}
         style={{ pointerEvents: "none" }}
         onCreated={({ gl }) => {
           // Один тонмаппинг на всё (раздел 6) — AgX в финальном проходе (PostFX), не в рендерере.
@@ -203,7 +207,15 @@ function Runtime({
       const tempo = progress.chapterId
         ? chapterTempo[chapterTempoId[progress.chapterId as keyof typeof chapterTempoId]]
         : chapterTempo.dawn;
-      rig.update(dt, progress.horizon, input, tempo.cameraSmoothing, reduced.matches);
+      // Композиция первого экрана по пропорциям (горизонт 72% / 68% на мобильных) — только в начале.
+      const aspect = size.width / Math.max(size.height, 1);
+      const framing = 1 - Math.min(Math.max(progress.horizon / 0.12, 0), 1);
+      const pitch = (horizonPitch(DAWN_FOV, aspect) - horizonPitch(DAWN_FOV, 16 / 9)) * framing;
+      // Шаг коня (ритм 0,6 с) — только на переходе Рассвет → Сборка, 40vh.
+      const transition =
+        (progress.scrollY - chapterStartScroll(1)) / (0.4 * progress.viewportHeight);
+      const y = reduced.matches ? 0 : stepBob(ticker.time, transition);
+      rig.update(dt, progress.horizon, input, tempo.cameraSmoothing, reduced.matches, { pitch, y });
       applyCamera(camera, rig.out);
     });
 
@@ -267,7 +279,7 @@ function Runtime({
       offDamping();
       offRender();
     };
-  }, [camera, gl, rig, quality, profile, setDpr, onDowngrade, debug]);
+  }, [camera, gl, rig, quality, profile, setDpr, onDowngrade, debug, size.width, size.height]);
 
   // ---------- Потеря контекста ----------
   useEffect(() => {

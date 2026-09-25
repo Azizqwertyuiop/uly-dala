@@ -213,6 +213,18 @@ export function startProgress(): () => void {
   };
 }
 
+/** Границы глав в документе (только чтение; обновляются при ресайзе). */
+export function chapterBounds(): readonly ChapterBound[] {
+  return bounds;
+}
+
+/** Прокрутка, с которой глава i становится текущей (её верх — на середине экрана). */
+export function chapterStartScroll(index: number): number {
+  const b = bounds[index];
+  if (!b) return 0;
+  return index === 0 ? 0 : Math.max(0, b.top - progress.viewportHeight * 0.5);
+}
+
 /** Есть ли на странице главы (главная) — для компонентов, которым это важно. */
 export function hasChapters(): boolean {
   return bounds.length > 0;

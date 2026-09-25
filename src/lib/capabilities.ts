@@ -147,20 +147,34 @@ export const RESOLUTION_MIN = 0.7;
 export const RESOLUTION_STEP = 0.1;
 export const RESOLUTION_WINDOW = 60;
 
+/** Прогрев после старта сцены (компиляция шейдеров, загрузка) — не судим по нему о GPU, с. */
+export const RESOLUTION_WARMUP = 2;
+/** Сколько окон подряд на уровне цели нужно, чтобы вернуть разрешение вверх. */
+export const RESOLUTION_RECOVER_WINDOWS = 3;
+
 /**
  * Среднее fps за 60 кадров ниже цели → масштаб рендера вниз шагами до 0.7.
- * Устойчиво выше цели с запасом — осторожно обратно вверх (не чаще раза за окно).
+ * Три окна подряд на уровне цели — на шаг обратно вверх (на экране 60 Гц fps не бывает выше 60,
+ * поэтому «с запасом» не требуем). Первые 2 с после старта не учитываются.
  */
 export class DynamicResolution {
   scale = 1;
   private frames = 0;
   private elapsed = 0;
+  private good = 0;
 
-  constructor(public targetFps: number) {}
+  constructor(
+    public targetFps: number,
+    private warmup = RESOLUTION_WARMUP,
+  ) {}
 
   /** dt — секунды кадра. Возвращает true, если масштаб изменился. */
   sample(dt: number): boolean {
     if (dt <= 0) return false;
+    if (this.warmup > 0) {
+      this.warmup -= dt;
+      return false;
+    }
     this.frames++;
     this.elapsed += dt;
     if (this.frames < RESOLUTION_WINDOW) return false;
@@ -169,8 +183,10 @@ export class DynamicResolution {
     this.elapsed = 0;
     const before = this.scale;
     if (fps < this.targetFps) {
+      this.good = 0;
       this.scale = Math.max(RESOLUTION_MIN, round1(this.scale - RESOLUTION_STEP));
-    } else if (fps > this.targetFps + 8 && this.scale < 1) {
+    } else if (this.scale < 1 && ++this.good >= RESOLUTION_RECOVER_WINDOWS) {
+      this.good = 0;
       this.scale = Math.min(1, round1(this.scale + RESOLUTION_STEP));
     }
     return this.scale !== before;

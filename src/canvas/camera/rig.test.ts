@@ -52,7 +52,7 @@ describe("камера: путь по всему сайту", () => {
     const rig = new CameraRigState();
     chapterIds.forEach((_, i) => {
       rig.snap(path.keyT(i));
-      const expected = path.position.getPoint(path.keyT(i));
+      const expected = path.positionAt(path.keyT(i));
       expect(
         rig.out.position.distanceTo(
           new Vector3(expected.x, Math.min(expected.y, MAX_CAMERA_HEIGHT), expected.z),
@@ -70,6 +70,25 @@ describe("камера: путь по всему сайту", () => {
       expect(rig.out.position.y).toBeLessThanOrEqual(MAX_CAMERA_HEIGHT);
       expect(rig.out.position.y).toBeGreaterThan(0.3);
     }
+  });
+
+  it("конец рассвета: 50 мм, камера над кругом примятой травы (на месте юрты)", () => {
+    const rig = new CameraRigState();
+    rig.snap(0.16);
+    expect(rig.out.focal).toBe(50);
+    expect(rig.out.position.z).toBeCloseTo(-52, 6);
+    expect(rig.out.pitch).toBeLessThan(-0.15); // взгляд вниз
+  });
+
+  it("шаг коня и композиция — только высота и тангаж, крен остаётся 0", () => {
+    const rig = new CameraRigState();
+    rig.snap(0.18);
+    const out = rig.update(1 / 60, 0.18, { x: 0.5, y: 0.5 }, 0.35, false, {
+      pitch: 0.01,
+      y: -0.012,
+    });
+    expect(out.roll).toBe(0);
+    expect(Math.abs(rollOf(out.yaw, out.pitch, out.roll))).toBeLessThan(1e-12);
   });
 
   it("оптика: 135 мм снаружи, 35–50 мм в движении", () => {

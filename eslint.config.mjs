@@ -8,6 +8,12 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Отключает правила оформления, которые конфликтуют с Prettier. Должен идти последним.
   prettier,
+  {
+    // Граф сцены three.js мутабелен по природе (R3F: объекты создаются один раз и меняются
+    // в каждом кадре). Правило React Compiler про неизменяемость здесь неприменимо.
+    files: ["src/canvas/**/*.tsx"],
+    rules: { "react-hooks/immutability": "off" },
+  },
   globalIgnores([
     ".next/**",
     "out/**",

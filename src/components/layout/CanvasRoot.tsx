@@ -7,6 +7,9 @@ import { useUiStore } from "@/store/ui";
 import styles from "./CanvasRoot.module.css";
 
 type StageModule = typeof import("@/canvas/Stage");
+
+const setLoad = (value: number) =>
+  document.documentElement.style.setProperty("--stage-load", String(value));
 type StageProps = Parameters<StageModule["default"]>[0];
 
 /*
@@ -35,8 +38,12 @@ export function CanvasRoot() {
       setDebug(new URLSearchParams(window.location.search).has("debug"));
       document.documentElement.dataset.quality = decision.quality;
       if (decision.quality === "fallback") return;
+      // Прелоадер-горизонт (раздел 2): линия прочерчивается по прогрессу загрузки 3D.
+      setLoad(0.35);
       void import("@/canvas/Stage").then((mod) => {
-        if (!cancelled) setStage(() => mod.default);
+        if (cancelled) return;
+        setLoad(0.7);
+        setStage(() => mod.default);
       });
     };
     // three.js — после load и в простое: первый экран (и LCP) уже отрисован статичным кадром,
@@ -74,6 +81,7 @@ export function CanvasRoot() {
           profile={profile}
           debug={debug}
           onReady={() => {
+            setLoad(1);
             document.documentElement.dataset.canvas = "ready";
           }}
           onFallback={() => {

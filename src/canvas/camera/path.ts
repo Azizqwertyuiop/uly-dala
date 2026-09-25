@@ -1,5 +1,6 @@
 import { CatmullRomCurve3, MathUtils, Vector3 } from "three";
 import { chapterIds } from "@/components/sections/chapters";
+import { horizonPitch } from "../steppe/dawn";
 import { chapterAnchor } from "../world";
 
 /*
@@ -20,10 +21,20 @@ export type CameraKey = {
   focus: number;
 };
 
+/** Первый экран (раздел 2): 60 см, 135 мм, крен 0, горизонт на 72% высоты, взгляд по −Z. */
+const DAWN_FOV = 2 * Math.atan(24 / (2 * 135)) * (180 / Math.PI);
+const DAWN_PITCH = horizonPitch(DAWN_FOV, 16 / 9);
+const dawnFrame = (focus: number): CameraKey => ({
+  position: [0, 0.6, 12],
+  target: [0, 0.6 + Math.tan(DAWN_PITCH) * 50, -38],
+  focal: 135,
+  focus,
+});
+
 /** Ключевые кадры по главам. TODO(assets): подогнать под настоящие сцены. */
 export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
-  // Рассвет: 60 см над землёй, 135 мм, конь на правой трети у горизонта.
-  dawn: { position: [0, 0.6, 12], target: [3, 1.1, -40], focal: 135, focus: 52 },
+  // Рассвет: конь на правой трети, ~275 м (положение коня считает DawnScene по пропорциям экрана).
+  dawn: dawnFrame(275),
   // Сборка: юрта встаёт справа от текста, 35 мм (внутрь юрты, 24 мм, — в конце главы 2, шаг 10).
   assembly: { position: [-8, 1.6, 16], target: [-3.6, 1.5, 0], focal: 35, focus: 17 },
   // День: мир готов, 50 мм.
@@ -33,8 +44,20 @@ export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
   // Этот мир существует: ночь, 50 мм.
   world: { position: [0, 1.5, 15], target: [0, 1, 0], focal: 50, focus: 15 },
   // Снова рассвет: та же оптика, что в начале.
-  return: { position: [0, 0.6, 12], target: [3, 1.1, -40], focal: 135, focus: 52 },
+  return: dawnFrame(275),
 };
+
+/**
+ * Промежуточные ключи внутри глав: t — прогресс сайта (как у горизонта), offset — от якоря главы.
+ * Конец рассвета (раздел 2): фокус 135 → 50 мм, камера над кругом примятой травы — на месте юрты.
+ */
+export const EXTRA_KEYS: { t: number; chapter: number; key: CameraKey }[] = [
+  {
+    t: 0.16,
+    chapter: 1,
+    key: { position: [0, 1.8, 8], target: [0, 0, 0], focal: 50, focus: 8.2 },
+  },
+];
 
 /** Максимальная высота камеры в степи, м. */
 export const MAX_CAMERA_HEIGHT = 1.8;
@@ -42,8 +65,11 @@ export const MAX_CAMERA_HEIGHT = 1.8;
 export const SENSOR_HEIGHT_MM = 24;
 
 export type CameraPath = {
+  /** Кривые целиком (для отладки); по прогрессу сайта — positionAt / targetAt. */
   position: CatmullRomCurve3;
   target: CatmullRomCurve3;
+  positionAt: (t: number, out?: Vector3) => Vector3;
+  targetAt: (t: number, out?: Vector3) => Vector3;
   focal: (t: number) => number;
   focus: (t: number) => number;
   /** t ключевого кадра главы i. */
@@ -52,36 +78,52 @@ export type CameraPath = {
 
 const smooth = (a: number, b: number, k: number) => a + (b - a) * MathUtils.smoothstep(k, 0, 1);
 
-function piecewise(values: number[]) {
+/** Прогресс сайта t → параметр кривой u: ключи стоят в своих t, между ними — линейно. */
+function remap(times: number[]) {
+  const last = times.length - 1;
   return (t: number) => {
-    const n = values.length;
-    if (n === 1) return values[0]!;
-    const x = MathUtils.clamp(t, 0, 1) * (n - 1);
-    const i = Math.min(Math.floor(x), n - 2);
-    return smooth(values[i]!, values[i + 1]!, x - i);
+    const x = MathUtils.clamp(t, 0, 1);
+    let k = 0;
+    while (k < last - 1 && x > times[k + 1]!) k++;
+    const span = times[k + 1]! - times[k]!;
+    const frac = span > 0 ? MathUtils.clamp((x - times[k]!) / span, 0, 1) : 0;
+    return { u: (k + frac) / last, k, frac };
   };
 }
 
 export function buildCameraPath(): CameraPath {
   const add = (anchor: [number, number, number], offset: [number, number, number]) =>
     new Vector3(anchor[0] + offset[0], anchor[1] + offset[1], anchor[2] + offset[2]);
-  const keys = chapterIds.map((id, i) => ({ key: CAMERA_KEYS[id], anchor: chapterAnchor(i) }));
-  const n = keys.length;
+  const n = chapterIds.length;
+  const keyT = (index: number) => (n > 1 ? index / (n - 1) : 0);
+  const keys = [
+    ...chapterIds.map((id, i) => ({ t: keyT(i), key: CAMERA_KEYS[id], anchor: chapterAnchor(i) })),
+    ...EXTRA_KEYS.map((e) => ({ t: e.t, key: e.key, anchor: chapterAnchor(e.chapter) })),
+  ].sort((a, b) => a.t - b.t);
+  const map = remap(keys.map((k) => k.t));
+  // centripetal — без петель и перелётов между ключами.
+  const position = new CatmullRomCurve3(
+    keys.map(({ key, anchor }) => add(anchor, key.position)),
+    false,
+    "centripetal",
+  );
+  const target = new CatmullRomCurve3(
+    keys.map(({ key, anchor }) => add(anchor, key.target)),
+    false,
+    "centripetal",
+  );
+  const scalar = (pick: (k: CameraKey) => number) => (t: number) => {
+    const { k, frac } = map(t);
+    return smooth(pick(keys[k]!.key), pick(keys[k + 1]!.key), frac);
+  };
   return {
-    // centripetal — без петель и перелётов между ключами.
-    position: new CatmullRomCurve3(
-      keys.map(({ key, anchor }) => add(anchor, key.position)),
-      false,
-      "centripetal",
-    ),
-    target: new CatmullRomCurve3(
-      keys.map(({ key, anchor }) => add(anchor, key.target)),
-      false,
-      "centripetal",
-    ),
-    focal: piecewise(keys.map(({ key }) => key.focal)),
-    focus: piecewise(keys.map(({ key }) => key.focus)),
-    keyT: (index) => (n > 1 ? index / (n - 1) : 0),
+    position,
+    target,
+    positionAt: (t, out = new Vector3()) => position.getPoint(map(t).u, out),
+    targetAt: (t, out = new Vector3()) => target.getPoint(map(t).u, out),
+    focal: scalar((k) => k.focal),
+    focus: scalar((k) => k.focus),
+    keyT,
   };
 }
 

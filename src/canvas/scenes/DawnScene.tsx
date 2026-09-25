@@ -1,41 +1,261 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import type { Mesh } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { MathUtils, type Group, type Mesh, type Object3D } from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { assets } from "../assets";
+import { input } from "@/motion/input";
+import { progress } from "@/motion/progress";
+import { Spring } from "@/motion/spring";
+import { ticker } from "@/motion/ticker";
+import { isSoftwareRenderer } from "@/lib/capabilities";
 import { currentTier } from "../loaders";
 import { createAlphaVideoMaterial } from "../materials/alphaVideoMaterial";
-import { createAlphaVideo } from "../video";
+import { grade, STEPPE_LAYER } from "../PostFX";
+import { stageStats } from "../stats";
+import { createAtmosphere, sunDirection } from "../steppe/atmosphere";
+import {
+  computeDawnState,
+  HORSE_DISTANCE,
+  horseOffsetX,
+  markWaveSeen,
+  waveAlreadySeen,
+} from "../steppe/dawn";
+import { createBlades, createCards, createGrassShared } from "../steppe/grass";
+import { HorseClips } from "../steppe/horse";
+import { createMountains, createSky } from "../steppe/sky";
+import { createTerrain, terrainHeight } from "../steppe/terrain";
+import { WindField } from "../steppe/wind";
 import { disposeObject } from "./Model";
-import { SceneGroup } from "./primitives";
 import type { SceneProps } from "./registry";
 
 /*
- * Глава «Рассвет»: плоскость видеотекстуры коня (узел horse_plane) с тестовым видео и постером.
- * TODO(assets): офлайн-рендер коня (docs/assets.md) заменит тестовое видео с тем же именем узла.
+ * Глава 1 «Рассвет» (CLAUDE.md, раздел 2): степь, ковыль, ветер, небо с горами и туманом, конь.
+ * Весь мир рассвета — на слое STEPPE_LAYER (рисуется только внутри секции «Рассвет»).
  */
-export default function DawnScene({ anchor, data }: SceneProps) {
-  const gltf = data as GLTF;
-  const material = useMemo(() => createAlphaVideoMaterial(), []);
 
+const DAWN_FOV = 2 * Math.atan(24 / (2 * 135)) * (180 / Math.PI);
+const CAMERA_Z = 12; // камера первого кадра (path.ts, dawnFrame)
+const HERO_SELECTOR = "[data-hero-text]";
+const HOVER_SELECTOR = "[data-dawn-hover]";
+
+function setLayer(root: Object3D) {
+  root.traverse((node) => node.layers.set(STEPPE_LAYER));
+}
+
+export default function DawnScene({ data }: SceneProps) {
+  const gltf = data as GLTF;
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+  const tier = currentTier();
+
+  const world = useMemo(() => {
+    const atmosphere = createAtmosphere();
+    const shared = createGrassShared();
+    const sky = createSky(atmosphere);
+    const mountains = createMountains(atmosphere);
+    const terrain = createTerrain(atmosphere);
+    const blades = createBlades(atmosphere, tier, shared);
+    const cards = createCards(atmosphere, tier, shared);
+    const wind = new WindField();
+    atmosphere.tWind.value = wind.texture;
+    const horseMaterial = createAlphaVideoMaterial();
+    // Программный рендер (SwiftShader в CI, принудительный ?quality=) — травы в 25 раз меньше,
+    // иначе кадр рисуется секундами. Реальные посетители с таким рендером получают fallback.
+    const ctx = gl.getContext();
+    const info = ctx.getExtension("WEBGL_debug_renderer_info");
+    const gpu = String(ctx.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : ctx.RENDERER));
+    if (isSoftwareRenderer(gpu)) {
+      blades.mesh.geometry.instanceCount = Math.round(blades.mesh.geometry.instanceCount / 25);
+      cards.mesh.geometry.instanceCount = Math.round(cards.mesh.geometry.instanceCount / 25);
+    }
+    return { atmosphere, shared, sky, mountains, terrain, blades, cards, wind, horseMaterial };
+  }, [gl, tier]);
+
+  const root = useRef<Group>(null);
+  const horseRoot = useRef<Group>(null);
+
+  // Слой степи и материал коня.
   useEffect(() => {
+    if (root.current) setLayer(root.current);
     const plane = gltf.scene.getObjectByName("horse_plane") as Mesh | undefined;
-    if (plane) plane.material = material;
-    const video = createAlphaVideo(assets.horse, currentTier(), (texture) => {
-      material.uniforms.map!.value = texture;
+    if (plane) plane.material = world.horseMaterial;
+    setLayer(gltf.scene);
+  }, [gltf, world]);
+
+  // Клипы коня, hover на CTA, поле ветра для тестов; уборка при выгрузке главы.
+  useEffect(() => {
+    const clips = new HorseClips(tier, (texture) => {
+      world.horseMaterial.uniforms.map!.value = texture;
     });
+    clips.show("idle");
+
+    const boost = new Spring(1, 0.12); // 240 мс, steppe
+    const targets = [...document.querySelectorAll<HTMLElement>(HOVER_SELECTOR)];
+    const on = () => (boost.target = 1.08);
+    const off = () => (boost.target = 1);
+    const canHover = window.matchMedia("(hover: hover)").matches;
+    for (const el of targets) {
+      if (canHover) {
+        el.addEventListener("pointerenter", on);
+        el.addEventListener("pointerleave", off);
+      }
+      el.addEventListener("focus", on);
+      el.addEventListener("blur", off);
+    }
+
+    stageStats.windProbe = () => world.wind.probe(gl);
+    state.current = { clips, boost };
     return () => {
-      video.dispose();
-      material.dispose();
+      clips.dispose();
+      for (const el of targets) {
+        el.removeEventListener("pointerenter", on);
+        el.removeEventListener("pointerleave", off);
+        el.removeEventListener("focus", on);
+        el.removeEventListener("blur", off);
+      }
+      stageStats.windProbe = null;
+      grade.exposure = 1;
+      delete document.documentElement.dataset.introHint;
+      world.wind.dispose();
+      [world.sky, world.terrain, world.blades, world.cards, ...world.mountains].forEach(
+        ({ mesh, material }) => {
+          mesh.geometry.dispose();
+          material.dispose();
+        },
+      );
+      world.horseMaterial.dispose();
       disposeObject(gltf.scene);
     };
-  }, [gltf, material]);
+  }, [gl, gltf, tier, world]);
+
+  const state = useRef<{ clips: HorseClips; boost: Spring } | null>(null);
+  const intro = useRef<{
+    start: number | null;
+    decided: boolean;
+    wave: boolean;
+    textSent: boolean;
+  }>({
+    start: null,
+    decided: false,
+    wave: false,
+    textSent: false,
+  });
+  const dom = useRef<{ hero: HTMLElement | null; textOut: boolean | null; hint: boolean }>({
+    hero: null,
+    textOut: null,
+    hint: false,
+  });
+
+  useFrame((_, rawDelta) => {
+    const dt = Math.min(rawDelta, 0.1);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const html = document.documentElement;
+    const inDawn = progress.chapterId === "dawn";
+    const local = inDawn ? progress.local : progress.chapterIndex > 0 ? 1 : 0;
+
+    // Интро — от готовности сцены, один раз; пропускается при восстановлении и reduced motion.
+    const i = intro.current;
+    if (!i.decided && html.dataset.canvas === "ready") {
+      i.decided = true;
+      const skip = stageStats.introSkipped || reduced || !inDawn || progress.scrollY > 4;
+      i.start = skip ? null : ticker.time;
+      i.wave = !skip && !waveAlreadySeen();
+      if (i.wave) markWaveSeen();
+    }
+    const introTime = i.start === null ? null : ticker.time - i.start;
+    const s = computeDawnState({
+      local,
+      introTime: i.decided ? introTime : 0,
+      waveEnabled: i.wave,
+    });
+
+    // Проявление текста светом — по таймлайну (4,2 с) или сразу, если интро нет.
+    if (i.decided && !i.textSent && s.textReveal) {
+      i.textSent = true;
+      window.dispatchEvent(new Event("uly:intro-text"));
+    }
+
+    // Атмосфера.
+    const a = world.atmosphere;
+    a.uTime.value += reduced ? 0 : dt;
+    a.uSkyReveal.value = s.skyReveal;
+    a.uSunElevation.value = s.sunElevation;
+    a.uGroundFog.value = s.groundFog;
+    const aspect = size.width / Math.max(size.height, 1);
+    const horseX = horseOffsetX(DAWN_FOV, aspect);
+    sunDirection(horseX, -HORSE_DISTANCE, s.sunElevation, a.uSunDir.value);
+    const boost = state.current?.boost;
+    if (boost) {
+      if (reduced) boost.snap();
+      else boost.update(dt);
+      a.uDawnBoost.value = boost.value;
+    }
+    world.shared.uWave.value = [s.waveFront, s.waveStrength];
+    world.terrain.material.uniforms.uWave!.value = [s.waveFront, s.waveStrength];
+    world.shared.uSway.value = reduced ? 0 : 1;
+    world.shared.uNearClip.value = MathUtils.mapLinear(stageStats.camera.fov, 10.2, 27, 6, 1.5);
+    grade.exposure = inDawn ? s.exposure : 1;
+
+    // Рельеф следует за камерой с шагом 4 м.
+    const cam = camera.position;
+    world.terrain.material.uniforms.uCenter!.value = [
+      Math.round(cam.x / 4) * 4,
+      Math.round(cam.z / 4) * 4,
+    ];
+
+    // Ветер: курсор / палец + программные порывы, затухание по delta.
+    const forwardX = -Math.sin(camera.rotation.y);
+    const forwardZ = -Math.cos(camera.rotation.y);
+    if (!reduced && input.active) world.wind.pointer(camera, input.x, input.y, input.vx, input.vy);
+    world.wind.update(gl, dt, { x: cam.x, z: cam.z, forwardX, forwardZ }, !reduced);
+    a.tWind.value = world.wind.texture;
+    a.uWindOrigin.value.copy(world.wind.origin);
+
+    // Конь: правая треть кадра, ~275 м; уходит шагом, тонет в утреннем тумане.
+    state.current?.clips.show(s.horseClip);
+    if (horseRoot.current) {
+      const z = CAMERA_Z - HORSE_DISTANCE - s.horseWalk * 140;
+      const x = horseX + s.horseWalk * 6;
+      horseRoot.current.position.set(x, terrainHeight(x, z), z);
+      horseRoot.current.rotation.y = Math.atan2(-x, CAMERA_Z - z);
+    }
+    const hu = world.horseMaterial.uniforms;
+    hu.opacity!.value = s.horseAlpha;
+    hu.uFogAmount!.value = MathUtils.clamp(0.06 + s.groundFog * 0.32, 0, 0.6);
+
+    // DOM: уход текста и подсказка скролла — атрибуты пишутся только при изменении.
+    const d = dom.current;
+    d.hero ??= document.querySelector<HTMLElement>(HERO_SELECTOR);
+    if (d.hero && d.textOut !== s.textOut) {
+      d.textOut = s.textOut;
+      d.hero.dataset.exit = String(s.textOut);
+    }
+    if (d.hint !== s.hintVisible) {
+      d.hint = s.hintVisible;
+      if (s.hintVisible) html.dataset.introHint = "";
+      else delete html.dataset.introHint;
+    }
+
+    stageStats.dawn.introTime = introTime;
+    stageStats.dawn.wave = s.waveStrength > 0;
+    stageStats.dawn.clip = s.horseClip;
+    stageStats.dawn.textOut = s.textOut;
+  }, 0);
 
   return (
-    <SceneGroup anchor={anchor}>
-      {/* Правая треть кадра, ~40 м — под 135 мм конь пересекает горизонт. */}
-      <primitive object={gltf.scene} position={[3, 0, -40]} rotation={[0, -0.25, 0]} />
-    </SceneGroup>
+    <group ref={root}>
+      <primitive object={world.sky.mesh} />
+      {world.mountains.map(({ mesh }) => (
+        <primitive key={mesh.name} object={mesh} />
+      ))}
+      <primitive object={world.terrain.mesh} />
+      <primitive object={world.blades.mesh} />
+      <primitive object={world.cards.mesh} />
+      <group ref={horseRoot}>
+        <primitive object={gltf.scene} />
+      </group>
+    </group>
   );
 }

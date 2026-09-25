@@ -71,6 +71,7 @@ const en: Messages = {
       "Full-cycle event agency in Almaty. Conferences, team building, weddings, kudalyk — at our own venue in the steppe.",
     proof: "6+ years · our own venue · our own equipment · in-house chef",
     ctaPrimary: "Discuss your event",
+    scrollHint: "Scroll",
     ctaSecondary: "See the venue",
     sceneAlt:
       "The steppe before dawn, covered in feather grass. On the right third of the frame a dark bay horse stands near the horizon, its outline traced by backlight. Above a narrow warm band of dawn — a cold indigo sky.",
