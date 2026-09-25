@@ -1,0 +1,24 @@
+.page {
+  padding-block: var(--space-10) var(--space-16);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-block);
+}
+
+.head {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.back {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+}

@@ -1,0 +1,117 @@
+/* Типографика (CLAUDE.md, раздел 4). Не более трёх уровней иерархии в главе. */
+
+.heroTitle {
+  font-family: var(--font-family-heading);
+  font-size: var(--text-hero);
+  line-height: var(--leading-hero);
+  letter-spacing: var(--tracking-hero);
+  font-weight: 500;
+  hanging-punctuation: first last;
+  text-wrap: balance;
+}
+
+.chapterTitle {
+  font-family: var(--font-family-heading);
+  font-size: var(--text-chapter);
+  line-height: var(--leading-chapter);
+  letter-spacing: var(--tracking-chapter);
+  font-weight: 500;
+  hanging-punctuation: first last;
+  text-wrap: balance;
+  max-width: 18ch;
+}
+
+.subTitle {
+  font-family: var(--font-family-heading);
+  font-size: clamp(26px, 2.4vw, 40px);
+  line-height: 1.1;
+  font-weight: 500;
+}
+
+.lead {
+  font-size: var(--text-lead);
+  line-height: var(--leading-lead);
+  letter-spacing: var(--tracking-lead);
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+.body {
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  max-width: var(--measure);
+  text-wrap: pretty;
+}
+
+.caption {
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  letter-spacing: var(--tracking-caption);
+  color: var(--tone-muted);
+}
+
+.eyebrow {
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  letter-spacing: var(--tracking-caption);
+  color: var(--tone-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Капс с разрядкой — ТОЛЬКО строка доказательств первого экрана (CLAUDE.md, раздел 4). */
+.proof {
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+.pending {
+  font-size: var(--text-body);
+  color: var(--tone-muted);
+  font-style: italic;
+}
+
+/* Ссылка: подчёркивание приходит слева направо и уходит вправо. */
+.link {
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 100% 100%;
+  background-size: 0% 1px;
+  transition: background-size var(--duration-quick) var(--ease-steppe);
+  padding-bottom: 2px;
+}
+
+.link:hover,
+.link:focus-visible {
+  background-position: 0% 100%;
+  background-size: 100% 1px;
+}
+
+/* Без hover (тач) — подчёркивание видно сразу. */
+@media (hover: none) {
+  .link {
+    background-size: 100% 1px;
+  }
+}
+
+.list {
+  display: grid;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.list li {
+  padding-left: 1.2em;
+  position: relative;
+  max-width: var(--measure);
+}
+
+.list li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--tone-muted);
+}

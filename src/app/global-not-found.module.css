@@ -1,0 +1,27 @@
+.page {
+  display: grid;
+  align-content: center;
+  gap: var(--space-6);
+  min-height: 100svh;
+  padding: var(--space-8) var(--grid-margin);
+}
+
+.title {
+  font-size: var(--text-chapter);
+  line-height: var(--leading-chapter);
+  letter-spacing: var(--tracking-chapter);
+  max-width: 18ch;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  list-style: none;
+}
+
+.links a {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+}

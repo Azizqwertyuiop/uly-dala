@@ -1,0 +1,94 @@
+.tabs {
+  display: grid;
+  gap: var(--space-6);
+}
+
+/* Без JS: оглавление-список ссылок на форматы. С JS: настоящие табы. */
+.toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  list-style: none;
+}
+
+.tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--tone-line);
+}
+
+.tab {
+  position: relative;
+  min-height: 48px;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--tone-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tab::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform var(--duration-quick) var(--ease-steppe);
+}
+
+.tab[aria-selected="true"]::after {
+  transform: scaleX(1);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--indigo);
+}
+
+[data-tone="dark"] .tab[aria-selected="true"] {
+  color: var(--kumys);
+}
+
+.panels {
+  display: grid;
+  gap: var(--space-block);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  scroll-margin-top: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .panel {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+    align-items: start;
+  }
+
+  .panelText {
+    grid-column: 1 / span 5;
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .panelImage {
+    grid-column: 7 / -1;
+  }
+}
+
+@media (max-width: 767px) {
+  .panelText {
+    display: grid;
+    gap: var(--space-3);
+  }
+}

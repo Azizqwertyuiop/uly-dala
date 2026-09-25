@@ -1,17 +1,27 @@
-import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
-import { use } from "react";
+import { AssemblySection } from "@/components/sections/AssemblySection";
+import { DawnSection } from "@/components/sections/DawnSection";
+import { DaySection } from "@/components/sections/DaySection";
+import { FireSection } from "@/components/sections/FireSection";
+import { ReturnSection } from "@/components/sections/ReturnSection";
+import { WorldSection } from "@/components/sections/WorldSection";
 import { resolveLocale } from "@/lib/intl/locale";
 
-// Пустая главная. Главы появятся на следующих шагах (CLAUDE.md, раздел 2).
-export default function HomePage({ params }: PageProps<"/[locale]">) {
-  const locale = resolveLocale(use(params).locale);
-  setRequestLocale(locale);
-  const t = useTranslations("brand");
+/*
+ * Главная: один день события, шесть глав (CLAUDE.md, раздел 2).
+ * Это семантический базовый слой и одновременно режим «Коротко»: всё читается без JS и WebGL.
+ */
+export default async function HomePage({ params }: PageProps<"/[locale]">) {
+  setRequestLocale(resolveLocale((await params).locale));
 
   return (
-    <main id="main">
-      <h1>{t("name")}</h1>
+    <main id="main" tabIndex={-1}>
+      <DawnSection />
+      <AssemblySection />
+      <DaySection />
+      <FireSection />
+      <WorldSection />
+      <ReturnSection />
     </main>
   );
 }

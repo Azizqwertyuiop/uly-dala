@@ -1,0 +1,163 @@
+/* Общие раскладки глав. Mobile-first: одна колонка, от 768px — сетка 12 колонок. */
+
+.split {
+  display: grid;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .split {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+    align-items: end;
+  }
+
+  .splitText {
+    grid-column: 1 / span 6;
+  }
+
+  .splitMedia {
+    grid-column: 7 / -1;
+  }
+}
+
+.textBlock {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+/* ---------- Рассвет ---------- */
+.hero {
+  display: grid;
+  gap: var(--space-6);
+}
+
+/* Подложка под текстом над кадром: контраст ≥ 7:1 (CLAUDE.md, раздел 10). */
+.heroText {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  background: var(--indigo);
+}
+
+@media (min-width: 1280px) {
+  .hero {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+    align-items: end;
+  }
+
+  .heroText {
+    grid-column: 1 / span 7;
+    grid-row: 1;
+    position: relative;
+    z-index: var(--z-content);
+    padding: var(--space-4) var(--space-4) var(--space-4) 0;
+    background: linear-gradient(
+      90deg,
+      var(--indigo) 0%,
+      var(--indigo) 80%,
+      color-mix(in srgb, var(--indigo) 0%, transparent) 100%
+    );
+  }
+
+  .heroMedia {
+    grid-column: 4 / -1;
+    grid-row: 1;
+  }
+}
+
+/* ---------- Сборка ---------- */
+.parts {
+  display: grid;
+  gap: var(--space-4);
+  list-style: none;
+  counter-reset: part;
+}
+
+@media (min-width: 768px) {
+  .parts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+  }
+}
+
+@media (min-width: 1280px) {
+  .parts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.part {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--tone-line);
+}
+
+.pillar {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.fork {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.forkList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  list-style: none;
+}
+
+.forkList a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+}
+
+/* ---------- Мир существует ---------- */
+.caseCard {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+}
+
+.caseLink {
+  display: grid;
+  gap: var(--space-2);
+  text-decoration: none;
+}
+
+.caseFrame {
+  overflow: hidden;
+}
+
+.caseFrame img {
+  transition: transform var(--duration-slow) var(--ease-steppe);
+}
+
+.caseLink:hover .caseFrame img,
+.caseLink:focus-visible .caseFrame img {
+  transform: scale(1.03);
+}
+
+/* ---------- Снова рассвет ---------- */
+.brief {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--tone-line);
+  scroll-margin-top: var(--space-4);
+}
+
+.briefSentence {
+  font-family: var(--font-family-heading);
+  font-size: clamp(28px, 3vw, 48px);
+  line-height: 1.2;
+  max-width: 30ch;
+}

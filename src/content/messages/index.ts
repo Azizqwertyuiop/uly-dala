@@ -1,4 +1,5 @@
 import type { Locale } from "@/lib/i18n";
+import { typograph } from "@/lib/typography";
 import en from "./en";
 import kk from "./kk";
 import ru, { type Messages } from "./ru";
@@ -20,7 +21,17 @@ function withFallback(base: Tree, overrides: Tree): Tree {
   return result;
 }
 
-export function getMessages(locale: Locale): Messages {
+/** Типографика ко всем строкам сразу — компонентам не нужно помнить о ней. */
+function typographTree(tree: Tree, locale: Locale): Tree {
+  const result: Tree = {};
+  for (const [key, value] of Object.entries(tree)) {
+    result[key] =
+      typeof value === "string" ? typograph(value, locale) : typographTree(value, locale);
+  }
+  return result;
+}
+
+function raw(locale: Locale): Messages {
   switch (locale) {
     case "ru":
       return ru;
@@ -29,4 +40,15 @@ export function getMessages(locale: Locale): Messages {
     case "kk":
       return withFallback(ru, kk as Tree) as Messages;
   }
+}
+
+const cache = new Map<Locale, Messages>();
+
+export function getMessages(locale: Locale): Messages {
+  let messages = cache.get(locale);
+  if (!messages) {
+    messages = typographTree(raw(locale) as Tree, locale) as Messages;
+    cache.set(locale, messages);
+  }
+  return messages;
 }

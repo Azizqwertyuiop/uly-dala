@@ -1,0 +1,43 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding-block: var(--space-1);
+  font-size: var(--text-body);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform var(--duration-instant) var(--ease-steppe);
+}
+
+/* Главная кнопка: нижняя линия растягивается от центра на 20% (CLAUDE.md, раздел 5). */
+.button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(1);
+  transform-origin: center;
+  transition: transform var(--duration-quick) var(--ease-steppe);
+}
+
+.button:hover::after,
+.button:focus-visible::after {
+  transform: scaleX(1.2);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.secondary {
+  font-weight: 400;
+}
+
+.secondary::after {
+  height: 1px;
+  opacity: 0.6;
+}

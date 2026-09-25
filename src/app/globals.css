@@ -45,3 +45,51 @@ p em,
 li em {
   font-family: inherit;
 }
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* ---------- Тон секции (CLAUDE.md, раздел 8: контраст по data-tone) ---------- */
+[data-tone="dark"] {
+  background: var(--indigo);
+  color: var(--kumys);
+  --tone-muted: color-mix(in srgb, var(--kumys) 72%, var(--indigo));
+  --tone-line: color-mix(in srgb, var(--kumys) 24%, var(--indigo));
+  --tone-surface: color-mix(in srgb, var(--kumys) 6%, var(--indigo));
+}
+
+[data-tone="light"] {
+  background: var(--felt);
+  color: var(--indigo);
+  --tone-muted: var(--willow);
+  --tone-line: color-mix(in srgb, var(--indigo) 20%, var(--felt));
+  --tone-surface: color-mix(in srgb, var(--kumys) 60%, var(--felt));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 200ms !important;
+    transition-property: opacity !important;
+    animation: none !important;
+  }
+}

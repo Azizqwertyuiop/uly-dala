@@ -1,0 +1,20 @@
+.chapter {
+  position: relative;
+  padding-block: var(--space-block);
+  overflow-x: clip;
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-block);
+}
+
+/* Метка времени стоит вплотную к заголовку главы, а не через 12vh. */
+.time {
+  margin-bottom: calc(var(--space-2) - var(--space-block));
+}
+
+.head {
+  display: grid;
+  gap: var(--space-3);
+}

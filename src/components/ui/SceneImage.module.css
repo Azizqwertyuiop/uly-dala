@@ -1,0 +1,10 @@
+.picture {
+  display: block;
+  overflow: hidden;
+  background: var(--tone-surface);
+}
+
+.image {
+  width: 100%;
+  height: auto;
+}
