@@ -2,6 +2,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { caseText, cases } from "@/content/cases";
 import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/intl/navigation";
+import { BriefLink } from "@/components/brief/BriefLink";
+import { briefFallbackHref } from "@/components/brief/briefProps";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
@@ -90,8 +92,9 @@ export async function WorldSection() {
       </div>
 
       <div className={layout.actions}>
-        {/* TODO(brief): мини-форма «Приехать на просмотр» — шаг 5. */}
-        <ButtonLink href="/#brief">{t("cta")}</ButtonLink>
+        <BriefLink href={briefFallbackHref(locale, "visit")} source="visit">
+          {t("cta")}
+        </BriefLink>
         <ButtonLink href="/fazenda" variant="secondary">
           {t("fazendaLink")}
         </ButtonLink>

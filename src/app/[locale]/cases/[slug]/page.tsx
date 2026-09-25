@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageShell, pageStyles } from "@/components/layout/PageShell";
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { BriefLink } from "@/components/brief/BriefLink";
+import { briefFallbackHref } from "@/components/brief/briefProps";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
@@ -98,7 +99,9 @@ export default async function CasePage({ params }: PageProps<"/[locale]/cases/[s
       </nav>
 
       <div>
-        <ButtonLink href="/#brief">{formatsT(`${format?.key ?? "conference"}.cta`)}</ButtonLink>
+        <BriefLink href={briefFallbackHref(locale, "brief")} source="brief" eventType={item.format}>
+          {formatsT(`${format?.key ?? "conference"}.cta`)}
+        </BriefLink>
       </div>
     </PageShell>
   );

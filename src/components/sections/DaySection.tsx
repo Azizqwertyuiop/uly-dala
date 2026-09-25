@@ -11,13 +11,13 @@ export async function DaySection() {
   const chapters = await getTranslations("chapters");
   const f = await getTranslations("formats");
 
-  const items: FormatTabItem[] = formats.map(({ slug, key }) => ({
+  const items: FormatTabItem[] = formats.map(({ slug, key, audience }) => ({
     slug,
+    audience,
     title: f(`${key}.title`),
     phrase: f(`${key}.phrase`),
     facts: [f(`${key}.facts.one`), f(`${key}.facts.two`), f(`${key}.facts.three`)],
     cta: f(`${key}.cta`),
-    // TODO(brief): предзаполнение брифа форматом — шаг 5.
     ctaHref: `/${locale}#brief`,
     pageHref: `/${locale}/services/${slug}`,
     image: formatImage(slug),

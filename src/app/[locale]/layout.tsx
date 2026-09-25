@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { BriefModal } from "@/components/brief/BriefModal";
+import { getBriefProps } from "@/components/brief/briefProps";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SkipLink } from "@/components/layout/SkipLink";
@@ -48,6 +50,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
               showAfter="assembly"
             />
           )}
+          <BriefModal {...getBriefProps(locale)} />
           <UiBootstrap />
         </NextIntlClientProvider>
       </body>

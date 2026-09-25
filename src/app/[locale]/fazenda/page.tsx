@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageShell, pageStyles } from "@/components/layout/PageShell";
 import { zones } from "@/components/sections/WorldSection";
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { BriefLink } from "@/components/brief/BriefLink";
+import { briefFallbackHref } from "@/components/brief/briefProps";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
@@ -20,7 +21,8 @@ export async function generateMetadata({
  * Фазенда. TODO(client-data): реальные зоны, вместимость, адрес и время в пути, фото и облёт.
  */
 export default async function FazendaPage({ params }: PageProps<"/[locale]/fazenda">) {
-  setRequestLocale(resolveLocale((await params).locale));
+  const locale = resolveLocale((await params).locale);
+  setRequestLocale(locale);
   const t = await getTranslations("fazendaPage");
   const world = await getTranslations("world");
 
@@ -59,8 +61,9 @@ export default async function FazendaPage({ params }: PageProps<"/[locale]/fazen
       </section>
 
       <div>
-        {/* TODO(brief): мини-форма «Приехать на просмотр» — шаг 5. */}
-        <ButtonLink href="/#brief">{world("cta")}</ButtonLink>
+        <BriefLink href={briefFallbackHref(locale, "visit")} source="visit">
+          {world("cta")}
+        </BriefLink>
       </div>
     </PageShell>
   );

@@ -48,3 +48,6 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# локальная база заявок (SQLite) — персональные данные, не коммитить
+/.data/

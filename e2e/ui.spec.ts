@@ -133,6 +133,7 @@ test.describe("меню", () => {
     await page.goto("/ru");
     await menuButton(page).click();
     await expect(dialog(page)).toBeVisible();
+    await dialog(page).evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
     const results = await new AxeBuilder({ page })
       .include("#site-menu")
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])

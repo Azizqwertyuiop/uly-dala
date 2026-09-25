@@ -1,8 +1,11 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { BriefLink } from "@/components/brief/BriefLink";
+import { briefFallbackHref } from "@/components/brief/briefProps";
+import type { Locale } from "@/lib/i18n";
 import { SceneImage } from "@/components/ui/SceneImage";
 import type from "@/components/ui/type.module.css";
 import { Chapter } from "./Chapter";
+import { ForkLinks } from "./ForkLinks";
 import styles from "./sections.module.css";
 
 const parts = ["kerege", "uyki", "shanyrak", "kiiz"] as const;
@@ -15,7 +18,8 @@ export async function AssemblySection() {
   const t = await getTranslations("assembly");
   const chapters = await getTranslations("chapters");
   // Названия деталей юрты — казахские слова; в en они даны транслитерацией.
-  const partLang = (await getLocale()) === "en" ? undefined : "kk";
+  const locale = (await getLocale()) as Locale;
+  const partLang = locale === "en" ? undefined : "kk";
 
   return (
     <Chapter id="assembly" time={t("time")} name={chapters("assembly")}>
@@ -65,27 +69,19 @@ export async function AssemblySection() {
         <h3 id="assembly-fork" className={type.subTitle}>
           {t("forkQuestion")}
         </h3>
-        <ul className={styles.forkList}>
-          <li>
-            <a href="#day" className={type.link}>
-              {t("fork.corporate")}
-            </a>
-          </li>
-          <li>
-            <a href="#day" className={type.link}>
-              {t("fork.family")}
-            </a>
-          </li>
-          <li>
-            <a href="#day" className={type.link}>
-              {t("fork.all")}
-            </a>
-          </li>
-        </ul>
+        <ForkLinks
+          labels={{
+            corporate: t("fork.corporate"),
+            family: t("fork.family"),
+            all: t("fork.all"),
+          }}
+        />
       </nav>
 
       <div>
-        <ButtonLink href="/#brief">{t("cta")}</ButtonLink>
+        <BriefLink href={briefFallbackHref(locale, "brief")} source="brief">
+          {t("cta")}
+        </BriefLink>
       </div>
     </Chapter>
   );

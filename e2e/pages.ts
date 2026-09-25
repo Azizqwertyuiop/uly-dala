@@ -23,6 +23,8 @@ export const innerPaths = [
   "/fazenda",
   ...caseSlugs.map((slug) => `/cases/${slug}`),
   "/privacy",
+  "/request/menu",
+  "/request/visit",
 ];
 
 export const allPaths = (locale: string) => [

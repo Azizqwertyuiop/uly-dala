@@ -1,5 +1,7 @@
-import { getTranslations } from "next-intl/server";
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { getLocale, getTranslations } from "next-intl/server";
+import { BriefLink } from "@/components/brief/BriefLink";
+import { briefFallbackHref } from "@/components/brief/briefProps";
+import type { Locale } from "@/lib/i18n";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
@@ -10,6 +12,7 @@ const sets = ["coffeeBreak", "banquet", "traditional"] as const;
 
 /** Глава 4. Огонь. Шеф, кухня, дастархан. */
 export async function FireSection() {
+  const locale = (await getLocale()) as Locale;
   const t = await getTranslations("fire");
   const chapters = await getTranslations("chapters");
 
@@ -45,8 +48,9 @@ export async function FireSection() {
       </div>
 
       <div>
-        {/* TODO(brief): мини-форма «Запросить меню» — шаг 5. */}
-        <ButtonLink href="/#brief">{t("cta")}</ButtonLink>
+        <BriefLink href={briefFallbackHref(locale, "menu")} source="menu">
+          {t("cta")}
+        </BriefLink>
       </div>
     </Chapter>
   );

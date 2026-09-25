@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { BriefLink } from "@/components/brief/BriefLink";
+import { isEventType } from "@/lib/brief/model";
+import { useBriefStore } from "@/store/brief";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
@@ -9,6 +12,7 @@ import styles from "./FormatTabs.module.css";
 
 export type FormatTabItem = {
   slug: string;
+  audience: "corporate" | "family";
   title: string;
   phrase: string;
   facts: string[];
@@ -30,7 +34,15 @@ type Props = {
  * Без JS (и до гидрации) — список всех форматов с оглавлением-ссылками.
  * С JS — табы по паттерну WAI-ARIA: стрелки, Home/End, фокус на активном табе.
  */
-export function FormatTabs({ label, formatPageLabel, items }: Props) {
+export function FormatTabs({ label, formatPageLabel, items: allItems }: Props) {
+  // Порядок форматов — по развилке главы 2: выбранная аудитория первой (порядок DOM = порядок Tab).
+  const audience = useBriefStore((s) => s.audience);
+  const items =
+    audience === "all"
+      ? allItems
+      : [...allItems].sort(
+          (a, b) => Number(b.audience === audience) - Number(a.audience === audience),
+        );
   const [enhanced, setEnhanced] = useState(false);
   const [active, setActive] = useState(0);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -132,9 +144,15 @@ export function FormatTabs({ label, formatPageLabel, items }: Props) {
                 ))}
               </ul>
               <div className={layout.actions}>
-                <Link href={item.ctaHref} className={type.link}>
+                <BriefLink
+                  href={item.ctaHref}
+                  source="brief"
+                  eventType={isEventType(item.slug) ? item.slug : undefined}
+                  variant="link"
+                  className={type.link}
+                >
                   <strong>{item.cta}</strong>
-                </Link>
+                </BriefLink>
                 <Link href={item.pageHref} className={type.link}>
                   {formatPageLabel}
                   <span className={layout.visuallyHidden}>: {item.title}</span>
