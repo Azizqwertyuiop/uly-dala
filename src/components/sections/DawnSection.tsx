@@ -36,6 +36,7 @@ export async function DawnSection() {
           </div>
         </div>
         <SceneImage
+          sceneSlot
           className={styles.heroMedia}
           src="/assets/placeholders/dawn.svg"
           alt={t("sceneAlt")}

@@ -33,6 +33,7 @@ export async function AssemblySection() {
           </p>
         </div>
         <SceneImage
+          sceneSlot
           className={styles.splitMedia}
           src="/assets/placeholders/assembly.svg"
           alt={t("sceneAlt")}
@@ -58,6 +59,7 @@ export async function AssemblySection() {
 
       <figure className={styles.pillar}>
         <SceneImage
+          sceneSlot
           src="/assets/placeholders/pillar.svg"
           alt={t("pillarAlt")}
           width={1600}

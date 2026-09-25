@@ -162,6 +162,7 @@ export function FormatTabs({ label, formatPageLabel, items: allItems }: Props) {
               </div>
             </div>
             <SceneImage
+              sceneSlot
               className={styles.panelImage}
               src={item.image}
               alt={item.alt}

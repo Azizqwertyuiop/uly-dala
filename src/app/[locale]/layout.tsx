@@ -5,6 +5,7 @@ import { BriefModal } from "@/components/brief/BriefModal";
 import { getBriefProps } from "@/components/brief/briefProps";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { CanvasRoot } from "@/components/layout/CanvasRoot";
 import { MotionBootstrap } from "@/components/layout/MotionBootstrap";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { UiBootstrap } from "@/components/layout/UiBootstrap";
@@ -47,6 +48,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
         {/* Клиенту передаётся только язык (для ссылок), тексты рендерятся на сервере. */}
         <NextIntlClientProvider messages={null}>
           <SkipLink label={t("skipLink")} />
+          <CanvasRoot />
           <SiteHeader />
           {children}
           <SiteFooter />

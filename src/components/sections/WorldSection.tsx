@@ -35,6 +35,7 @@ export async function WorldSection() {
           <p className={type.body}>{t("location")}</p>
         </div>
         <SceneImage
+          sceneSlot
           className={styles.splitMedia}
           src="/assets/placeholders/world.svg"
           alt={t("sceneAlt")}

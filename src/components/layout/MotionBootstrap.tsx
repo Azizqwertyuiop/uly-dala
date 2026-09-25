@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { whenIdle } from "@/lib/idle";
 import { startInput } from "@/motion/input";
 import { startProgress } from "@/motion/progress";
 import { startReveal } from "@/motion/reveal";
@@ -17,20 +18,22 @@ export function MotionBootstrap() {
 
     let cancelled = false;
     let destroyScroll: (() => void) | undefined;
+    let cancelIdle = () => {};
     const loadScroll = () => {
-      const run = () =>
-        void startScroll().then((runtime) => {
-          if (cancelled) runtime.destroy();
-          else destroyScroll = runtime.destroy;
-        });
-      if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 2000 });
-      else setTimeout(run, 200);
+      cancelIdle = whenIdle(
+        () =>
+          void startScroll().then((runtime) => {
+            if (cancelled) runtime.destroy();
+            else destroyScroll = runtime.destroy;
+          }),
+      );
     };
     if (document.readyState === "complete") loadScroll();
     else window.addEventListener("load", loadScroll, { once: true });
 
     return () => {
       cancelled = true;
+      cancelIdle();
       stops.forEach((stop) => stop());
       destroyScroll?.();
       window.removeEventListener("load", loadScroll);

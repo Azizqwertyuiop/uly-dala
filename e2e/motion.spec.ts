@@ -24,28 +24,38 @@ const readStats = (): Stats => {
   };
 };
 
-test("ровно один requestAnimationFrame на кадр — вместе с Lenis, GSAP и ScrollTrigger", async ({
-  page,
-}) => {
-  await page.addInitScript(countNativeRaf);
-  await page.goto("/ru");
-  // Дождаться ленивой загрузки Lenis/GSAP.
-  await expect.poll(() => page.evaluate(readStats).then((s) => s.lenis)).toBe(true);
+for (const [label, path] of [
+  ["без 3D", "/ru"],
+  ["с 3D-сценой (three.js, R3F)", "/ru?quality=high"],
+] as const) {
+  test(`ровно один requestAnimationFrame на кадр — Lenis, GSAP, ScrollTrigger, ${label}`, async ({
+    page,
+  }) => {
+    await page.addInitScript(countNativeRaf);
+    await page.goto(path);
+    // Дождаться ленивой загрузки Lenis/GSAP (и сцены, если она есть).
+    await expect.poll(() => page.evaluate(readStats).then((s) => s.lenis)).toBe(true);
+    if (path.includes("quality=high")) {
+      await expect(page.locator("html")).toHaveAttribute("data-canvas", "ready", {
+        timeout: 15_000,
+      });
+    }
 
-  const before = await page.evaluate(readStats);
-  for (let i = 0; i < 10; i++) {
-    await page.mouse.wheel(0, 400);
-    await page.waitForTimeout(100);
-  }
-  await page.waitForTimeout(500);
-  const after = await page.evaluate(readStats);
+    const before = await page.evaluate(readStats);
+    for (let i = 0; i < 10; i++) {
+      await page.mouse.wheel(0, 400);
+      await page.waitForTimeout(100);
+    }
+    await page.waitForTimeout(500);
+    const after = await page.evaluate(readStats);
 
-  const frames = after.frames - before.frames;
-  const calls = after.calls - before.calls;
-  expect(frames).toBeGreaterThan(20);
-  // Каждый кадр — ровно один нативный вызов (±1 на границах замера).
-  expect(Math.abs(calls - frames)).toBeLessThanOrEqual(1);
-});
+    const frames = after.frames - before.frames;
+    const calls = after.calls - before.calls;
+    expect(frames).toBeGreaterThan(20);
+    // Каждый кадр — ровно один нативный вызов (±1 на границах замера).
+    expect(Math.abs(calls - frames)).toBeLessThanOrEqual(1);
+  });
+}
 
 test("Lenis — только на десктопе; на тач — нативный скролл", async ({ browser }) => {
   const touch = await browser.newContext({

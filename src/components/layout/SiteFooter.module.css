@@ -2,6 +2,12 @@
   padding-block: var(--space-12) var(--space-6);
 }
 
+/* Содержимое — над холстом сцены. */
+.footer > * {
+  position: relative;
+  z-index: var(--z-content);
+}
+
 .columns {
   display: grid;
   gap: var(--space-6);

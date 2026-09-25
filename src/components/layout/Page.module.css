@@ -3,6 +3,8 @@
 }
 
 .inner {
+  position: relative;
+  z-index: var(--z-content);
   display: grid;
   gap: var(--space-block);
 }

@@ -23,6 +23,11 @@ html:has([data-horizon]) body {
   padding-bottom: calc(var(--horizon-height) + env(safe-area-inset-bottom));
 }
 
+/* 3D-сцена готова — статичные кадры глав уступают ей место (размер сохраняется). */
+html[data-canvas="ready"] [data-scene-slot] {
+  visibility: hidden;
+}
+
 /* Открытое меню блокирует прокрутку страницы под ним. */
 html[data-menu-open] {
   overflow: hidden;

@@ -28,6 +28,7 @@ export async function FireSection() {
           </p>
         </div>
         <SceneImage
+          sceneSlot
           className={styles.splitMedia}
           src="/assets/placeholders/fire.svg"
           alt={t("sceneAlt")}

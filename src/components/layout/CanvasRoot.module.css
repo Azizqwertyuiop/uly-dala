@@ -1,0 +1,14 @@
+/*
+ * Холст сцены. Слой --z-canvas: выше фонов секций (они не позиционированы), ниже содержимого
+ * (оно на слое --z-content). Клики проходят насквозь.
+ */
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-canvas);
+  pointer-events: none;
+}
+
+.root canvas {
+  display: block;
+}

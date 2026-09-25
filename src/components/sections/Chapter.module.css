@@ -1,10 +1,15 @@
+/*
+ * Секция НЕ позиционирована: её фон рисуется ниже холста сцены (--z-canvas),
+ * а содержимое (.inner, --z-content) — выше. Так 3D оказывается между фоном и текстом.
+ */
 .chapter {
-  position: relative;
   padding-block: var(--space-block);
   overflow-x: clip;
 }
 
 .inner {
+  position: relative;
+  z-index: var(--z-content);
   display: grid;
   gap: var(--space-block);
 }

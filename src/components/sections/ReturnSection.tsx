@@ -22,6 +22,7 @@ export async function ReturnSection() {
         </h2>
       </div>
       <SceneImage
+        sceneSlot
         src="/assets/placeholders/return.svg"
         alt={t("sceneAlt")}
         width={1600}
