@@ -1,0 +1,13 @@
+.next
+out
+build
+node_modules
+package-lock.json
+next-env.d.ts
+test-results
+playwright-report
+blob-report
+# Документы проекта ведутся вручную — не переформатировать
+CLAUDE.md
+PROMPTS.md
+AGENTS.md
