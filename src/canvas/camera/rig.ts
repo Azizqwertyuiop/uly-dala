@@ -1,4 +1,5 @@
 import { MathUtils, Vector3 } from "three";
+import type { FormatSlug } from "@/content/formats";
 import { Spring, VectorSpring } from "@/motion/spring";
 import {
   angleDelta,
@@ -39,7 +40,7 @@ export type RigOutput = {
 };
 
 export class CameraRigState {
-  readonly path: CameraPath;
+  path: CameraPath;
   readonly out: RigOutput = {
     position: new Vector3(),
     yaw: 0,
@@ -71,6 +72,14 @@ export class CameraRigState {
     this.target = new VectorSpring([0, 0, 0], smoothTime);
     this.focal = new Spring(50, smoothTime);
     this.snap(0);
+  }
+
+  /**
+   * Порядок форматов «Дня» (развилка) изменился — путь перестраивается.
+   * Пружины не сбрасываются: камера плавно переходит на новый путь.
+   */
+  setDayOrder(order: readonly FormatSlug[]): void {
+    this.path = buildCameraPath(order);
   }
 
   /** Мгновенно в точку t — восстановление после обновления страницы, без облёта. */

@@ -2,7 +2,7 @@
 
 import { advance, Canvas, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NoToneMapping, type PerspectiveCamera } from "three";
+import { NoToneMapping, type Object3D, type PerspectiveCamera } from "three";
 import {
   DynamicResolution,
   FirefoxProbe,
@@ -22,11 +22,14 @@ import { CameraRigState } from "./camera/rig";
 import { horizonPitch, stepBob } from "./steppe/dawn";
 import { DebugHud, DebugSplines } from "./debug";
 import { configureLoaders } from "./loaders";
-import { PostFX } from "./PostFX";
+import { PostFX, STEPPE_LAYER } from "./PostFX";
 import { planScenes } from "./scenes/plan";
 import { sceneRegistry, type LoadedScene } from "./scenes/registry";
 import { stageStats } from "./stats";
-import { assemblyFov, assemblyYawOffset } from "./camera/framing";
+import { dayControl } from "@/lib/dayControl";
+import { sceneTempo } from "./tempo";
+import { assemblyYawOffset, dayYawOffset, sceneFov } from "./camera/framing";
+import { stateAt } from "./day/timeline";
 import { chapterAnchor, chapterTempoId } from "./world";
 
 /*
@@ -106,6 +109,7 @@ function Runtime({
   const compiled = useRef(new Set<string>());
   const ready = useRef(false);
   const paused = useRef(false);
+  const dayVersion = useRef(-1);
   const resolution = useRef(new DynamicResolution(TARGET_FPS[quality]));
 
   // ---------- Разрешение: бюджет пикселей × DPR-лимит × динамический масштаб ----------
@@ -195,7 +199,10 @@ function Runtime({
 
   useEffect(() => {
     if (ready.current || progress.chapterId === null) return;
-    if (scenes.has(progress.chapterId)) markReady();
+    // Готово, когда на месте и глава, и мир, в котором она стоит (степь).
+    const entry = sceneRegistry.find((e) => e.id === progress.chapterId);
+    if (scenes.has(progress.chapterId) && (entry?.requires ?? []).every((id) => scenes.has(id)))
+      markReady();
   }); // проверка после каждого обновления набора сцен
 
   // ---------- Кадр: камера (damping) и рендер (render) ----------
@@ -205,9 +212,17 @@ function Runtime({
 
     const offDamping = ticker.add("damping", (dt) => {
       if (!ready.current || paused.current) return;
-      const tempo = progress.chapterId
-        ? chapterTempo[chapterTempoId[progress.chapterId as keyof typeof chapterTempoId]]
-        : chapterTempo.dawn;
+      // Темп главы; сцена может задать свой (кудалык в «Дне» — ×1.6, сглаживание 0,6 с).
+      const tempo = sceneTempo.id
+        ? chapterTempo[sceneTempo.id]
+        : progress.chapterId
+          ? chapterTempo[chapterTempoId[progress.chapterId as keyof typeof chapterTempoId]]
+          : chapterTempo.dawn;
+      // Порядок форматов «Дня» (развилка) изменился — путь камеры перестраивается.
+      if (dayVersion.current !== dayControl.version) {
+        dayVersion.current = dayControl.version;
+        rig.setDayOrder(dayControl.order);
+      }
       // Композиция первого экрана по пропорциям (горизонт 72% / 68% на мобильных) — только в начале.
       const aspect = size.width / Math.max(size.height, 1);
       const framing = 1 - Math.min(Math.max(progress.horizon / 0.12, 0), 1);
@@ -217,13 +232,16 @@ function Runtime({
         (progress.scrollY - chapterStartScroll(1)) / (0.4 * progress.viewportHeight);
       const y = reduced.matches ? 0 : stepBob(ticker.time, transition);
       // «Сборка» на узком экране: камера доворачивается к юрте (только рысканье).
-      const yaw = assemblyYawOffset(rig.path, progress.camera, aspect);
+      const daySlot = progress.chapterIndex === 2 ? stateAt(progress.track).index : 0;
+      const yaw =
+        assemblyYawOffset(rig.path, progress.camera, aspect) +
+        dayYawOffset(rig.path, progress.camera, aspect, daySlot);
       rig.update(dt, progress.camera, input, tempo.cameraSmoothing, reduced.matches, {
         pitch,
         yaw,
         y,
       });
-      rig.out.fov = assemblyFov(rig.out.fov, progress.camera, aspect);
+      rig.out.fov = sceneFov(rig.out.fov, progress.camera, aspect);
       applyCamera(camera, rig.out);
     });
 
@@ -347,8 +365,9 @@ function Runtime({
 
   return (
     <>
-      <hemisphereLight args={["#f7f4ee", "#6b4a33", 0.9]} />
-      <directionalLight position={[20, 30, 10]} intensity={1.6} />
+      {/* Свет — и для слоя степи (юрта, площадки «Дня»): в three.js свет тоже фильтруется слоями. */}
+      <hemisphereLight args={["#f7f4ee", "#6b4a33", 0.9]} ref={bothLayers} />
+      <directionalLight position={[20, 30, 10]} intensity={1.6} ref={bothLayers} />
       {sceneRegistry.map((entry) => {
         const loaded = scenes.get(entry.id);
         if (!loaded) return null;
@@ -360,6 +379,9 @@ function Runtime({
     </>
   );
 }
+
+/** Объект виден и в основном слое, и в слое степи. */
+const bothLayers = (object: Object3D | null) => object?.layers.enable(STEPPE_LAYER);
 
 const lastFov = { value: 0 };
 

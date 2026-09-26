@@ -100,6 +100,25 @@ export function startReveal(): () => void {
 
   elements.filter((el) => !waiting.includes(el)).forEach((el) => observer.observe(el));
 
+  // Элементы, появившиеся позже (гидрация заменила узел: панели табов «Дня» — article → div,
+  // смена языка без перезагрузки), тоже проявляются по видимости.
+  const domObserver = new MutationObserver((records) => {
+    for (const record of records) {
+      record.addedNodes.forEach((node) => {
+        if (!(node instanceof HTMLElement)) return;
+        const found = node.matches("[data-reveal]") ? [node] : [];
+        found.push(...node.querySelectorAll<HTMLElement>("[data-reveal]"));
+        for (const el of found) {
+          if (el.dataset.revealState || elements.includes(el)) continue;
+          elements.push(el);
+          if (html.dataset.mode === "brief") finish(el);
+          else observer.observe(el);
+        }
+      });
+    }
+  });
+  domObserver.observe(document.body, { childList: true, subtree: true });
+
   // Смена режима на «Коротко» — сразу показать всё.
   const modeObserver = new MutationObserver(() => {
     if (html.dataset.mode === "brief") {
@@ -111,6 +130,7 @@ export function startReveal(): () => void {
 
   return () => {
     observer.disconnect();
+    domObserver.disconnect();
     modeObserver.disconnect();
     stageObserver.disconnect();
     window.removeEventListener("uly:intro-text", release);

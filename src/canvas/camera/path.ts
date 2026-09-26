@@ -1,6 +1,15 @@
 import { CatmullRomCurve3, MathUtils, Vector3 } from "three";
 import { chapterIds } from "@/components/sections/chapters";
+import type { FormatSlug } from "@/content/formats";
 import { TRACK_CAMERA_SHARE } from "@/motion/progress";
+import {
+  DAY_FRAMING,
+  DAY_STATES,
+  DEFAULT_ORDER,
+  HOLD_FROM,
+  HOLD_TO,
+  slotCenter,
+} from "../day/timeline";
 import { horizonPitch } from "../steppe/dawn";
 import { chapterAnchor } from "../world";
 
@@ -38,7 +47,7 @@ export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
   dawn: dawnFrame(275),
   // Сборка: юрта встаёт справа от текста, 35 мм; внутрь юрты (24 мм) — в конце дорожки (EXTRA_KEYS).
   assembly: { position: [-8, 1.6, 16], target: [-3.6, 1.5, 0], focal: 35, focus: 17 },
-  // День: мир готов, 50 мм.
+  // День: мир готов, 50 мм. Фактический ключ входа строится из порядка развилки (dayArrival).
   day: { position: [7, 1.7, 13], target: [0, 1.2, 0], focal: 50, focus: 14 },
   // Огонь: над дастарханом, взгляд вниз (орто — позже, в главе 4).
   fire: { position: [0, 1.8, 4], target: [0, 0.2, 0], focal: 35, focus: 4.5 },
@@ -86,6 +95,47 @@ export const EXTRA_KEYS: { t: number; chapter: number; key: CameraKey }[] = [
   },
 ];
 
+/** Ключей на отрезке «стояния» у площадки. */
+const HOLD_STEPS = 6;
+
+/**
+ * «День» (глава 3): камера проезжает мимо шести площадок в порядке развилки.
+ * На каждой — «стоит» (медленный наезд) в середине состояния, между ними — переезд сквозь завесу.
+ * Ключи зависят от порядка, поэтому путь перестраивается, когда порядок меняется (rig.setDayOrder).
+ */
+export function dayCameraKeys(order: readonly FormatSlug[]): { t: number; key: CameraKey }[] {
+  const keys: { t: number; key: CameraKey }[] = [];
+  for (let k = 0; k < DAY_STATES; k++) {
+    const slug = order[k] ?? DEFAULT_ORDER[k]!;
+    const f = DAY_FRAMING[slug];
+    const c = slotCenter(k);
+    const at = (o: [number, number, number], d = 0) =>
+      [
+        c[0] + o[0] + f.dolly[0] * d,
+        c[1] + o[1] + f.dolly[1] * d,
+        c[2] + o[2] + f.dolly[2] * d,
+      ] as [number, number, number];
+    const target = at(f.target);
+    // «Стояние» — ключи через равные доли на одной прямой: сплайн внутри остаётся прямым,
+    // дальние ключи переезда не выгибают наезд (иначе камера «ходит» сильнее, чем наезд).
+    for (let i = 0; i <= HOLD_STEPS; i++) {
+      const d = i / HOLD_STEPS;
+      keys.push({
+        t: trackT(2, (k + HOLD_FROM + (HOLD_TO - HOLD_FROM) * d) / DAY_STATES),
+        key: { position: at(f.position, d), target, focal: f.focal, focus: f.focus },
+      });
+    }
+  }
+  return keys;
+}
+
+/** Ключ входа в «День»: чуть позади первой площадки — из света столпа к событию. */
+function dayArrival(order: readonly FormatSlug[]): CameraKey {
+  const first = dayCameraKeys(order)[0]!.key;
+  const [x, y, z] = first.position;
+  return { ...first, position: [x - 1.2, y, z + 2.5] };
+}
+
 /** Максимальная высота камеры в степи, м. */
 export const MAX_CAMERA_HEIGHT = 1.8;
 /** Высота кадра полнокадрового сенсора, мм — для перевода фокусного в угол обзора. */
@@ -118,14 +168,20 @@ function remap(times: number[]) {
   };
 }
 
-export function buildCameraPath(): CameraPath {
+export function buildCameraPath(dayOrder: readonly FormatSlug[] = DEFAULT_ORDER): CameraPath {
   const add = (anchor: [number, number, number], offset: [number, number, number]) =>
     new Vector3(anchor[0] + offset[0], anchor[1] + offset[1], anchor[2] + offset[2]);
   const n = chapterIds.length;
   const keyT = (index: number) => (n > 1 ? index / (n - 1) : 0);
+  const dayIndex = chapterIds.indexOf("day");
   const keys = [
-    ...chapterIds.map((id, i) => ({ t: keyT(i), key: CAMERA_KEYS[id], anchor: chapterAnchor(i) })),
+    ...chapterIds.map((id, i) => ({
+      t: keyT(i),
+      key: id === "day" ? dayArrival(dayOrder) : CAMERA_KEYS[id],
+      anchor: chapterAnchor(i),
+    })),
     ...EXTRA_KEYS.map((e) => ({ t: e.t, key: e.key, anchor: chapterAnchor(e.chapter) })),
+    ...dayCameraKeys(dayOrder).map((e) => ({ ...e, anchor: chapterAnchor(dayIndex) })),
   ].sort((a, b) => a.t - b.t);
   const map = remap(keys.map((k) => k.t));
   // centripetal — без петель и перелётов между ключами.

@@ -7,6 +7,7 @@ import {
   LinearMipmapLinearFilter,
   Mesh,
   ShaderMaterial,
+  Vector3,
   type IUniform,
 } from "three";
 import { STEPPE_HEAD } from "./glsl";
@@ -32,6 +33,16 @@ const SHARED = /* glsl */ `
   uniform vec3 uCircle;    // x, z центра круга примятой травы, радиус
   uniform float uSway;     // 0 — reduced motion (стебли неподвижны)
   uniform float uNearClip; // м: при 135 мм ближняя трава не заслоняет кадр
+  uniform vec3 uClearings[4]; // скошенные поляны под площадками «Дня»: x, z, радиус (0 — нет)
+  // Площадка события в степи — на скошенной траве: низкий дастархан и стулья не тонут в ковыле.
+  float mown(vec2 p) {
+    float m = 0.0;
+    for (int i = 0; i < 4; i++) {
+      vec3 c = uClearings[i];
+      if (c.z > 0.0) m = max(m, 1.0 - smoothstep(c.z - 0.5, c.z + 0.3, distance(p, c.xy)));
+    }
+    return m;
+  }
   vec2 tilePosition(vec2 offset) {
     vec2 cam = cameraPosition.xz;
     return cam + mod(offset - cam + uTile * 0.5, uTile) - uTile * 0.5;
@@ -69,8 +80,8 @@ const SHADING = /* glsl */ `
     // «Резко растущий в контровом свете»: высокая степень back.
     float silver = awn * (aniso * 0.05 + pow(back, 12.0) * 0.16) * (1.0 + wave * 5.0 + gust * 1.5);
     vec3 col = base * (ambient + diffuse) + base * transmit * sunCol * 2.0;
-    // Утром солнце выше — контровой блик ости слабеет (иначе трава белеет).
-    col += silver * vec3(0.80, 0.85, 0.95) * (0.4 + 1.4 * sunUp) * uSkyReveal * mix(1.0, 0.25, uDaylight);
+    // Днём солнце высоко — контровой блик ости слабеет (иначе трава белеет); на закате возвращается.
+    col += silver * vec3(0.80, 0.85, 0.95) * (0.4 + 1.4 * sunUp) * uSkyReveal * mix(1.0, 0.25, uDaylight * (1.0 - uDusk));
     return col * dayGain();
   }
 `;
@@ -144,7 +155,7 @@ export function createBlades(
         // Не у самой камеры (не заслонять кадр) и растворение к краю плитки — там карточки.
         float fade = smoothstep(uNearClip, uNearClip + 2.0, d) * (1.0 - smoothstep(uTile * 0.36, uTile * 0.5, d));
         // Ковыль ниже камеры (0,6 м): ости серебрятся под линией горизонта, не заслоняя коня.
-        float height = mix(0.22, 0.5, aRand.x) * fade;
+        float height = mix(0.22, 0.5, aRand.x) * fade * (1.0 - 0.8 * mown(p));
         float width = mix(0.010, 0.024, aRand.y);
         float ang = aRand.z * 6.2831853;
         vec2 side = vec2(cos(ang), sin(ang));
@@ -324,7 +335,7 @@ export function createCards(
         float d = distance(p, cameraPosition.xz);
         // Кольцо средней зоны: от края стеблей до растворения в поверхности.
         vFade = smoothstep(max(14.0, uNearClip + 8.0), max(20.0, uNearClip + 14.0), d) * (1.0 - smoothstep(170.0, 230.0, d));
-        float scale = mix(0.3, 0.55, aRand.x) * vFade;
+        float scale = mix(0.3, 0.55, aRand.x) * vFade * (1.0 - 0.8 * mown(p));
         float ang = aRand.z * 6.2831853;
         mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
         vec2 xz = rot * position.xz * scale;
@@ -375,11 +386,15 @@ export function createCards(
   return { mesh, material };
 }
 
-/** Юниформы, общие для стеблей, карточек и рельефа (волна, круг, покачивание). */
+/** Сколько скошенных полян одновременно (текущая площадка «Дня» и соседние). */
+export const CLEARINGS = 4;
+
+/** Юниформы, общие для стеблей, карточек и рельефа (волна, круг, поляны, покачивание). */
 export function createGrassShared() {
   return {
     uWave: { value: [-100, 0] },
     uCircle: { value: [0, -60, 3.2] },
+    uClearings: { value: Array.from({ length: CLEARINGS }, () => new Vector3()) },
     uSway: { value: 1 },
     uNearClip: { value: 6 },
   } satisfies Record<string, IUniform>;

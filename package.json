@@ -20,7 +20,7 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run e2e",
     "assets": "node scripts/generate-3d-sources.mjs && node scripts/optimize-assets.mjs",
     "assets:video": "node scripts/make-test-video.mjs",
-    "assets:2d": "node scripts/generate-placeholders-2d.mjs"
+    "assets:2d": "node scripts/generate-placeholders-2d.mjs && node scripts/generate-pdf-stub.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",

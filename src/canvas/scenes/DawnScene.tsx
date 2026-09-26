@@ -14,6 +14,7 @@ import { createAlphaVideoMaterial } from "../materials/alphaVideoMaterial";
 import { grade, STEPPE_LAYER } from "../PostFX";
 import { stageStats } from "../stats";
 import { createAtmosphere, sunDirection } from "../steppe/atmosphere";
+import { steppeOverride } from "../steppe/control";
 import {
   computeDawnState,
   computeMorning,
@@ -185,12 +186,28 @@ export default function DawnScene({ data }: SceneProps) {
     const a = world.atmosphere;
     a.uTime.value += reduced ? 0 : dt;
     a.uSkyReveal.value = s.skyReveal;
-    a.uSunElevation.value = m.sunElevation;
-    a.uGroundFog.value = m.groundFog;
-    a.uDaylight.value = m.daylight;
     const aspect = size.width / Math.max(size.height, 1);
     const horseX = horseOffsetX(DAWN_FOV, aspect);
-    sunDirection(horseX, -HORSE_DISTANCE, m.sunElevation, a.uSunDir.value);
+    const o = steppeOverride;
+    const clearings = world.shared.uClearings.value;
+    for (let k = 0; k < clearings.length; k++) {
+      const c = o.active ? o.clearings[k]! : null;
+      clearings[k]!.set(c ? c[0] : 0, c ? c[1] : 0, c ? c[2] : 0);
+    }
+    if (o.active && progress.chapterIndex >= 2) {
+      // «День» и дальше: время суток и завесу задаёт сцена главы.
+      a.uSunElevation.value = o.sunElevation;
+      a.uGroundFog.value = o.groundFog;
+      a.uDaylight.value = 1;
+      a.uDusk.value = o.dusk;
+      sunDirection(o.sunX, o.sunZ, o.sunElevation, a.uSunDir.value);
+    } else {
+      a.uSunElevation.value = m.sunElevation;
+      a.uGroundFog.value = m.groundFog;
+      a.uDaylight.value = m.daylight;
+      a.uDusk.value = 0;
+      sunDirection(horseX, -HORSE_DISTANCE, m.sunElevation, a.uSunDir.value);
+    }
     const boost = state.current?.boost;
     if (boost) {
       if (reduced) boost.snap();
@@ -201,7 +218,8 @@ export default function DawnScene({ data }: SceneProps) {
     world.terrain.material.uniforms.uWave!.value = [s.waveFront, s.waveStrength];
     world.shared.uSway.value = reduced ? 0 : 1;
     world.shared.uNearClip.value = MathUtils.mapLinear(stageStats.camera.fov, 10.2, 27, 6, 1.5);
-    grade.exposure = progress.chapterIndex <= 1 ? m.exposure : 1;
+    grade.exposure =
+      progress.chapterIndex <= 1 ? m.exposure : steppeOverride.active ? steppeOverride.exposure : 1;
 
     // Рельеф следует за камерой с шагом 4 м.
     const cam = camera.position;

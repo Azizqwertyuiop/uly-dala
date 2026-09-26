@@ -93,3 +93,14 @@ export async function startScroll(): Promise<ScrollRuntime> {
   };
   return runtime;
 }
+
+/**
+ * Прокрутка страницы к y (px): через Lenis на десктопе, нативно — на тач;
+ * при prefers-reduced-motion — мгновенно. Для «пропустить сцену» и табов «Дня».
+ */
+export function scrollToY(y: number): void {
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const lenis = runtime?.lenis;
+  if (lenis) lenis.scrollTo(y, { immediate: reduced, duration: 1.1 });
+  else window.scrollTo({ top: y, behavior: reduced ? "auto" : "smooth" });
+}

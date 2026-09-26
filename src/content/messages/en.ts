@@ -129,6 +129,8 @@ const en: Messages = {
     lead: "One steppe — six formats. Choose yours.",
     tabsLabel: "Event formats",
     formatPage: "More about this format",
+    presentation: "Download the presentation",
+    presentationMeta: "PDF, 1 KB",
   },
   formats: {
     conference: {

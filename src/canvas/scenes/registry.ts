@@ -20,6 +20,8 @@ export type SceneEntry = {
   loader: () => Promise<LoadedScene>;
   range: [number, number];
   memoryMb: number;
+  /** Сцены, в мире которых стоит эта (степь рассвета для «Сборки» и «Дня»). */
+  requires?: readonly ChapterId[];
 };
 
 const withModel =
@@ -38,7 +40,16 @@ const withModel =
 const loaders: Record<ChapterId, SceneEntry["loader"]> = {
   dawn: withModel(() => import("./DawnScene"), assets.horsePlane),
   assembly: withModel(() => import("./AssemblyScene"), assets.yurt),
-  day: withModel(() => import("./DayScene"), assets.ledWall),
+  // «День»: LED-стена (конференция) и дастархан (кудалык) — обе модели к первому кадру.
+  day: async () => {
+    const tier = currentTier();
+    const [mod, led, dastarkhan] = await Promise.all([
+      import("./DayScene"),
+      loadModel(assets.ledWall.variants[tier]),
+      loadModel(assets.dastarkhan.variants[tier]),
+    ]);
+    return { Component: mod.default, data: { led, dastarkhan } };
+  },
   fire: withModel(() => import("./FireScene"), assets.dastarkhan),
   world: withModel(() => import("./WorldScene")),
   return: withModel(() => import("./ReturnScene")),
@@ -48,10 +59,16 @@ const loaders: Record<ChapterId, SceneEntry["loader"]> = {
 const memory: Record<ChapterId, number> = {
   dawn: 24, // видео 4K с альфой
   assembly: 12,
-  day: 6,
+  day: 10, // шесть площадок, env map 256²
   fire: 6,
   world: 4,
   return: 4,
+};
+
+/** Юрта и площадки «Дня» стоят в степи рассвета (DawnScene: небо, рельеф, трава, ветер). */
+const requires: Partial<Record<ChapterId, readonly ChapterId[]>> = {
+  assembly: ["dawn"],
+  day: ["dawn"],
 };
 
 const last = chapterIds.length - 1;
@@ -62,4 +79,5 @@ export const sceneRegistry: readonly SceneEntry[] = chapterIds.map((id, index) =
   loader: loaders[id],
   range: [Math.max(0, (index - 0.5) / last), Math.min(1, (index + 0.5) / last)],
   memoryMb: memory[id],
+  requires: requires[id],
 }));

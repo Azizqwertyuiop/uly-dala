@@ -23,6 +23,8 @@ export const stageStats = {
   windProbe: null as null | (() => number),
   dawn: { introTime: null as number | null, wave: false, clip: "", textOut: false, fps: 0 },
   camera: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, fov: 0 },
+  /** День: прогресс сцены (сглаженный), текущий формат, слот, завеса, темп. */
+  day: { p: 0, state: "", index: 0, veil: 0, tempo: "day" },
   /** Сборка: прогресс сцены (после притяжения), этап и сводка деталей 0…1. */
   assembly: {
     p: 0,

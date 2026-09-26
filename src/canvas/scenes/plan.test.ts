@@ -10,6 +10,30 @@ const plan = (current: number, local: number, loaded: string[], memoryLimitMb = 
   planScenes({ current, local, loaded: new Set(loaded), registry, memoryLimitMb });
 
 describe("менеджер сцен", () => {
+  describe("зависимости: юрта и площадки «Дня» стоят в степи рассвета", () => {
+    const withWorld = registry.map((e) =>
+      e.id === "assembly" || e.id === "day" ? { ...e, requires: ["dawn"] } : e,
+    );
+    const planW = (current: number, local: number, loaded: string[]) =>
+      planScenes({
+        current,
+        local,
+        loaded: new Set(loaded),
+        registry: withWorld,
+        memoryLimitMb: 1024,
+      });
+
+    it("обновление посреди «Дня» — степь загружается первой, вместе с главой", () => {
+      expect(planW(2, 0.2, []).load).toEqual(["dawn", "day"]);
+      expect(planW(1, 0.1, []).load).toEqual(["dawn", "assembly"]);
+    });
+
+    it("степь не выгружается, пока нужна; потом — как обычно", () => {
+      expect(planW(2, 0.2, ["dawn", "day"]).dispose).toEqual([]);
+      expect(planW(3, 0.2, ["dawn", "day", "fire"]).dispose).toEqual(["dawn"]);
+    });
+  });
+
   it("текущая глава загружается сразу", () => {
     expect(plan(0, 0, []).load).toEqual(["dawn"]);
     // Обновление страницы посреди сайта — сразу нужная глава, без предыдущих.

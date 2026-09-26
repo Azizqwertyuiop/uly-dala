@@ -135,6 +135,9 @@ const ru = {
     lead: "Одна степь — шесть форматов. Выберите свой.",
     tabsLabel: "Форматы событий",
     formatPage: "Подробнее о формате",
+    // TODO(client-data): настоящая презентация заказчика; сейчас — PDF-заглушка.
+    presentation: "Скачать презентацию",
+    presentationMeta: "PDF, 1 КБ",
   },
   formats: {
     // TODO(client-copy): фразы и факты — черновик, кроме кудалыка (раздел 3 CLAUDE.md).

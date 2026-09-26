@@ -12,6 +12,7 @@ export const ATMOSPHERE_UNIFORMS = /* glsl */ `
   uniform float uDawnBoost;    // 1…1.08 — полоса рассвета ярче при hover на CTA
   uniform float uGroundFog;    // плотность приземного тумана
   uniform float uDaylight;     // 0 — рассвет, 1 — утро «Сборки» (07:00)
+  uniform float uDusk;         // 0 — полдень, 1 — тёплые сумерки («День»)
   uniform float uHaze;         // дальняя дымка, 1/м
   uniform float uTime;
   uniform sampler2D tWind;     // поле ветра: RG — направление×сила, B — энергия
@@ -73,15 +74,22 @@ export const SKY_GLSL = /* glsl */ `
   // Утро «Сборки»: высокое бледное небо, у горизонта — тёплая дымка со стороны солнца.
   const vec3 DAY_ZENITH = vec3(0.05, 0.09, 0.19);
   const vec3 DAY_HORIZON = vec3(0.36, 0.33, 0.28);
+  // Вечер: тёмный индиго сверху, тёплая широкая полоса у горизонта со стороны солнца.
+  const vec3 DUSK_ZENITH = vec3(0.018, 0.024, 0.06);
+  const vec3 DUSK_HORIZON = vec3(0.5, 0.25, 0.1);
   vec3 daySky(vec3 dir, float toward) {
     float e = dir.y;
-    vec3 col = mix(DAY_HORIZON, DAY_ZENITH, pow(smoothstep(0.0, 0.7, max(e, 0.0)), 0.6));
+    float up = pow(smoothstep(0.0, 0.7, max(e, 0.0)), 0.6);
+    vec3 col = mix(DAY_HORIZON, DAY_ZENITH, up);
     col += vec3(0.30, 0.18, 0.08) * pow(toward, 6.0) * exp(-max(e, 0.0) * 5.0);
     col += vec3(0.6, 0.45, 0.3) * pow(max(dot(normalize(dir), uSunDir), 0.0), 60.0);
-    return mix(col, DAY_HORIZON * 0.55, (1.0 - smoothstep(-0.08, 0.0, e)));
+    vec3 dusk = mix(DUSK_HORIZON * (0.35 + 0.65 * pow(toward, 3.0)), DUSK_ZENITH, pow(smoothstep(0.0, 0.5, max(e, 0.0)), 0.5));
+    dusk += vec3(0.7, 0.35, 0.12) * pow(max(dot(normalize(dir), uSunDir), 0.0), 24.0);
+    col = mix(col, dusk, uDusk);
+    return mix(col, mix(DAY_HORIZON, DUSK_HORIZON * 0.4, uDusk) * 0.55, (1.0 - smoothstep(-0.08, 0.0, e)));
   }
-  /** Сколько света добавляет утро поверхностям степи (рельеф, трава, горы). */
-  float dayGain() { return mix(1.0, 10.0, uDaylight); }
+  /** Сколько света добавляет день поверхностям степи (рельеф, трава, горы); вечером — меньше. */
+  float dayGain() { return mix(1.0, 10.0, uDaylight) * mix(1.0, 0.42, uDusk); }
   vec3 skyColor(vec3 dir) {
     float e = dir.y;
     float sunUp = clamp((uSunElevation + 1.5) / 6.0, 0.0, 1.0); // восход по скроллу

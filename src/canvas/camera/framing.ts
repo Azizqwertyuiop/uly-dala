@@ -1,4 +1,5 @@
 import { MathUtils, Vector3 } from "three";
+import { slotCenter } from "../day/timeline";
 import { chapterAnchor } from "../world";
 import { angleDelta, lookAngles, trackT, type CameraPath } from "./path";
 
@@ -29,16 +30,23 @@ export function assemblyWeight(t: number): number {
   return enter * leave;
 }
 
+/** Вес доворота в «Дне»: вся дорожка главы (площадки у пути справа). */
+export function dayWeight(t: number): number {
+  const enter = MathUtils.smoothstep(t, trackT(2, 0) - 0.012, trackT(2, 0));
+  const leave = 1 - MathUtils.smoothstep(t, trackT(2, 1), trackT(2, 1) + 0.012);
+  return enter * leave;
+}
+
 /** Горизонтальный охват на узком экране — не меньше этой доли вертикального угла обзора. */
 export const PORTRAIT_COVERAGE = 0.7;
 
 /**
- * Угол обзора (вертикальный, градусы) на узком экране во время «Сборки»: юрта шириной ~20°
- * целиком в кадре. На широком экране и вне «Сборки» — без изменений (рассвет не трогаем:
+ * Угол обзора (вертикальный, градусы) на узком экране в «Сборке» и «Дне»: юрта и площадка
+ * целиком в кадре. На широком экране и в других главах — без изменений (рассвет не трогаем:
  * его композиция считается от 135 мм).
  */
-export function assemblyFov(fovDeg: number, t: number, aspect: number): number {
-  const w = narrowness(aspect) * assemblyWeight(t);
+export function sceneFov(fovDeg: number, t: number, aspect: number): number {
+  const w = narrowness(aspect) * Math.max(assemblyWeight(t), dayWeight(t));
   if (w <= 0) return fovDeg;
   const half = MathUtils.degToRad(fovDeg / 2);
   const wide = MathUtils.radToDeg(2 * Math.atan((Math.tan(half) * PORTRAIT_COVERAGE) / aspect));
@@ -53,6 +61,20 @@ export function assemblyYawOffset(path: CameraPath, t: number, aspect: number): 
   path.targetAt(t, toTarget);
   const anchor = chapterAnchor(1);
   toYurt.set(anchor[0] + YURT_CENTER[0], anchor[1] + YURT_CENTER[1], anchor[2] + YURT_CENTER[2]);
+  lookAngles(from, toTarget, a);
+  lookAngles(from, toYurt, b);
+  return angleDelta(a.yaw, b.yaw) * w;
+}
+
+/** «День» на узком экране: доворот к центру текущей площадки (слот slot). */
+export function dayYawOffset(path: CameraPath, t: number, aspect: number, slot: number): number {
+  const w = narrowness(aspect) * dayWeight(t);
+  if (w <= 0) return 0;
+  path.positionAt(t, from);
+  path.targetAt(t, toTarget);
+  const anchor = chapterAnchor(2);
+  const c = slotCenter(slot);
+  toYurt.set(anchor[0] + c[0], 1, anchor[2] + c[2]);
   lookAngles(from, toTarget, a);
   lookAngles(from, toYurt, b);
   return angleDelta(a.yaw, b.yaw) * w;

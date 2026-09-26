@@ -1,6 +1,7 @@
 import { Euler, MathUtils, Quaternion, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { chapterIds } from "@/components/sections/chapters";
+import { DAY_FRAMING, DEFAULT_ORDER, slotCenter, STATE_SPAN } from "../day/timeline";
 import { buildCameraPath, focalToFov, MAX_CAMERA_HEIGHT, trackT } from "./path";
 import { CameraRigState, MAX_ANGULAR_SPEED } from "./rig";
 
@@ -90,6 +91,46 @@ describe("камера: путь по всему сайту", () => {
     // Перед входом — у дверного проёма (+Z), снаружи.
     rig.snap(trackT(1, 0.9));
     expect(rig.out.position.z + 60).toBeGreaterThan(3);
+  });
+
+  it("«День»: в середине каждого состояния камера у своей площадки; порядок развилки — свой путь", () => {
+    const rig = new CameraRigState();
+    const check = (order: readonly (typeof DEFAULT_ORDER)[number][]) => {
+      rig.setDayOrder(order);
+      order.forEach((slug, k) => {
+        rig.snap(trackT(2, (k + 0.5) * STATE_SPAN));
+        const c = slotCenter(k);
+        const f = DAY_FRAMING[slug];
+        // Якорь «Дня» — z = −120.
+        expect(rig.out.position.x).toBeCloseTo(c[0] + f.position[0] + f.dolly[0] / 2, 0);
+        expect(rig.out.position.z + 120).toBeCloseTo(c[2] + f.position[2], 0);
+        expect(rig.out.focal).toBeCloseTo(f.focal, 0);
+        expect(rig.out.roll).toBe(0);
+      });
+    };
+    check(DEFAULT_ORDER);
+    check(["kudalyk", "wedding", "private-party", "conference", "coffee-break", "team-building"]);
+  });
+
+  it("«День»: наезд у площадки прямой, у кудалыка — в 1,6 раза короче (спокойнее)", () => {
+    const path = buildCameraPath();
+    const holdLength = (k: number) => {
+      let len = 0;
+      const a = new Vector3();
+      const b = new Vector3();
+      path.positionAt(trackT(2, (k + 0.3) * STATE_SPAN), a);
+      for (let i = 1; i <= 200; i++) {
+        path.positionAt(trackT(2, (k + 0.3 + (0.4 * i) / 200) * STATE_SPAN), b);
+        len += a.distanceTo(b);
+        a.copy(b);
+      }
+      return len;
+    };
+    const conference = holdLength(DEFAULT_ORDER.indexOf("conference"));
+    const kudalyk = holdLength(DEFAULT_ORDER.indexOf("kudalyk"));
+    // Между 0,3 и 0,7 состояния — 2/3 наезда (0,9 м), путь почти прямой.
+    expect(conference).toBeCloseTo(0.9 * (0.4 / 0.6), 1);
+    expect(conference / kudalyk).toBeCloseTo(1.6, 1);
   });
 
   it("шаг коня и композиция — только высота и тангаж, крен остаётся 0", () => {

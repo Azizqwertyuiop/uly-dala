@@ -92,3 +92,116 @@
     gap: var(--space-3);
   }
 }
+
+.meta {
+  color: var(--tone-muted);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+/*
+ * Смена панели: появление — прозрачность и небольшой подъём (только transform/opacity).
+ * Только при смене формата (data-switched), не при первой отрисовке: текст виден сразу.
+ */
+.tabs[data-switched] .panel:not([hidden]) {
+  animation: panel-in calc(var(--duration-base) * 1.3) var(--ease-steppe) both;
+}
+
+/*
+ * Кудалык (раздел 2): темп ×1.6, текст антиквой, проявление без сдвига — только прозрачность.
+ */
+.tabs[data-switched] .panel[data-format="kudalyk"]:not([hidden]) {
+  animation-name: panel-in-calm;
+  animation-duration: calc(var(--duration-base) * 1.3 * 1.6);
+}
+
+.panel[data-format="kudalyk"] .phrase,
+.panel[data-format="kudalyk"] .facts {
+  font-family: var(--font-family-heading);
+}
+
+.panel[data-format="kudalyk"] .facts {
+  font-size: 1.1em;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes panel-in-calm {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabs[data-switched] .panel:not([hidden]),
+  .tabs[data-switched] .panel[data-format="kudalyk"]:not([hidden]) {
+    animation: panel-in-calm 200ms linear both;
+  }
+}
+
+/* Кинорежим «Дня»: панель — одна колонка над сценой; кадр-заглушку заменяет сцена. */
+:global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panel {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panelText {
+  grid-column: auto;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panelImage {
+  display: none;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tabs {
+  gap: var(--space-3);
+}
+
+/* Телефон, кинорежим: табы — одной строкой с прокруткой внутри полосы (страница не скроллится
+   вбок), панель компактнее — площадка на сцене остаётся видна над текстом. */
+@media (max-width: 767px) {
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tablist {
+    flex-wrap: nowrap;
+    gap: var(--space-3);
+    margin-inline: calc(-1 * var(--grid-margin));
+    padding-inline: var(--grid-margin);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tab {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  /* Название формата уже на активном табе — в панели оно для экранного диктора. */
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
+    .panelText
+    h3 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panelText {
+    gap: var(--space-2);
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .facts {
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
+    .panel[data-format="kudalyk"]
+    .facts {
+    font-size: 16px;
+  }
+}

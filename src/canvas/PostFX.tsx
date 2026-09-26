@@ -21,15 +21,14 @@ import { stageStats } from "./stats";
  * Пост-процесс сцены: рендер в линейный HDR-буфер (MSAA на high) → финальный проход (post.ts).
  * useFrame с приоритетом 1 забирает рендер у R3F — кадр по-прежнему запускает ticker через advance().
  *
- * Степь (небо, рельеф, трава, конь, юрта) — слой STEPPE_LAYER: рисуется только внутри прямоугольника
- * от верха «Рассвета» до конца закреплённой дорожки «Сборки» (scissor) — юрта встаёт в той же степи.
- * Дальше страница «наезжает» на степь как обычный блок, её фон и контраст не меняются.
+ * Степь (небо, рельеф, трава, конь, юрта, площадки «Дня») — слой STEPPE_LAYER: рисуется только
+ * в своих полосах (scissor): от верха «Рассвета» до конца дорожки «Сборки» (юрта встаёт в той же
+ * степи) и на дорожке «Дня». Между ними и дальше страница — обычные блоки: фон и контраст не меняются.
  * Прямоугольник — из измеренных границ глав и дорожек, без чтения DOM в кадре.
  */
 
 export const STEPPE_LAYER = 1;
 const STEPPE_CHAPTER = 0;
-const STEPPE_UNTIL_TRACK = "assembly";
 
 /** Цветокоррекция кадра: экспозиция — через таймлайн глав (раздел 6). */
 export const grade = { exposure: 1 };
@@ -77,6 +76,23 @@ export function PostFX({ msaa }: { msaa: boolean }) {
     r.material.uniforms.uResolution!.value = [w, h];
   }, [size.width, size.height, dpr, msaa]);
 
+  /** Слой степи в полосе документа [top, bottom] (px), обрезанной экраном. */
+  const renderSteppe = (r: Resources, docTop: number, docBottom: number) => {
+    const top = Math.max(docTop - progress.scrollY, 0);
+    const bottom = Math.min(docBottom - progress.scrollY, size.height);
+    if (bottom <= top) return;
+    const ratio = r.target.height / size.height;
+    gl.setScissorTest(true);
+    r.target.scissorTest = true;
+    r.target.scissor.set(0, (size.height - bottom) * ratio, r.target.width, (bottom - top) * ratio);
+    gl.setRenderTarget(r.target);
+    camera.layers.set(STEPPE_LAYER);
+    gl.render(scene, camera);
+    r.target.scissorTest = false;
+    gl.setScissorTest(false);
+    gl.setRenderTarget(r.target);
+  };
+
   useFrame(() => {
     const r = res.current;
     if (!r) return;
@@ -91,31 +107,16 @@ export function PostFX({ msaa }: { msaa: boolean }) {
     const autoClear = gl.autoClear;
     gl.autoClear = false;
 
-    // 1) Степь — только в прямоугольнике своей секции.
+    // 1) Степь — только в своих прямоугольниках: рассвет + дорожка «Сборки», дорожка «Дня».
     const b = chapterBounds()[STEPPE_CHAPTER];
     if (b && progress.chapterId !== null) {
-      const top = b.top - progress.scrollY;
-      const track = chapterTrack(STEPPE_UNTIL_TRACK);
-      const end = track ? Math.max(b.top + b.height, track.top + track.height) : b.top + b.height;
-      const bottom = Math.min(end - progress.scrollY, size.height);
-      const clippedTop = Math.max(top, 0);
-      if (bottom > clippedTop) {
-        const ratio = r.target.height / size.height;
-        gl.setScissorTest(true);
-        r.target.scissorTest = true;
-        r.target.scissor.set(
-          0,
-          (size.height - bottom) * ratio,
-          r.target.width,
-          (bottom - clippedTop) * ratio,
-        );
-        gl.setRenderTarget(r.target);
-        camera.layers.set(STEPPE_LAYER);
-        gl.render(scene, camera);
-        r.target.scissorTest = false;
-        gl.setScissorTest(false);
-        gl.setRenderTarget(r.target);
-      }
+      const assembly = chapterTrack("assembly");
+      const day = chapterTrack("day");
+      const firstEnd = assembly
+        ? Math.max(b.top + b.height, assembly.top + assembly.height)
+        : b.top + b.height;
+      renderSteppe(r, b.top, firstEnd);
+      if (day) renderSteppe(r, day.top, day.top + day.height);
     }
     // 2) Всё остальное — без ограничений.
     camera.layers.set(0);
