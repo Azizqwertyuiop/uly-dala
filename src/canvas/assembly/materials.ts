@@ -1,4 +1,4 @@
-import { Color, type MeshStandardMaterial, type Texture } from "three";
+import { Color, DoubleSide, type MeshStandardMaterial, type Texture } from "three";
 
 /*
  * Материалы юрты: стандартные PBR-материалы из glTF + небольшие вставки в шейдер.
@@ -41,6 +41,8 @@ export function patchYurtMaterial(base: MeshStandardMaterial, opts: Options): Me
   const material = base.clone();
   const key = ["yurt", opts.accordion ? "acc" : "", opts.cover ? "cover" : ""].join(":");
   material.customProgramCacheKey = () => key;
+  // Войлок виден и снаружи, и изнутри юрты (камера входит внутрь).
+  if (opts.cover) material.side = DoubleSide;
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, opts.shared, opts.accordion ?? {}, opts.cover ?? {});
     let vs = shader.vertexShader;
@@ -89,6 +91,12 @@ export function patchYurtMaterial(base: MeshStandardMaterial, opts: Options): Me
         "void main() {",
         `void main() {
         if (vCoverS > uCover + 0.002) discard;`,
+      );
+      // Изнутри войлок в тени: столп света и своя техника читаются ярче.
+      fs = fs.replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+        if (!gl_FrontFacing) diffuseColor.rgb *= 0.3;`,
       );
     }
 

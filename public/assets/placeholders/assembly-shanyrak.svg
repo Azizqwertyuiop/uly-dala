@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+<defs>
+<linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0.00" stop-color="#6f7a86"/><stop offset="0.50" stop-color="#b9b7ab"/><stop offset="1.00" stop-color="#ede6da"/></linearGradient>
+<radialGradient id="g" cx="0.68" cy="1" r="0.6"><stop offset="0" stop-color="#f2d2a0" stop-opacity="0.55"/><stop offset="1" stop-color="#f2d2a0" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1600" height="648" fill="url(#s)"/>
+<rect width="1600" height="648" fill="url(#g)"/>
+<rect y="648" width="1600" height="252" fill="#5d5c4a"/>
+<rect y="647" width="1600" height="2" fill="#f2d2a0" opacity="0.7"/>
+<ellipse cx="800" cy="654" rx="320" ry="26" fill="#6e6a52"/>
+<clipPath id="w"><rect x="570" y="498" width="460" height="150"/></clipPath>
+<path d="M570 648 l82.5 -150 M570 648 l-82.5 -150 M592 648 l82.5 -150 M592 648 l-82.5 -150 M614 648 l82.5 -150 M614 648 l-82.5 -150 M636 648 l82.5 -150 M636 648 l-82.5 -150 M658 648 l82.5 -150 M658 648 l-82.5 -150 M680 648 l82.5 -150 M680 648 l-82.5 -150 M702 648 l82.5 -150 M702 648 l-82.5 -150 M724 648 l82.5 -150 M724 648 l-82.5 -150 M746 648 l82.5 -150 M746 648 l-82.5 -150 M768 648 l82.5 -150 M768 648 l-82.5 -150 M790 648 l82.5 -150 M790 648 l-82.5 -150 M812 648 l82.5 -150 M812 648 l-82.5 -150 M834 648 l82.5 -150 M834 648 l-82.5 -150 M856 648 l82.5 -150 M856 648 l-82.5 -150 M878 648 l82.5 -150 M878 648 l-82.5 -150 M900 648 l82.5 -150 M900 648 l-82.5 -150 M922 648 l82.5 -150 M922 648 l-82.5 -150 M944 648 l82.5 -150 M944 648 l-82.5 -150 M966 648 l82.5 -150 M966 648 l-82.5 -150 M988 648 l82.5 -150 M988 648 l-82.5 -150 M1010 648 l82.5 -150 M1010 648 l-82.5 -150" stroke="#4a3526" stroke-width="3" clip-path="url(#w)"/>
+<rect x="760" y="528" width="80" height="120" fill="#6b4a33"/>
+<path d="M570 498 L758.6 378 M598.75 498 L763.775 378 M627.5 498 L768.95 378 M656.25 498 L774.125 378 M685 498 L779.3 378 M713.75 498 L784.475 378 M742.5 498 L789.65 378 M771.25 498 L794.825 378 M800 498 L800 378 M828.75 498 L805.175 378 M857.5 498 L810.35 378 M886.25 498 L815.525 378 M915 498 L820.7 378 M943.75 498 L825.875 378 M972.5 498 L831.05 378 M1001.25 498 L836.225 378 M1030 498 L841.4 378" stroke="#4a3526" stroke-width="4"/>
+<ellipse cx="800" cy="378" rx="46" ry="11" fill="none" stroke="#4a3526" stroke-width="8"/>
+</svg>

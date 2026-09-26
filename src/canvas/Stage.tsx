@@ -26,6 +26,7 @@ import { PostFX } from "./PostFX";
 import { planScenes } from "./scenes/plan";
 import { sceneRegistry, type LoadedScene } from "./scenes/registry";
 import { stageStats } from "./stats";
+import { assemblyFov, assemblyYawOffset } from "./camera/framing";
 import { chapterAnchor, chapterTempoId } from "./world";
 
 /*
@@ -185,7 +186,7 @@ function Runtime({
     if (ready.current) return;
     ready.current = true;
     // Восстановление после обновления страницы: без облёта от начала, интро пропускается.
-    rig.snap(progress.horizon);
+    rig.snap(progress.camera);
     applyCamera(camera, rig.out);
     stageStats.introSkipped = window.scrollY > 0;
     advance(ticker.time * 1000);
@@ -215,7 +216,14 @@ function Runtime({
       const transition =
         (progress.scrollY - chapterStartScroll(1)) / (0.4 * progress.viewportHeight);
       const y = reduced.matches ? 0 : stepBob(ticker.time, transition);
-      rig.update(dt, progress.horizon, input, tempo.cameraSmoothing, reduced.matches, { pitch, y });
+      // «Сборка» на узком экране: камера доворачивается к юрте (только рысканье).
+      const yaw = assemblyYawOffset(rig.path, progress.camera, aspect);
+      rig.update(dt, progress.camera, input, tempo.cameraSmoothing, reduced.matches, {
+        pitch,
+        yaw,
+        y,
+      });
+      rig.out.fov = assemblyFov(rig.out.fov, progress.camera, aspect);
       applyCamera(camera, rig.out);
     });
 

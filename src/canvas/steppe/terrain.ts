@@ -146,6 +146,7 @@ export function createTerrain(atmosphere: Record<string, IUniform>) {
         // Круг примятой травы — светлее: стебли лежат.
         float circle = 1.0 - smoothstep(uCircle.z - 0.3, uCircle.z + 0.3, distance(vWorld.xz, uCircle.xy));
         col = mix(col, col * 1.6 + vec3(0.01), circle * 0.6);
+        col *= dayGain();
         col = applyFog(col, vWorld);
         gl_FragColor = vec4(col, 1.0);
       }

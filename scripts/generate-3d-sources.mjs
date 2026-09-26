@@ -2,6 +2,8 @@
  * Процедурные исходники 3D с ФИНАЛЬНЫМИ именами узлов (CLAUDE.md, раздел 0):
  * настоящие модели художника заменят эти файлы в assets-src/ без изменений кода.
  * Требования к моделям — docs/assets.md. 1 единица = 1 метр, Y вверх, взгляд камеры — по −Z.
+ * Материалы — диэлектрики (metallic = 0): в glTF по умолчанию metallic = 1, а металл без карты
+ * окружения выглядит чёрным.
  *
  * Запуск: node scripts/generate-3d-sources.mjs → assets-src/models/*.glb, assets-src/textures/*,
  *         public/assets/noise/blue-noise-64.png
@@ -99,7 +101,8 @@ class MeshBuilder {
       for (let j = 0; j < rows - 1; j++) {
         const a = base + i * rows + j,
           b = a + rows;
-        this.indices.push(a, b, a + 1, b, b + 1, a + 1);
+        // Обход против часовой снаружи: лицевая сторона смотрит наружу (как нормали).
+        this.indices.push(a, a + 1, b, b, a + 1, b + 1);
       }
     return this;
   }
@@ -199,6 +202,7 @@ async function yurt() {
 
   const wood = doc
     .createMaterial("wood")
+    .setMetallicFactor(0)
     .setBaseColorFactor([0.24, 0.14, 0.08, 1])
     .setRoughnessFactor(0.7);
   const felt = feltTextures();
@@ -206,6 +210,7 @@ async function yurt() {
   writeFileSync(new URL("kiiz_normal.png", TEXTURES), felt.normal);
   const kiizMat = doc
     .createMaterial("kiiz")
+    .setMetallicFactor(0)
     .setBaseColorTexture(
       doc
         .createTexture("kiiz_basecolor")
@@ -223,6 +228,7 @@ async function yurt() {
     .setRoughnessFactor(1);
   const doorMat = doc
     .createMaterial("esik")
+    .setMetallicFactor(0)
     .setBaseColorFactor([0.42, 0.29, 0.2, 1])
     .setRoughnessFactor(0.6);
 
@@ -310,9 +316,13 @@ async function dastarkhan() {
   scene.addChild(root);
   const cloth = doc
     .createMaterial("dastarkhan_cloth")
+    .setMetallicFactor(0)
     .setBaseColorFactor([0.93, 0.9, 0.85, 1])
     .setRoughnessFactor(0.9);
-  const wood = doc.createMaterial("dastarkhan_table").setBaseColorFactor([0.42, 0.29, 0.2, 1]);
+  const wood = doc
+    .createMaterial("dastarkhan_table")
+    .setMetallicFactor(0)
+    .setBaseColorFactor([0.42, 0.29, 0.2, 1]);
   // Две половины дастархана — смыкаются в главе «День» (кудалык).
   root.addChild(
     addMesh(
@@ -352,9 +362,13 @@ async function ledWall() {
   scene.addChild(root);
   const image = ledTexture();
   writeFileSync(new URL("led_screen_emissive.png", TEXTURES), image);
-  const frame = doc.createMaterial("led_frame").setBaseColorFactor([0.05, 0.05, 0.06, 1]);
+  const frame = doc
+    .createMaterial("led_frame")
+    .setMetallicFactor(0)
+    .setBaseColorFactor([0.05, 0.05, 0.06, 1]);
   const screen = doc
     .createMaterial("led_screen")
+    .setMetallicFactor(0)
     .setBaseColorFactor([0, 0, 0, 1])
     .setEmissiveFactor([1, 1, 1])
     .setEmissiveTexture(

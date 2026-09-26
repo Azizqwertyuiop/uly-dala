@@ -2,6 +2,9 @@ import { MathUtils } from "three";
 import { describe, expect, it } from "vitest";
 import {
   computeDawnState,
+  computeMorning,
+  MORNING_FROM,
+  MORNING_TO,
   horizonFraction,
   horizonPitch,
   horseOffsetX,
@@ -108,5 +111,29 @@ describe("шаг коня на переходе в Сборку", () => {
     expect(stepBob(0.3, 1)).toBe(0);
     expect(Math.abs(stepBob(STEP_PERIOD / 2, 0.5))).toBeCloseTo(STEP_AMPLITUDE, 6);
     expect(stepBob(STEP_PERIOD * 2, 0.5)).toBeCloseTo(0, 6);
+  });
+});
+
+describe("утро «Сборки»", () => {
+  const end = at(null, 1);
+
+  it("на рассвете утра нет; на переходе — непрерывно, без склейки", () => {
+    const before = computeMorning(end, MORNING_FROM, 0);
+    expect(before.daylight).toBe(0);
+    expect(before.sunElevation).toBe(end.sunElevation);
+    expect(before.exposure).toBe(end.exposure);
+    expect(before.groundFog).toBe(end.groundFog);
+    const e = 1e-3;
+    const a = computeMorning(end, MORNING_FROM + 0.05, 0);
+    const b = computeMorning(end, MORNING_FROM + 0.05 + e, 0);
+    expect(Math.abs(b.daylight - a.daylight)).toBeLessThan(0.05);
+  });
+
+  it("к 07:00 — светло, солнце выше, туман почти ушёл, экспозиция 1", () => {
+    const m = computeMorning(end, MORNING_TO, 1);
+    expect(m.daylight).toBe(1);
+    expect(m.sunElevation).toBeCloseTo(end.sunElevation + 7, 6);
+    expect(m.groundFog).toBeCloseTo(end.groundFog * 0.2, 6);
+    expect(m.exposure).toBe(1);
   });
 });

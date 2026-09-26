@@ -87,7 +87,8 @@ test.describe("холст сцены", () => {
     for (const [i, id] of chapterIds.entries()) {
       await scrollToChapter(page, id);
       await expect.poll(async () => (await stage(page)).current, { timeout: 10_000 }).toBe(id);
-      await expect.poll(async () => (await stage(page)).loaded).toContain(id);
+      // Программный WebGL под параллельной нагрузкой — медленный: запас по времени.
+      await expect.poll(async () => (await stage(page)).loaded, { timeout: 15_000 }).toContain(id);
       // Камера у своей главы (якоря глав через 60 м по −Z).
       await expect
         .poll(async () => Math.abs((await stage(page)).camera.z + i * CHAPTER_SPACING), {

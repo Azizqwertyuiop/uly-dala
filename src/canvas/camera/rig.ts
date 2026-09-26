@@ -59,6 +59,7 @@ export class CameraRigState {
   private time = 0;
   private t = 0;
   private offsetPitch = 0;
+  private offsetYaw = 0;
   private offsetY = 0;
   private scratchA = new Vector3();
   private scratchB = new Vector3();
@@ -100,8 +101,11 @@ export class CameraRigState {
     pointer: { x: number; y: number },
     smoothTime: number,
     reduced: boolean,
-    /** Сдвиги кадра главы: тангаж (рад, композиция по пропорциям экрана) и высота (м, шаг коня). */
-    offsets: { pitch?: number; y?: number } = {},
+    /**
+     * Сдвиги кадра главы: тангаж и рысканье (рад, композиция по пропорциям экрана)
+     * и высота (м, шаг коня). Крен не трогается никогда.
+     */
+    offsets: { pitch?: number; yaw?: number; y?: number } = {},
   ): RigOutput {
     this.time += dt;
     this.t = clamp01(t);
@@ -113,6 +117,7 @@ export class CameraRigState {
     this.target.setTarget([q.x, q.y, q.z]);
     this.focal.target = this.path.focal(t);
     this.offsetPitch = offsets.pitch ?? 0;
+    this.offsetYaw = offsets.yaw ?? 0;
     this.offsetY = offsets.y ?? 0;
     const pos = this.position.update(dt);
     const tgt = this.target.update(dt);
@@ -147,7 +152,7 @@ export class CameraRigState {
         BREATH_AMPLITUDE *
         Math.sin((this.time / BREATH_PERIOD) * Math.PI * 2)
       : 0;
-    out.yaw = this.baseYaw + this.cursorYaw.value;
+    out.yaw = this.baseYaw + this.offsetYaw + this.cursorYaw.value;
     out.pitch = this.basePitch + this.offsetPitch + this.cursorPitch.value + breathPitch;
     out.roll = 0;
   }

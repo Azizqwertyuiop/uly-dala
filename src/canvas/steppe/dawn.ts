@@ -132,6 +132,41 @@ export function horseOffsetX(fovDeg: number, aspect: number, distance = HORSE_DI
 export const STEP_PERIOD = 0.6;
 export const STEP_AMPLITUDE = 0.012; // м
 
+// ---------------------------------------------------------------------------
+// Утро «Сборки» (07:00): степь та же, солнце выше, туман уходит
+// ---------------------------------------------------------------------------
+
+/** Свет прибывает на переходе Рассвет → Сборка — по положению на горизонте. */
+export const MORNING_FROM = 0.12;
+export const MORNING_TO = 0.24;
+
+export type MorningState = {
+  daylight: number;
+  sunElevation: number;
+  groundFog: number;
+  exposure: number;
+};
+
+/**
+ * dawn — состояние рассвета (его конец), horizon — прогресс сайта, track — дорожка «Сборки» 0…1.
+ * Всё непрерывно: при daylight = 0 утро совпадает с концом рассвета (без склейки).
+ */
+export function computeMorning(
+  dawn: Pick<DawnState, "sunElevation" | "groundFog" | "exposure">,
+  horizon: number,
+  track: number,
+  out: MorningState = { daylight: 0, sunElevation: 0, groundFog: 0, exposure: 1 },
+): MorningState {
+  const daylight = smooth(MORNING_FROM, MORNING_TO, horizon);
+  out.daylight = daylight;
+  out.sunElevation = dawn.sunElevation + daylight * (4 + 3 * MathUtils.clamp(track, 0, 1));
+  out.groundFog = dawn.groundFog * (1 - 0.8 * daylight);
+  // Поверхности степи светлеют сами (dayGain в шейдерах); экспозиция возвращается к 1 —
+  // юрта и остальная сцена под тем же динамическим светом, что и в других главах.
+  out.exposure = MathUtils.lerp(dawn.exposure, 1, daylight);
+  return out;
+}
+
 /** Вертикальное покачивание камеры «шагом»; transition — 0…1 внутри 40vh перехода. */
 export function stepBob(time: number, transition: number): number {
   if (transition <= 0 || transition >= 1) return 0;

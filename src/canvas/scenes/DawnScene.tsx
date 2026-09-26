@@ -16,6 +16,7 @@ import { stageStats } from "../stats";
 import { createAtmosphere, sunDirection } from "../steppe/atmosphere";
 import {
   computeDawnState,
+  computeMorning,
   HORSE_DISTANCE,
   horseOffsetX,
   markWaveSeen,
@@ -142,6 +143,7 @@ export default function DawnScene({ data }: SceneProps) {
     wave: false,
     textSent: false,
   });
+  const morning = useRef({ daylight: 0, sunElevation: 0, groundFog: 0, exposure: 1 });
   const dom = useRef<{ hero: HTMLElement | null; textOut: boolean | null; hint: boolean }>({
     hero: null,
     textOut: null,
@@ -177,15 +179,18 @@ export default function DawnScene({ data }: SceneProps) {
       window.dispatchEvent(new Event("uly:intro-text"));
     }
 
-    // Атмосфера.
+    // Атмосфера. Степь продолжается под «Сборкой»: утро 07:00 (солнце выше, туман уходит).
+    const track = progress.chapterIndex === 1 ? progress.track : progress.chapterIndex > 1 ? 1 : 0;
+    const m = computeMorning(s, progress.horizon, track, morning.current);
     const a = world.atmosphere;
     a.uTime.value += reduced ? 0 : dt;
     a.uSkyReveal.value = s.skyReveal;
-    a.uSunElevation.value = s.sunElevation;
-    a.uGroundFog.value = s.groundFog;
+    a.uSunElevation.value = m.sunElevation;
+    a.uGroundFog.value = m.groundFog;
+    a.uDaylight.value = m.daylight;
     const aspect = size.width / Math.max(size.height, 1);
     const horseX = horseOffsetX(DAWN_FOV, aspect);
-    sunDirection(horseX, -HORSE_DISTANCE, s.sunElevation, a.uSunDir.value);
+    sunDirection(horseX, -HORSE_DISTANCE, m.sunElevation, a.uSunDir.value);
     const boost = state.current?.boost;
     if (boost) {
       if (reduced) boost.snap();
@@ -196,7 +201,7 @@ export default function DawnScene({ data }: SceneProps) {
     world.terrain.material.uniforms.uWave!.value = [s.waveFront, s.waveStrength];
     world.shared.uSway.value = reduced ? 0 : 1;
     world.shared.uNearClip.value = MathUtils.mapLinear(stageStats.camera.fov, 10.2, 27, 6, 1.5);
-    grade.exposure = inDawn ? s.exposure : 1;
+    grade.exposure = progress.chapterIndex <= 1 ? m.exposure : 1;
 
     // Рельеф следует за камерой с шагом 4 м.
     const cam = camera.position;

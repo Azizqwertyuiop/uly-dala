@@ -43,6 +43,52 @@ const pillar = `<path d="M720 0 h160 l140 900 h-440 z" fill="#f7f4ee" opacity="0
 const table = (h = 900, fill = "#6b4a33") =>
   `<rect x="420" y="${hy(h) + 40}" width="760" height="22" rx="4" fill="${fill}"/>`;
 
+/*
+ * Четыре кадра «Сборки» для режима «Коротко» (статичные кадры этапов): стены → жерди → венец → войлок.
+ * Юрта стоит на круге примятой травы; каждый следующий кадр добавляет деталь.
+ */
+function assemblyStage(stage) {
+  const y = hy();
+  const cx = 800;
+  const r = 230; // полуширина стены
+  const wall = 150;
+  const top = y - wall;
+  const crownY = top - 120;
+  const wood = "#4a3526";
+  const parts = [`<ellipse cx="${cx}" cy="${y + 6}" rx="${r + 90}" ry="26" fill="#6e6a52"/>`];
+  // Кереге: косая решётка.
+  const lattice = [];
+  for (let x = cx - r; x <= cx + r; x += 22) {
+    lattice.push(`M${x} ${y} l${wall * 0.55} -${wall}`, `M${x} ${y} l-${wall * 0.55} -${wall}`);
+  }
+  parts.push(
+    `<clipPath id="w"><rect x="${cx - r}" y="${top}" width="${r * 2}" height="${wall}"/></clipPath>`,
+    `<path d="${lattice.join(" ")}" stroke="${wood}" stroke-width="3" clip-path="url(#w)"/>`,
+    `<rect x="${cx - 40}" y="${y - 120}" width="80" height="120" fill="#6b4a33"/>`,
+  );
+  if (stage >= 1) {
+    const poles = [];
+    for (let i = 0; i <= 16; i++) {
+      const x = cx - r + (i * r * 2) / 16;
+      poles.push(`M${x} ${top} L${cx + (x - cx) * 0.18} ${crownY}`);
+    }
+    parts.push(`<path d="${poles.join(" ")}" stroke="${wood}" stroke-width="4"/>`);
+  }
+  if (stage >= 2) {
+    parts.push(
+      `<ellipse cx="${cx}" cy="${crownY}" rx="46" ry="11" fill="none" stroke="${wood}" stroke-width="8"/>`,
+    );
+  }
+  if (stage >= 3) {
+    parts.push(
+      `<path d="M${cx - r - 4} ${y} V${top} L${cx - 50} ${crownY + 4} H${cx + 50} L${cx + r + 4} ${top} V${y} H${cx + 40} V${y - 120} H${cx - 40} V${y} Z" fill="#d9d0c0"/>`,
+      `<rect x="${cx - 40}" y="${y - 120}" width="80" height="120" fill="#f2d2a0" opacity="0.85"/>`,
+      pillar.replace('opacity="0.18"', 'opacity="0.08"'),
+    );
+  }
+  return parts.join("\n");
+}
+
 const dawnSky = ["#141824", "#1c2230", "#3a3550", "#c9824a"];
 const daySky = ["#b9c2c0", "#dcdfd8", "#ede6da"];
 const eveningSky = ["#1c2230", "#6b4a33", "#e0a060"];
@@ -57,6 +103,17 @@ const files = {
     ground: "#5d5c4a",
     extra: yurt(800, 900, "#3b3128", 130),
   }),
+  ...Object.fromEntries(
+    ["kerege", "uyki", "shanyrak", "kiiz"].map((part, stage) => [
+      `assembly-${part}`,
+      frame({
+        sky: ["#6f7a86", "#b9b7ab", "#ede6da"],
+        glow: "#f2d2a0",
+        ground: "#5d5c4a",
+        extra: assemblyStage(stage),
+      }),
+    ]),
+  ),
   pillar: frame({
     sky: ["#0d0f14", "#1c2230", "#2a2320"],
     glow: "#f7f4ee",

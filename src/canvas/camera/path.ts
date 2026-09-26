@@ -1,5 +1,6 @@
 import { CatmullRomCurve3, MathUtils, Vector3 } from "three";
 import { chapterIds } from "@/components/sections/chapters";
+import { TRACK_CAMERA_SHARE } from "@/motion/progress";
 import { horizonPitch } from "../steppe/dawn";
 import { chapterAnchor } from "../world";
 
@@ -35,7 +36,7 @@ const dawnFrame = (focus: number): CameraKey => ({
 export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
   // Рассвет: конь на правой трети, ~275 м (положение коня считает DawnScene по пропорциям экрана).
   dawn: dawnFrame(275),
-  // Сборка: юрта встаёт справа от текста, 35 мм (внутрь юрты, 24 мм, — в конце главы 2, шаг 10).
+  // Сборка: юрта встаёт справа от текста, 35 мм; внутрь юрты (24 мм) — в конце дорожки (EXTRA_KEYS).
   assembly: { position: [-8, 1.6, 16], target: [-3.6, 1.5, 0], focal: 35, focus: 17 },
   // День: мир готов, 50 мм.
   day: { position: [7, 1.7, 13], target: [0, 1.2, 0], focal: 50, focus: 14 },
@@ -51,11 +52,37 @@ export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
  * Промежуточные ключи внутри глав: t — прогресс сайта (как у горизонта), offset — от якоря главы.
  * Конец рассвета (раздел 2): фокус 135 → 50 мм, камера над кругом примятой травы — на месте юрты.
  */
+/** t по прогрессу дорожки главы i (0…1): дорожка занимает TRACK_CAMERA_SHARE главы. */
+export const trackT = (chapter: number, p: number) =>
+  (chapter + TRACK_CAMERA_SHARE * p) / (chapterIds.length - 1);
+
 export const EXTRA_KEYS: { t: number; chapter: number; key: CameraKey }[] = [
   {
     t: 0.16,
     chapter: 1,
     key: { position: [0, 1.8, 8], target: [0, 0, 0], focal: 50, focus: 8.2 },
+  },
+  // Сборка (глава 2): юрта справа от текста, камера медленно подходит к дверному проёму…
+  {
+    t: trackT(1, 0.45),
+    chapter: 1,
+    key: { position: [-7, 1.7, 12.5], target: [-3, 1.9, 0], focal: 35, focus: 13 },
+  },
+  {
+    t: trackT(1, 0.78),
+    chapter: 1,
+    key: { position: [-4.5, 1.6, 9.5], target: [-1.2, 1.5, 0], focal: 32, focus: 10 },
+  },
+  {
+    t: trackT(1, 0.9),
+    chapter: 1,
+    key: { position: [0, 1.5, 5.2], target: [0, 1.45, 0], focal: 28, focus: 5 },
+  },
+  // …и входит внутрь: 24 мм, столп света из шаңырақа, своя техника за ним.
+  {
+    t: trackT(1, 1),
+    chapter: 1,
+    key: { position: [0, 1.45, 1.9], target: [0, 1.7, -2.4], focal: 24, focus: 3.5 },
   },
 ];
 

@@ -10,6 +10,8 @@ import { ticker } from "./ticker";
  */
 
 export type ChapterBound = { id: string; top: number; height: number };
+/** Закреплённая дорожка внутри главы (data-track="<id главы>"), например 300vh «Сборки». */
+export type ChapterTrack = { id: string; top: number; height: number };
 
 export type ProgressState = {
   scrollY: number;
@@ -23,6 +25,13 @@ export type ProgressState = {
   local: number;
   /** Положение на навигации-горизонте: 0 — первая отметка, 1 — последняя. */
   horizon: number;
+  /** Прогресс дорожки текущей главы 0…1 (у глав без дорожки — local). */
+  track: number;
+  /**
+   * Прогресс для камеры: как horizon, но в главе с дорожкой первые TRACK_CAMERA_SHARE
+   * локального прогресса камеры приходятся ровно на дорожку (этапы сцены), остальное — на хвост главы.
+   */
+  camera: number;
   /** Скорость прокрутки, px/с (сглаженная). */
   velocity: number;
   /** 1 — вниз, −1 — вверх, 0 — ещё не понятно. С гистерезисом. */
@@ -44,12 +53,23 @@ export function createProgressState(): ProgressState {
     chapterId: null,
     local: 0,
     horizon: 0,
+    track: 0,
+    camera: 0,
     velocity: 0,
     direction: 0,
   };
 }
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
+
+/** Доля локального прогресса камеры, отведённая дорожке главы. */
+export const TRACK_CAMERA_SHARE = 0.9;
+
+/** Прогресс закреплённой дорожки: 0 — экран прилип (верх дорожки у верха экрана), 1 — отлип. */
+export function trackLocal(scrollY: number, track: ChapterTrack, viewportHeight: number): number {
+  const run = track.height - viewportHeight;
+  return run > 0 ? clamp01((scrollY - track.top) / run) : scrollY >= track.top ? 1 : 0;
+}
 
 /** Внутреннее состояние для направления: точка, от которой считается сдвиг. */
 export type DirectionAnchor = { y: number };
@@ -67,6 +87,7 @@ export function computeProgress(
   viewportHeight: number,
   maxScroll: number,
   dt: number,
+  tracks: readonly ChapterTrack[] = [],
 ): void {
   const previous = out.scrollY;
   out.scrollY = scrollY;
@@ -99,6 +120,8 @@ export function computeProgress(
     out.chapterId = null;
     out.local = out.global;
     out.horizon = out.global;
+    out.track = out.global;
+    out.camera = out.global;
     return;
   }
 
@@ -119,6 +142,22 @@ export function computeProgress(
   out.chapterId = bounds[index]!.id;
   out.local = atEnd ? 1 : to > from ? clamp01((scrollY - from) / (to - from)) : 0;
   out.horizon = n > 1 ? clamp01((index + out.local) / (n - 1)) : out.global;
+
+  let track: ChapterTrack | null = null;
+  for (let i = 0; i < tracks.length; i++) if (tracks[i]!.id === out.chapterId) track = tracks[i]!;
+  let cameraLocal = out.local;
+  if (track) {
+    out.track = trackLocal(scrollY, track, viewportHeight);
+    const release = track.top + track.height - viewportHeight;
+    cameraLocal =
+      scrollY <= release || to <= release
+        ? TRACK_CAMERA_SHARE * out.track
+        : TRACK_CAMERA_SHARE +
+          (1 - TRACK_CAMERA_SHARE) * clamp01((scrollY - release) / (to - release));
+  } else {
+    out.track = out.local;
+  }
+  out.camera = n > 1 ? clamp01((index + cameraLocal) / (n - 1)) : out.global;
 }
 
 // ---------------------------------------------------------------------------
@@ -138,6 +177,7 @@ export function onChapterChange(listener: ChapterListener): () => void {
 }
 
 let bounds: ChapterBound[] = [];
+let tracks: ChapterTrack[] = [];
 let started = false;
 /** −1 — сообщить подписчикам в ближайшем кадре (после перемера глав). */
 let lastIndex = -1;
@@ -150,6 +190,10 @@ export function measureChapters(): void {
   bounds = [...document.querySelectorAll<HTMLElement>("main section[data-chapter]")].map((el) => {
     const rect = el.getBoundingClientRect();
     return { id: el.dataset.chapter ?? el.id, top: rect.top + scrollY, height: rect.height };
+  });
+  tracks = [...document.querySelectorAll<HTMLElement>("main [data-track]")].map((el) => {
+    const rect = el.getBoundingClientRect();
+    return { id: el.dataset.track ?? "", top: rect.top + scrollY, height: rect.height };
   });
   const docHeight = document.documentElement.scrollHeight;
   progress.viewportHeight = viewportHeight;
@@ -198,6 +242,7 @@ export function startProgress(): () => void {
       progress.viewportHeight,
       progress.maxScroll,
       dt,
+      tracks,
     );
     if (progress.chapterIndex !== lastIndex) {
       lastIndex = progress.chapterIndex;
@@ -216,6 +261,11 @@ export function startProgress(): () => void {
 /** Границы глав в документе (только чтение; обновляются при ресайзе). */
 export function chapterBounds(): readonly ChapterBound[] {
   return bounds;
+}
+
+/** Дорожка главы (только чтение; обновляется при ресайзе) или null. */
+export function chapterTrack(id: string): ChapterTrack | null {
+  return tracks.find((t) => t.id === id) ?? null;
 }
 
 /** Прокрутка, с которой глава i становится текущей (её верх — на середине экрана). */

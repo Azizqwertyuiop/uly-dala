@@ -104,7 +104,7 @@ export function createMountains(atmosphere: Record<string, IUniform>) {
         void main() {
           vec3 dir = normalize(vWorld - cameraPosition);
           vec3 horizon = skyColor(vec3(dir.x, 0.004, dir.z));
-          vec3 silhouette = vec3(0.0012, 0.0014, 0.0024);
+          vec3 silhouette = mix(vec3(0.0012, 0.0014, 0.0024), vec3(0.045, 0.052, 0.066), uDaylight);
           vec3 col = mix(silhouette, horizon, uLayerHaze);
           gl_FragColor = vec4(col * mix(0.15, 1.0, uSkyReveal), 1.0);
         }

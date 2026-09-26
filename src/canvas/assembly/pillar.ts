@@ -65,12 +65,12 @@ export function createPillar(tier: "high" | "medium") {
         void main() {
           vec3 V = normalize(cameraPosition - vWorld);
           // Толщина луча по взгляду: в центре силуэта ярче, к краям — в ноль.
-          float thick = pow(abs(dot(normalize(vNormal), V)), 1.6);
+          float thick = pow(abs(dot(normalize(vNormal), V)), 2.6);
           float a = atan(vWorld.z, vWorld.x);
           float streaks = 0.65 + 0.35 * fbm(vec2(a * 3.0, vY * 2.5 + uTime * 0.05));
           // Ярче у венца, мягко гаснет к полу.
           float fall = mix(0.35, 1.0, vY);
-          float glow = thick * streaks * fall * uIntensity * 0.55;
+          float glow = thick * streaks * fall * uIntensity * 0.16;
           gl_FragColor = vec4(${LIGHT} * glow, 1.0);
         }
       `,
@@ -99,8 +99,8 @@ export function createPillar(tier: "high" | "medium") {
         varying vec2 vP;
         void main() {
           float r = length(vP);
-          float pool = smoothstep(1.0, 0.55, r) * (0.6 + 0.4 * smoothstep(0.75, 0.0, r));
-          gl_FragColor = vec4(${LIGHT} * pool * uIntensity * 0.5, 1.0);
+          float pool = (1.0 - smoothstep(0.55, 1.0, r)) * (0.6 + 0.4 * (1.0 - smoothstep(0.0, 0.75, r)));
+          gl_FragColor = vec4(${LIGHT} * pool * uIntensity * 0.22, 1.0);
         }
       `,
       transparent: true,
@@ -137,8 +137,8 @@ export function createPillar(tier: "high" | "medium") {
           vec3 p = vec3(cos(a) * r, y * ${PILLAR.top.toFixed(2)}, sin(a) * r);
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = (0.012 + 0.018 * aSeed.w) * uPixelRatio * 800.0 / -mv.z;
-          vA = (0.4 + 0.6 * aSeed.w) * smoothstep(0.0, 0.15, y) * smoothstep(1.0, 0.8, y);
+          gl_PointSize = (0.01 + 0.014 * aSeed.w) * uPixelRatio * 420.0 / -mv.z;
+          vA = (0.4 + 0.6 * aSeed.w) * smoothstep(0.0, 0.15, y) * (1.0 - smoothstep(0.8, 1.0, y));
         }
       `,
       fragmentShader: /* glsl */ `
@@ -146,8 +146,8 @@ export function createPillar(tier: "high" | "medium") {
         varying float vA;
         void main() {
           float d = length(gl_PointCoord - 0.5);
-          float a = smoothstep(0.5, 0.0, d) * vA * uIntensity;
-          gl_FragColor = vec4(${LIGHT} * a * 0.9, 1.0);
+          float a = (1.0 - smoothstep(0.0, 0.5, d)) * vA * uIntensity;
+          gl_FragColor = vec4(${LIGHT} * a * 0.5, 1.0);
         }
       `,
       transparent: true,

@@ -1,7 +1,7 @@
 import { Euler, MathUtils, Quaternion, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { chapterIds } from "@/components/sections/chapters";
-import { buildCameraPath, focalToFov, MAX_CAMERA_HEIGHT } from "./path";
+import { buildCameraPath, focalToFov, MAX_CAMERA_HEIGHT, trackT } from "./path";
 import { CameraRigState, MAX_ANGULAR_SPEED } from "./rig";
 
 /** Крен: насколько «правый» вектор камеры отклонён от горизонтали. Ноль — горизонт ровный. */
@@ -80,6 +80,18 @@ describe("камера: путь по всему сайту", () => {
     expect(rig.out.pitch).toBeLessThan(-0.15); // взгляд вниз
   });
 
+  it("конец дорожки «Сборки»: камера внутри юрты, 24 мм, крен 0", () => {
+    const rig = new CameraRigState();
+    rig.snap(trackT(1, 1));
+    expect(rig.out.focal).toBe(24);
+    // Юрта — на якоре главы 2 (z = −60), радиус 3 м: камера внутри круга.
+    expect(Math.hypot(rig.out.position.x, rig.out.position.z + 60)).toBeLessThan(2.5);
+    expect(rig.out.roll).toBe(0);
+    // Перед входом — у дверного проёма (+Z), снаружи.
+    rig.snap(trackT(1, 0.9));
+    expect(rig.out.position.z + 60).toBeGreaterThan(3);
+  });
+
   it("шаг коня и композиция — только высота и тангаж, крен остаётся 0", () => {
     const rig = new CameraRigState();
     rig.snap(0.18);
@@ -129,8 +141,9 @@ describe("камера: путь по всему сайту", () => {
     const yaw = Math.abs(MathUtils.radToDeg(moved.out.yaw - still.out.yaw));
     const pitch = Math.abs(MathUtils.radToDeg(moved.out.pitch - still.out.pitch));
     expect(yaw).toBeCloseTo(1.5, 1);
-    // Тангаж: курсор 0,8° плюс микродыхание (0,3% кадра).
-    expect(pitch).toBeLessThan(0.8 + 0.05);
-    expect(pitch).toBeGreaterThan(0.7);
+    // Тангаж: курсор 0,8° плюс микродыхание (0,3% кадра — в градусах зависит от угла обзора).
+    const breath = 0.003 * moved.out.fov;
+    expect(pitch).toBeLessThan(0.8 + breath + 0.01);
+    expect(pitch).toBeGreaterThan(0.8 - breath - 0.01);
   });
 });

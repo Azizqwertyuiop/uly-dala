@@ -9,13 +9,30 @@ import type { BriefValues, EventType, Source } from "@/lib/brief/model";
  */
 
 export const DRAFT_KEY = "uly-dala:brief-draft";
+/** Выбор развилки главы 2 — до закрытия вкладки, как и черновик. */
+export const AUDIENCE_KEY = "uly-dala:audience";
 
 export type Audience = "corporate" | "family" | "all";
+
+/**
+ * Предзаполнение брифа развилкой: первый формат выбранной аудитории в главе «День»
+ * (content/formats.ts; соответствие проверяет тест). «Посмотреть всё» — без предзаполнения.
+ */
+export const AUDIENCE_PREFILL: Record<Audience, EventType | null> = {
+  corporate: "conference",
+  family: "kudalyk",
+  all: null,
+};
+
+const isAudience = (value: unknown): value is Audience =>
+  value === "corporate" || value === "family" || value === "all";
 
 type BriefState = {
   draft: BriefValues;
   hydrated: boolean;
   audience: Audience;
+  /** Тип события, который подставила развилка (а не человек) — его можно заменить новым выбором. */
+  audiencePrefill: EventType | null;
   modal: { open: boolean; source: Source; key: number };
   setField: <K extends keyof BriefValues>(field: K, value: BriefValues[K]) => void;
   merge: (values: BriefValues) => void;
@@ -49,6 +66,7 @@ export const useBriefStore = create<BriefState>()((set, get) => ({
   draft: {},
   hydrated: false,
   audience: "all",
+  audiencePrefill: null,
   modal: { open: false, source: "brief", key: 0 },
 
   setField: (field, value) => {
@@ -83,7 +101,25 @@ export const useBriefStore = create<BriefState>()((set, get) => ({
     set({ draft: {} });
   },
 
-  setAudience: (audience) => set({ audience }),
+  // Развилка: порядок форматов (FormatTabs), формулировки CTA (AudienceText) и предзаполнение брифа.
+  // Тип события, выбранный человеком, развилка не трогает.
+  setAudience: (audience) => {
+    try {
+      window.sessionStorage.setItem(AUDIENCE_KEY, audience);
+    } catch {
+      // Хранилище недоступно — выбор просто не переживёт перезагрузку.
+    }
+    const { draft, audiencePrefill } = get();
+    const next = AUDIENCE_PREFILL[audience];
+    if (!draft.eventType || draft.eventType === audiencePrefill) {
+      const updated = { ...draft };
+      if (next) updated.eventType = next;
+      else delete updated.eventType;
+      save(updated);
+      set({ draft: updated });
+    }
+    set({ audience, audiencePrefill: next });
+  },
 
   openModal: (source, prefill) => {
     if (prefill?.eventType) get().prefill({ eventType: prefill.eventType });
@@ -94,6 +130,13 @@ export const useBriefStore = create<BriefState>()((set, get) => ({
 
   hydrate: () => {
     if (get().hydrated) return;
-    set({ draft: { ...load(), ...get().draft }, hydrated: true });
+    let audience = get().audience;
+    try {
+      const stored = window.sessionStorage.getItem(AUDIENCE_KEY);
+      if (audience === "all" && isAudience(stored)) audience = stored;
+    } catch {
+      // ignore
+    }
+    set({ draft: { ...load(), ...get().draft }, audience, hydrated: true });
   },
 }));

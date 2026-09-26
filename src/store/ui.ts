@@ -41,8 +41,16 @@ function storeMode(mode: UiMode) {
   }
 }
 
+/*
+ * data-mode — режим; data-cinematic — «кинораскладка» глав (закреплённые экраны, сцена под текстом).
+ * Её ставит скрипт в <head> до первой отрисовки; здесь она снимается и возвращается при смене режима,
+ * чтобы «Коротко» сразу давал плоскую редакционную раскладку без перезагрузки.
+ */
 function applyToDocument(mode: UiMode) {
-  document.documentElement.dataset.mode = mode;
+  const html = document.documentElement;
+  html.dataset.mode = mode;
+  if (mode === "brief") delete html.dataset.cinematic;
+  else html.dataset.cinematic = "";
 }
 
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";

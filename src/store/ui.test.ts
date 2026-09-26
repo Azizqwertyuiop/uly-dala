@@ -67,6 +67,17 @@ describe("uiMode", () => {
     expect(store.getState().uiMode).toBe("cinematic");
   });
 
+  it("«Коротко» сразу снимает кинораскладку, возврат — ставит обратно", async () => {
+    const env = setupBrowser({ reduced: false });
+    const store = await freshStore();
+    store.getState().hydrate();
+    expect(env.documentElement.dataset.cinematic).toBe("");
+    store.getState().setUiMode("brief");
+    expect(env.documentElement.dataset.cinematic).toBeUndefined();
+    store.getState().setUiMode("cinematic");
+    expect(env.documentElement.dataset.cinematic).toBe("");
+  });
+
   it("выбор пользователя запоминается и важнее системной настройки", async () => {
     const env = setupBrowser({ reduced: true, stored: "cinematic" });
     const store = await freshStore();

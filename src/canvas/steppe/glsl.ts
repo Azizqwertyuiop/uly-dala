@@ -11,6 +11,7 @@ export const ATMOSPHERE_UNIFORMS = /* glsl */ `
   uniform float uSkyReveal;    // 0…1 — интро
   uniform float uDawnBoost;    // 1…1.08 — полоса рассвета ярче при hover на CTA
   uniform float uGroundFog;    // плотность приземного тумана
+  uniform float uDaylight;     // 0 — рассвет, 1 — утро «Сборки» (07:00)
   uniform float uHaze;         // дальняя дымка, 1/м
   uniform float uTime;
   uniform sampler2D tWind;     // поле ветра: RG — направление×сила, B — энергия
@@ -69,6 +70,18 @@ export const SKY_GLSL = /* glsl */ `
   const vec3 MID = vec3(0.0060, 0.0082, 0.0175);
   const vec3 COLD = vec3(0.030, 0.038, 0.062);  // ~9000 K
   const vec3 WARM = vec3(0.62, 0.30, 0.11);     // ~3200 K
+  // Утро «Сборки»: высокое бледное небо, у горизонта — тёплая дымка со стороны солнца.
+  const vec3 DAY_ZENITH = vec3(0.05, 0.09, 0.19);
+  const vec3 DAY_HORIZON = vec3(0.36, 0.33, 0.28);
+  vec3 daySky(vec3 dir, float toward) {
+    float e = dir.y;
+    vec3 col = mix(DAY_HORIZON, DAY_ZENITH, pow(smoothstep(0.0, 0.7, max(e, 0.0)), 0.6));
+    col += vec3(0.30, 0.18, 0.08) * pow(toward, 6.0) * exp(-max(e, 0.0) * 5.0);
+    col += vec3(0.6, 0.45, 0.3) * pow(max(dot(normalize(dir), uSunDir), 0.0), 60.0);
+    return mix(col, DAY_HORIZON * 0.55, (1.0 - smoothstep(-0.08, 0.0, e)));
+  }
+  /** Сколько света добавляет утро поверхностям степи (рельеф, трава, горы). */
+  float dayGain() { return mix(1.0, 10.0, uDaylight); }
   vec3 skyColor(vec3 dir) {
     float e = dir.y;
     float sunUp = clamp((uSunElevation + 1.5) / 6.0, 0.0, 1.0); // восход по скроллу
@@ -85,7 +98,8 @@ export const SKY_GLSL = /* glsl */ `
     float glow = pow(max(dot(normalize(dir), uSunDir), 0.0), 220.0);
     col += WARM * glow * (0.25 + 1.4 * sunUp) * uDawnBoost;
     // Под горизонтом — сумрак земли (виден в дымке).
-    col = mix(col, MID * 0.6, smoothstep(0.0, -0.08, e));
+    col = mix(col, MID * 0.6, (1.0 - smoothstep(-0.08, 0.0, e)));
+    col = mix(col, daySky(dir, toward), uDaylight);
     return col * mix(0.15, 1.0, uSkyReveal);
   }
 `;

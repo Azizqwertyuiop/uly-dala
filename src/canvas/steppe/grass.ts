@@ -69,8 +69,9 @@ const SHADING = /* glsl */ `
     // «Резко растущий в контровом свете»: высокая степень back.
     float silver = awn * (aniso * 0.05 + pow(back, 12.0) * 0.16) * (1.0 + wave * 5.0 + gust * 1.5);
     vec3 col = base * (ambient + diffuse) + base * transmit * sunCol * 2.0;
-    col += silver * vec3(0.80, 0.85, 0.95) * (0.4 + 1.4 * sunUp) * uSkyReveal;
-    return col;
+    // Утром солнце выше — контровой блик ости слабеет (иначе трава белеет).
+    col += silver * vec3(0.80, 0.85, 0.95) * (0.4 + 1.4 * sunUp) * uSkyReveal * mix(1.0, 0.25, uDaylight);
+    return col * dayGain();
   }
 `;
 

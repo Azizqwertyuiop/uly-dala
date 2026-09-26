@@ -11,7 +11,7 @@ import {
   TextureLoader,
   WebGLRenderTarget,
 } from "three";
-import { chapterBounds, progress } from "@/motion/progress";
+import { chapterBounds, chapterTrack, progress } from "@/motion/progress";
 import { ticker } from "@/motion/ticker";
 import { assets } from "./assets";
 import { createPostMaterial, grainFrame } from "./materials/post";
@@ -21,13 +21,15 @@ import { stageStats } from "./stats";
  * Пост-процесс сцены: рендер в линейный HDR-буфер (MSAA на high) → финальный проход (post.ts).
  * useFrame с приоритетом 1 забирает рендер у R3F — кадр по-прежнему запускает ticker через advance().
  *
- * Степь (небо, рельеф, трава, конь) — слой STEPPE_LAYER: рисуется только внутри прямоугольника
- * секции «Рассвет» на экране (scissor). Следующая секция «наезжает» на степь как обычный блок,
- * её фон и контраст не меняются. Прямоугольник — из измеренных границ глав, без чтения DOM в кадре.
+ * Степь (небо, рельеф, трава, конь, юрта) — слой STEPPE_LAYER: рисуется только внутри прямоугольника
+ * от верха «Рассвета» до конца закреплённой дорожки «Сборки» (scissor) — юрта встаёт в той же степи.
+ * Дальше страница «наезжает» на степь как обычный блок, её фон и контраст не меняются.
+ * Прямоугольник — из измеренных границ глав и дорожек, без чтения DOM в кадре.
  */
 
 export const STEPPE_LAYER = 1;
 const STEPPE_CHAPTER = 0;
+const STEPPE_UNTIL_TRACK = "assembly";
 
 /** Цветокоррекция кадра: экспозиция — через таймлайн глав (раздел 6). */
 export const grade = { exposure: 1 };
@@ -93,7 +95,9 @@ export function PostFX({ msaa }: { msaa: boolean }) {
     const b = chapterBounds()[STEPPE_CHAPTER];
     if (b && progress.chapterId !== null) {
       const top = b.top - progress.scrollY;
-      const bottom = Math.min(top + b.height, size.height);
+      const track = chapterTrack(STEPPE_UNTIL_TRACK);
+      const end = track ? Math.max(b.top + b.height, track.top + track.height) : b.top + b.height;
+      const bottom = Math.min(end - progress.scrollY, size.height);
       const clippedTop = Math.max(top, 0);
       if (bottom > clippedTop) {
         const ratio = r.target.height / size.height;

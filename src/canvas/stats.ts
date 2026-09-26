@@ -23,6 +23,18 @@ export const stageStats = {
   windProbe: null as null | (() => number),
   dawn: { introTime: null as number | null, wave: false, clip: "", textOut: false, fps: 0 },
   camera: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, fov: 0 },
+  /** Сборка: прогресс сцены (после притяжения), этап и сводка деталей 0…1. */
+  assembly: {
+    p: 0,
+    phase: "",
+    snapping: false,
+    yaw: 0,
+    kerege: 0,
+    uyki: 0,
+    shanyrak: 0,
+    kiiz: 0,
+    pillar: 0,
+  },
 };
 
 if (typeof window !== "undefined") {

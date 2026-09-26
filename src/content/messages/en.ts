@@ -88,18 +88,23 @@ const en: Messages = {
       kerege: {
         name: "Kerege",
         text: "The foundation. Our light, sound and LED screens are our own equipment — no dependence on contractors.",
+        frameAlt:
+          "Morning in the steppe. On a circle of flattened grass the lattice walls of a yurt stand open; our own lights, speakers and an LED screen are already inside.",
       },
       uyki: {
         name: "Uyki",
         text: "Dozens of details meeting at one point. Logistics, contractors, timing.",
+        frameAlt: "Above the lattice walls, the roof poles meet at the centre.",
       },
       shanyrak: {
         name: "Shanyrak",
         text: "It holds everything together. The idea and direction of the event.",
+        frameAlt: "The crown of the dome — the shanyrak — slowly descends onto the poles.",
       },
       kiiz: {
         name: "Kiiz",
         text: "Warmth. Service, catering, an in-house chef.",
+        frameAlt: "Felt covers the frame from top to bottom; the door is open, warm light inside.",
       },
     },
     pillar: "The shanyrak was the first spotlight.",
@@ -112,6 +117,11 @@ const en: Messages = {
       all: "Show everything",
     },
     cta: "Discuss your event",
+    ctaCorporate: "Discuss a company event",
+    ctaFamily: "Discuss a family celebration",
+    rotateLabel: "Rotate the yurt",
+    rotateHint: "Drag to rotate",
+    rotateHintTouch: "Swipe to rotate",
   },
   day: {
     time: "12:00",

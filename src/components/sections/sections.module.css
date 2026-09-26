@@ -183,11 +183,28 @@
 }
 
 /* ---------- Сборка ---------- */
+/*
+ * Обычная раскладка («Коротко», без WebGL, без JS): текст, четыре этапа со статичными кадрами,
+ * столп света, развилка. Кинорежим (html[data-cinematic], уровень не fallback): дорожка 300vh,
+ * экран закреплён; юрта — на холсте, подпись текущего этапа стоит у своей детали:
+ * этап — data-phase, позиция — одна CSS-переменная --caption-xy (обе пишет сцена).
+ */
+.assemblyTrack,
+.assemblyStage,
+.assemblyAfter {
+  display: grid;
+  gap: var(--space-block);
+}
+
+.assemblyFrame,
+.rotate {
+  display: none;
+}
+
 .parts {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-6);
   list-style: none;
-  counter-reset: part;
 }
 
 @media (min-width: 768px) {
@@ -205,8 +222,13 @@
 
 .part {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
   align-content: start;
+}
+
+.partText {
+  display: grid;
+  gap: var(--space-1);
   padding-top: var(--space-2);
   border-top: 1px solid var(--tone-line);
 }
@@ -214,6 +236,7 @@
 .pillar {
   display: grid;
   gap: var(--space-3);
+  margin: 0;
 }
 
 .fork {
@@ -232,6 +255,244 @@
   display: inline-flex;
   align-items: center;
   min-height: 48px;
+}
+
+.forkList a[aria-current="true"] {
+  font-weight: 600;
+}
+
+/* Кинорежим. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assembly {
+  padding-top: 0;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyTrack {
+  display: block;
+  height: 300svh;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyStage {
+  position: sticky;
+  top: 0;
+  display: block;
+  height: 100svh;
+  min-height: 480px;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyFrame {
+  display: block;
+  position: absolute;
+  inset: 0 calc(-1 * var(--grid-margin));
+  z-index: -1;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyText {
+  position: absolute;
+  left: 0;
+  top: calc(72px + var(--space-4));
+  max-width: 560px;
+  padding: var(--space-3) var(--space-6) var(--space-3) 0;
+}
+
+/* Заголовок и манифест прочитаны — с третьего этапа уходят вверх, уступая кадр юрте. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyText {
+  transition:
+    transform calc(var(--duration-base) * 1.3) var(--ease-steppe),
+    opacity calc(var(--duration-base) * 1.3) var(--ease-steppe);
+}
+
+:global(html[data-canvas="ready"])
+  .assemblyStage:is([data-phase="shanyrak"], [data-phase="kiiz"], [data-phase="pillar"])
+  .assemblyText:not(:focus-within) {
+  transform: translateY(-24px);
+  opacity: 0;
+  transition:
+    transform var(--duration-quick) var(--ease-exit),
+    opacity var(--duration-quick) var(--ease-exit);
+}
+
+/* На телефоне места меньше — манифест уходит уже со второго этапа. */
+@media (max-width: 767px) {
+  :global(html[data-canvas="ready"])
+    .assemblyStage[data-phase="uyki"]
+    .assemblyText:not(:focus-within) {
+    transform: translateY(-24px);
+    opacity: 0;
+    transition:
+      transform var(--duration-quick) var(--ease-exit),
+      opacity var(--duration-quick) var(--ease-exit);
+  }
+}
+
+/* Подложка под текстом над сценой (контраст ≥ 4.5:1): войлок от левого края, без рамок. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyText::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -12% -30% -12% calc(-1 * var(--grid-margin));
+  background: linear-gradient(
+    90deg,
+    var(--felt) 0%,
+    color-mix(in srgb, var(--felt) 90%, transparent) 50%,
+    color-mix(in srgb, var(--felt) 0%, transparent) 100%
+  );
+  mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Название списка — для экранного диктора; подписи этапов стоят у деталей юрты. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .partsLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .parts {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .part {
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--grid-margin));
+  z-index: 2;
+  display: block;
+  width: min(300px, calc(100vw - 40px));
+  transform: translate(var(--caption-xy, 0px, 0px));
+  opacity: 0;
+  /* Появление дольше ухода (раздел 5). */
+  transition: opacity var(--duration-quick) var(--ease-exit);
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .partFrame,
+:global(html[data-cinematic]:not([data-quality="fallback"])) .pillarFrame {
+  display: none;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .partText {
+  padding: var(--space-2) var(--space-3);
+  border-top: 0;
+  border-left: 2px solid var(--willow);
+  background: var(--felt);
+}
+
+:global(html[data-canvas="ready"]) .assemblyStage[data-phase="kerege"] .part[data-part="kerege"],
+:global(html[data-canvas="ready"]) .assemblyStage[data-phase="uyki"] .part[data-part="uyki"],
+:global(html[data-canvas="ready"])
+  .assemblyStage[data-phase="shanyrak"]
+  .part[data-part="shanyrak"],
+:global(html[data-canvas="ready"]) .assemblyStage[data-phase="kiiz"] .part[data-part="kiiz"] {
+  opacity: 1;
+  transition: opacity var(--duration-base) var(--ease-steppe);
+}
+
+/* Финал: фраза под столпом света; внутри юрты темно — светлый текст на тёмной подложке. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .pillar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--horizon-height) + var(--space-8));
+  z-index: 2;
+  justify-items: center;
+  opacity: 0;
+  transition: opacity var(--duration-quick) var(--ease-exit);
+  pointer-events: none;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .pillarPhrase {
+  padding: var(--space-2) var(--space-4);
+  background: color-mix(in srgb, var(--indigo) 88%, transparent);
+  color: var(--kumys);
+  text-align: center;
+}
+
+:global(html[data-canvas="ready"]) .assemblyStage[data-phase="pillar"] .pillar {
+  opacity: 1;
+  transition: opacity var(--duration-slow) var(--ease-steppe);
+}
+
+/* Вращение юрты: область над юртой (правая часть экрана). Вертикальный свайп — это скролл. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .rotate {
+  display: block;
+  position: absolute;
+  top: 72px;
+  right: calc(-1 * var(--grid-margin));
+  bottom: var(--horizon-height);
+  z-index: 1;
+  width: 55%;
+  touch-action: pan-y;
+}
+
+@media (max-width: 767px) {
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .rotate {
+    top: 45%;
+    width: calc(100% + 2 * var(--grid-margin));
+  }
+}
+
+.rotate[aria-disabled="true"] {
+  pointer-events: none;
+}
+
+.rotate:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -8px;
+}
+
+.rotateTip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 2px var(--space-1);
+  background: var(--felt);
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--duration-quick) var(--ease-steppe);
+  pointer-events: none;
+}
+
+.rotateHintTouch {
+  display: none;
+}
+
+@media (hover: hover) {
+  .rotate:hover:not([aria-disabled="true"]):not([data-dragging]) .rotateTip {
+    opacity: 1;
+  }
+}
+
+/* На тач-устройствах hover не имитируется — подсказка видна сразу. */
+@media (hover: none) {
+  .rotate:not([aria-disabled="true"]) .rotateHintTouch {
+    display: block;
+    position: absolute;
+    right: var(--grid-margin);
+    bottom: var(--space-4);
+    padding: 2px var(--space-1);
+    background: var(--felt);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+}
+
+/* После дорожки: развилка и CTA — обычный блок на фоне секции. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyAfter {
+  padding-top: var(--space-block);
 }
 
 /* ---------- Мир существует ---------- */
