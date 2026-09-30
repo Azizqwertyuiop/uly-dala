@@ -7,6 +7,7 @@ import {
   type Texture,
 } from "three";
 import { identityLut } from "./lut";
+import { TRANSITIONS_GLSL } from "./transitions";
 
 /*
  * Финальный проход (CLAUDE.md, раздел 6) — один на всю сцену:
@@ -16,6 +17,11 @@ import { identityLut } from "./lut";
  *  4. лёгкая единая виньетка;
  *  5. кодирование в sRGB и дизеринг синим шумом (±1/255, треугольное распределение) — без полос.
  * Вход — линейный HDR-буфер с предумноженной альфой; выход — предумноженный sRGB для холста с alpha.
+ *
+ * «Реальный» слой (фазенда: сплаты, видео облёта; кадры архива) — отдельный буфер: это кадры,
+ * уже приведённые к дисплею (фото, съёмка), поэтому AgX их не трогает, а LUT, зерно, виньетка
+ * и дизеринг — те же, что у степи: одна плёнка на весь сайт, без шва (раздел 6).
+ * Переход «свет» в фазенду — здесь же, по яркости, в полосе дорожки главы (uLightRect).
  */
 
 export const GRAIN_AMOUNT = 0.025;
@@ -70,6 +76,10 @@ export function createPostMaterial(blueNoise: Texture, lut: Data3DTexture = iden
   return new ShaderMaterial({
     uniforms: {
       tScene: { value: null },
+      tReal: { value: null },
+      uRealOn: { value: 0 },
+      uLight: { value: 1 },
+      uLightRect: { value: [0, 0] },
       tBlueNoise: { value: blueNoise },
       tLut: { value: lut },
       uLutAmount: { value: 0 },
@@ -92,6 +102,10 @@ export function createPostMaterial(blueNoise: Texture, lut: Data3DTexture = iden
       precision highp float;
       precision highp sampler3D;
       uniform sampler2D tScene;
+      uniform sampler2D tReal;
+      uniform float uRealOn;
+      uniform float uLight;
+      uniform vec2 uLightRect; // полоса «света» по высоте, пиксели буфера сверху
       uniform sampler3D tLut;
       uniform float uLutAmount;
       uniform float uExposure;
@@ -103,6 +117,7 @@ export function createPostMaterial(blueNoise: Texture, lut: Data3DTexture = iden
       varying vec2 vUv;
       ${AGX_GLSL}
       ${DITHER_GLSL}
+      ${TRANSITIONS_GLSL}
       float hash(vec2 p) {
         p = fract(p * vec2(443.897, 441.423));
         p += dot(p, p.yx + 19.19);
@@ -114,11 +129,25 @@ export function createPostMaterial(blueNoise: Texture, lut: Data3DTexture = iden
       void main() {
         vec4 scene = texture2D(tScene, vUv);
         float a = scene.a;
+        vec3 display = vec3(0.0);
+        if (a > 0.0) display = linearToSrgb(agx(scene.rgb / a * uExposure));
+        // Реальный слой: без AgX (кадры уже «проявлены»), поверх стилизованной сцены.
+        if (uRealOn > 0.5) {
+          vec4 real = texture2D(tReal, vUv);
+          if (real.a > 0.0) {
+            vec3 photo = linearToSrgb(clamp(real.rgb / real.a, 0.0, 1.0));
+            float m = real.a;
+            float y = (1.0 - vUv.y) * uResolution.y;
+            if (y >= uLightRect.x && y <= uLightRect.y) {
+              m *= revealLight(dot(photo, vec3(0.2126, 0.7152, 0.0722)), uLight);
+            }
+            float outA = m + a * (1.0 - m);
+            display = outA > 0.0 ? (photo * m + display * a * (1.0 - m)) / outA : display;
+            a = outA;
+          }
+        }
         if (a <= 0.0) { gl_FragColor = vec4(0.0); return; }
-        vec3 color = scene.rgb / a * uExposure;
-        color = agx(color);
         // LUT — в пространстве отображения (как у колориста).
-        vec3 display = linearToSrgb(color);
         vec3 graded = texture(tLut, clamp(display, 0.0, 1.0)).rgb;
         display = mix(display, graded, uLutAmount);
         // Зерно: яркостное, сильнее в полутонах, новое 24 раза в секунду.

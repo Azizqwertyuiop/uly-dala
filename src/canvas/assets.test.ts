@@ -15,6 +15,7 @@ function urlsOf(asset: (typeof assets)[keyof typeof assets], tier: Tier): string
     const v = asset.variants[tier];
     return [size(v.hevc) > size(v.vp9) ? v.hevc : v.vp9, asset.poster];
   }
+  if (asset.kind === "clip") return [asset.url, asset.poster];
   return [asset.url];
 }
 

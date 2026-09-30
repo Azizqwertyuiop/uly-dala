@@ -30,6 +30,21 @@ export type VideoAsset = {
 
 export type TextureAsset = { kind: "texture"; chapter: ChapterId | "global"; url: string };
 
+/**
+ * Видео без альфы (облёт фазенды): один файл H.264 в MP4 на все браузеры — аппаратное
+ * декодирование везде; ключевой кадр каждые 0,5 с (перемотка скроллом).
+ */
+export type ClipAsset = {
+  kind: "clip";
+  chapter: ChapterId;
+  url: string;
+  poster: string;
+  aspect: number;
+};
+
+/** Gaussian Splatting (фазенда, только high и не iOS / не тач — canUseSplats). */
+export type SplatAsset = { kind: "splat"; chapter: ChapterId; url: string };
+
 const model = (name: string, chapter: ChapterId, nodes: readonly string[]): ModelAsset => ({
   kind: "model",
   chapter,
@@ -65,8 +80,21 @@ export const assets = {
     "dastarkhan_right",
     "dastarkhan_table",
   ]),
+  // Фазенда (глава 5): сплаты на high (десктоп), облёт — на medium и там, где сплаты нельзя.
+  // TODO(assets): настоящая съёмка — .spz вместо заглушки .splat, облёт 1080p (docs/assets.md).
+  fazendaSplat: { kind: "splat", chapter: "world", url: "/assets/splats/fazenda.splat" },
+  fazendaFlyover: {
+    kind: "clip",
+    chapter: "world",
+    url: "/assets/video/fazenda-flyover.medium.mp4",
+    poster: "/assets/video/fazenda-flyover.poster.png",
+    aspect: 16 / 9,
+  },
   blueNoise: { kind: "texture", chapter: "global", url: "/assets/noise/blue-noise-64.png" },
-} as const satisfies Record<string, ModelAsset | VideoAsset | TextureAsset>;
+} as const satisfies Record<
+  string,
+  ModelAsset | VideoAsset | ClipAsset | TextureAsset | SplatAsset
+>;
 
 /** Транскодер KTX2 (Basis) — локально, без CDN. */
 export const BASIS_TRANSCODER_PATH = "/assets/decoders/basis/";

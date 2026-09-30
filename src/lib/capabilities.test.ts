@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canUseSplats,
   decideQuality,
   detectInAppBrowser,
   DynamicResolution,
@@ -156,5 +157,28 @@ describe("динамическое разрешение", () => {
     const fast = new FirefoxProbe();
     while (!fast.sample(1 / 60));
     expect(fast.downgrade).toBe(false);
+  });
+});
+
+describe("сплаты фазенды (Gaussian Splatting)", () => {
+  it("только high на десктопе", () => {
+    expect(canUseSplats(desktop, "high")).toBe(true);
+    expect(canUseSplats(desktop, "medium")).toBe(false);
+    expect(canUseSplats(desktop, "fallback")).toBe(false);
+  });
+
+  it("никогда на iOS (и iPadOS, притворяющемся Mac) и на мобильных", () => {
+    expect(canUseSplats({ ...desktop, userAgent: iphone, coarsePointer: true }, "high")).toBe(
+      false,
+    );
+    const ipad =
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15";
+    expect(canUseSplats({ ...desktop, userAgent: ipad, maxTouchPoints: 5 }, "high")).toBe(false);
+    const android = "Mozilla/5.0 (Linux; Android 15; Pixel 9) Chrome/140.0 Mobile Safari/537.36";
+    expect(canUseSplats({ ...desktop, userAgent: android, coarsePointer: true }, "high")).toBe(
+      false,
+    );
+    // Телефон с мышью (DeX, подключённая мышь) — всё равно телефон.
+    expect(canUseSplats({ ...desktop, userAgent: android }, "high")).toBe(false);
   });
 });

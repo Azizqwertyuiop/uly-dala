@@ -910,14 +910,240 @@
   transition: transform var(--duration-slow) var(--ease-steppe);
 }
 
-.caseLink:focus-visible .caseFrame img {
+/* Масштаб 1,03 внутри рамки (раздел 5); у кадра с WebGL-двойником его делает шейдер. */
+.caseLink:focus-visible .caseFrame img:not([data-gl]) {
   transform: scale(1.03);
 }
 
 @media (hover: hover) {
-  .caseLink:hover .caseFrame img {
+  .caseLink:hover .caseFrame img:not([data-gl]) {
     transform: scale(1.03);
   }
+}
+
+/* ---------- Этот мир существует ---------- */
+/*
+ * Обычная раскладка («Коротко», без WebGL, без JS): лента кейсов, фото фазенды, список зон,
+ * схема дороги, клиенты и отзывы. Кинорежим: дорожка фазенды 200vh, экран закреплён,
+ * фазенда — на холсте (сплаты / видео облёта), плашка текущей зоны выделена (data-zone).
+ */
+.archive,
+.worldZones,
+.logos,
+.reviews {
+  display: grid;
+  gap: var(--grid-gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .archive {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .worldZones {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .worldZones {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.worldTrack,
+.worldStage,
+.worldZonesBlock,
+.worldInfo {
+  display: grid;
+  gap: var(--space-block);
+}
+
+.worldZonesBlock {
+  gap: var(--space-3);
+}
+
+.worldZone {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--tone-line);
+}
+
+.worldHint {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .worldInfo {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--grid-gutter);
+  }
+}
+
+.worldMap {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  color: var(--tone-fg);
+}
+
+.worldMapLabel {
+  font-family: var(--font-text);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  fill: currentColor;
+}
+
+.worldLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.review {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.review blockquote {
+  margin: 0;
+}
+
+.logos {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  align-items: center;
+}
+
+.logos img {
+  width: 100%;
+  height: auto;
+  max-height: 48px;
+  object-fit: contain;
+}
+
+/* Кинорежим. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldTrack {
+  display: block;
+  height: 200svh;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldStage {
+  position: sticky;
+  top: 0;
+  display: block;
+  height: 100svh;
+  min-height: 560px;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldFrame {
+  display: block;
+  position: absolute;
+  inset: 0 calc(-1 * var(--grid-margin));
+  z-index: -1;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldHead,
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock {
+  position: absolute;
+  left: 0;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldHead {
+  top: calc(72px + var(--space-4));
+  max-width: 420px;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldHint {
+  display: block;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock {
+  right: 0;
+  bottom: calc(var(--horizon-height) + var(--space-6));
+}
+
+/* Подложки под текстом над фазендой (контраст ≥ 4.5:1): ночь сверху слева и снизу. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldHead::before,
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldHead::before {
+  inset: -30% -40% -30% calc(-1 * var(--grid-margin));
+  background: radial-gradient(
+    ellipse at 20% 50%,
+    color-mix(in srgb, var(--indigo) 88%, transparent) 30%,
+    color-mix(in srgb, var(--indigo) 0%, transparent) 72%
+  );
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock::before {
+  inset: -40% calc(-1 * var(--grid-margin)) calc(-1 * (var(--horizon-height) + var(--space-6)));
+  background: linear-gradient(
+    to top,
+    var(--indigo) 0%,
+    color-mix(in srgb, var(--indigo) 86%, transparent) 55%,
+    color-mix(in srgb, var(--indigo) 0%, transparent) 100%
+  );
+}
+
+/*
+ * Телефон: четыре плашки не помещаются над фазендой — видна плашка текущей зоны,
+ * остальные скрыты только визуально (экранный диктор читает список целиком).
+ */
+@media (max-width: 767px) {
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"])) .worldHint {
+    display: none;
+  }
+
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"]))
+    .worldStage:not([data-zone="field"])
+    [data-zone-item="field"],
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"]))
+    .worldStage:not([data-zone="tent"])
+    [data-zone-item="tent"],
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"]))
+    .worldStage:not([data-zone="yurt"])
+    [data-zone-item="yurt"],
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"]))
+    .worldStage:not([data-zone="kitchen"])
+    [data-zone-item="kitchen"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Текущая зона облёта — линия над плашкой ярче и толще. Без анимации текста. */
+:global(html[data-canvas="ready"]) .worldStage[data-zone="field"] [data-zone-item="field"],
+:global(html[data-canvas="ready"]) .worldStage[data-zone="tent"] [data-zone-item="tent"],
+:global(html[data-canvas="ready"]) .worldStage[data-zone="yurt"] [data-zone-item="yurt"],
+:global(html[data-canvas="ready"]) .worldStage[data-zone="kitchen"] [data-zone-item="kitchen"] {
+  border-top-color: var(--tone-fg);
+  box-shadow: inset 0 1px 0 var(--tone-fg);
 }
 
 /* ---------- Снова рассвет ---------- */

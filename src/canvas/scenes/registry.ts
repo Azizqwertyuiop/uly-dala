@@ -1,7 +1,8 @@
 import type { ComponentType } from "react";
 import { chapterIds, type ChapterId } from "@/components/sections/chapters";
+import { canUseSplats } from "@/lib/capabilities";
 import { assets } from "../assets";
-import { currentTier, loadModel } from "../loaders";
+import { currentProfile, currentTier, loadModel } from "../loaders";
 
 /*
  * Реестр сцен глав (CLAUDE.md, раздел 7): { id, loader, range }.
@@ -51,7 +52,24 @@ const loaders: Record<ChapterId, SceneEntry["loader"]> = {
     return { Component: mod.default, data: { led, dastarkhan } };
   },
   fire: withModel(() => import("./FireScene"), assets.dastarkhan),
-  world: withModel(() => import("./WorldScene")),
+  // «Этот мир существует»: сплаты фазенды — только high на десктопе (не iOS, не тач);
+  // иначе видео облёта. Библиотека сплатов (Spark) и файл грузятся только в первом случае.
+  world: async () => {
+    const profile = currentProfile();
+    if (profile && canUseSplats(profile, currentTier())) {
+      const [mod, spark, bytes] = await Promise.all([
+        import("./WorldScene"),
+        import("@sparkjsdev/spark"),
+        fetch(assets.fazendaSplat.url).then((r) => {
+          if (!r.ok) throw new Error(`${assets.fazendaSplat.url}: ${r.status}`);
+          return r.arrayBuffer();
+        }),
+      ]);
+      return { Component: mod.default, data: { mode: "splats", spark, bytes } };
+    }
+    const mod = await import("./WorldScene");
+    return { Component: mod.default, data: { mode: "video" } };
+  },
   return: withModel(() => import("./ReturnScene")),
 };
 
@@ -61,7 +79,7 @@ const memory: Record<ChapterId, number> = {
   assembly: 12,
   day: 10, // шесть площадок, env map 256²
   fire: 8, // очаг, дым, стол, три сета, env map
-  world: 4,
+  world: 16, // сплаты фазенды (заглушка 31k) или кадр видео облёта 960×540
   return: 4,
 };
 

@@ -1,3 +1,4 @@
+import type { Transition } from "@/canvas/materials/transitions";
 import styles from "./SceneImage.module.css";
 
 type Props = {
@@ -12,6 +13,10 @@ type Props = {
   className?: string;
   /** Место 3D-сцены главы: кадр скрывается, когда сцена на холсте готова. */
   sceneSlot?: boolean;
+  /** Реальный кадр (глава 5): WebGL-двойник поверх <img> с переходом появления. */
+  gl?: Transition;
+  /** Имя общего элемента для перехода между страницами (View Transitions). */
+  transitionName?: string;
 };
 
 /**
@@ -27,6 +32,8 @@ export function SceneImage({
   sizes,
   className,
   sceneSlot,
+  gl,
+  transitionName,
 }: Props) {
   return (
     <picture
@@ -44,6 +51,9 @@ export function SceneImage({
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : undefined}
         decoding="async"
+        data-gl-image={gl ? "" : undefined}
+        data-gl-transition={gl}
+        style={transitionName ? { viewTransitionName: transitionName } : undefined}
       />
     </picture>
   );

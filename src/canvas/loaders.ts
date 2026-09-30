@@ -4,6 +4,7 @@ import type { WebGLRenderer } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
+import type { DeviceProfile } from "@/lib/capabilities";
 import { BASIS_TRANSCODER_PATH, type Tier } from "./assets";
 
 /*
@@ -15,10 +16,12 @@ let renderer: WebGLRenderer | null = null;
 let ktx2: KTX2Loader | null = null;
 let gltf: GLTFLoader | null = null;
 let tier: Tier = "high";
+let profile: DeviceProfile | null = null;
 
-export function configureLoaders(gl: WebGLRenderer, quality: Tier) {
+export function configureLoaders(gl: WebGLRenderer, quality: Tier, device?: DeviceProfile) {
   renderer = gl;
   tier = quality;
+  if (device) profile = device;
   if (!ktx2) {
     ktx2 = new KTX2Loader().setTranscoderPath(BASIS_TRANSCODER_PATH).detectSupport(gl);
   }
@@ -26,6 +29,11 @@ export function configureLoaders(gl: WebGLRenderer, quality: Tier) {
 
 export function currentTier(): Tier {
   return tier;
+}
+
+/** Профиль устройства (для решений загрузчиков: сплаты — только где можно). */
+export function currentProfile(): DeviceProfile | null {
+  return profile;
 }
 
 export function getGltfLoader(): GLTFLoader {

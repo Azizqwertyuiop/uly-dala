@@ -23,6 +23,19 @@ html:has([data-horizon]) body {
   padding-bottom: calc(var(--horizon-height) + env(safe-area-inset-bottom));
 }
 
+/*
+ * Кадр с WebGL-двойником (реальный слой, глава 5): <img> остаётся для доступности и фолбэка,
+ * но не рисуется поверх своего двойника. Холст выключен — картинка снова обычная.
+ */
+html[data-canvas="ready"] img[data-gl="ready"] {
+  opacity: 0;
+}
+
+/* Холст — под страницей: подложка рамки не должна закрывать двойника. */
+html[data-canvas="ready"] picture:has(> img[data-gl="ready"]) {
+  background: transparent;
+}
+
 /* 3D-сцена готова — статичные кадры глав уступают ей место (размер сохраняется). */
 html[data-canvas="ready"] [data-scene-slot] {
   visibility: hidden;
@@ -188,6 +201,28 @@ html[data-reveal="on"]:not([data-reveal-js]) [data-reveal=""] {
   *::after {
     transition-duration: 200ms !important;
     transition-property: opacity !important;
+    animation: none !important;
+  }
+}
+
+/*
+ * Переход в страницу кейса общим элементом (CLAUDE.md, раздел 5): кадр архива растягивается
+ * в обложку — 1000 мс, horizon. Остальная страница — короткая смена без движения.
+ */
+::view-transition-group(case-cover) {
+  animation-duration: 1000ms;
+  animation-timing-function: var(--ease-horizon);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-base);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     animation: none !important;
   }
 }

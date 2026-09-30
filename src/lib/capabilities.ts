@@ -114,6 +114,20 @@ export const PIXEL_BUDGET: Record<Exclude<Quality, "fallback">, number> = {
 };
 
 /** Предел DPR: десктоп ≤ 2, мобильные ≤ 1.5. */
+/**
+ * Gaussian Splatting фазенды (глава 5, раздел 6) — только high, не iOS и не мобильные
+ * (тач-указатель): память GPU и сортировка сплатов им не по силам. Остальным — видео облёта
+ * (medium) или фото (fallback). Библиотека и файл сплатов в таком случае даже не грузятся.
+ */
+export function canUseSplats(p: DeviceProfile, quality: Quality): boolean {
+  return (
+    quality === "high" &&
+    !isIOS(p.userAgent, p.maxTouchPoints) &&
+    !p.coarsePointer &&
+    !/Android|Mobi/.test(p.userAgent)
+  );
+}
+
 export function dprCap(coarsePointer: boolean): number {
   return coarsePointer ? 1.5 : 2;
 }

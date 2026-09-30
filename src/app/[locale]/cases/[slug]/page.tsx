@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageShell, pageStyles } from "@/components/layout/PageShell";
 import { BriefLink } from "@/components/brief/BriefLink";
 import { briefFallbackHref } from "@/components/brief/briefProps";
+import { CASE_COVER } from "@/components/sections/caseTransition";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
@@ -63,14 +64,18 @@ export default async function CasePage({ params }: PageProps<"/[locale]/cases/[s
         </div>
       </div>
 
-      <SceneImage
-        src={item.cover.src}
-        alt={text.coverAlt}
-        width={item.cover.width}
-        height={item.cover.height}
-        priority
-        sizes="100vw"
-      />
+      {/* Обложка — общий элемент с кадром ленты архива на главной (переход 1000 мс). */}
+      <div data-case-cover="">
+        <SceneImage
+          src={item.cover.src}
+          alt={text.coverAlt}
+          width={item.cover.width}
+          height={item.cover.height}
+          priority
+          sizes="100vw"
+          transitionName={CASE_COVER}
+        />
+      </div>
 
       <div className={layout.grid}>
         <div className={`${layout.stackLarge} ${layout.main}`}>

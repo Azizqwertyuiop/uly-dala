@@ -23,6 +23,7 @@ import { horizonPitch, stepBob } from "./steppe/dawn";
 import { DebugHud, DebugSplines } from "./debug";
 import { configureLoaders } from "./loaders";
 import { PostFX, STEPPE_LAYER } from "./PostFX";
+import { DomImages } from "./real/DomImages";
 import { planScenes } from "./scenes/plan";
 import { sceneRegistry, type LoadedScene } from "./scenes/registry";
 import { stageStats } from "./stats";
@@ -107,7 +108,9 @@ function Runtime({
   const rig = useMemo(() => new CameraRigState(chapterTempo.dawn.cameraSmoothing), []);
   const [scenes, setScenes] = useState<Map<string, LoadedScene>>(() => new Map());
   // Загрузчики (KTX2/meshopt) — до первого плана сцен: им нужен renderer.
-  useState(() => configureLoaders(gl, quality));
+  useState(() => configureLoaders(gl, quality, profile));
+  // Понижение уровня (Firefox < 50 fps) — следующие главы грузятся уже в medium.
+  useEffect(() => configureLoaders(gl, quality, profile), [gl, quality, profile]);
   const loading = useRef(new Set<string>());
   const compiled = useRef(new Set<string>());
   const ready = useRef(false);
@@ -406,6 +409,7 @@ function Runtime({
         const Scene = loaded.Component;
         return <Scene key={entry.id} anchor={chapterAnchor(entry.index)} data={loaded.data} />;
       })}
+      <DomImages />
       <PostFX msaa={quality === "high"} />
       {debug && <DebugSplines path={rig.path} />}
     </>
