@@ -133,6 +133,46 @@ describe("камера: путь по всему сайту", () => {
     expect(conference / kudalyk).toBeCloseTo(1.6, 1);
   });
 
+  it("поза сцены: при весе 1 — точно она (и выше 1,8 м), крен 0; курсор замирает на плане", () => {
+    const rig = new CameraRigState();
+    rig.snap(0.62);
+    const pose = {
+      position: new Vector3(1, 250, -180),
+      target: new Vector3(1, 0.4, -180.02),
+      focal: 900,
+      still: 1,
+      weight: 1,
+    };
+    let out = rig.update(1 / 60, 0.62, { x: 1, y: 1 }, 0.35, false, {}, pose);
+    out = rig.update(1 / 60, 0.62, { x: 1, y: 1 }, 0.35, false, {}, pose);
+    expect(out.position.distanceTo(pose.position)).toBeLessThan(1e-6);
+    expect(out.focal).toBeCloseTo(900, 3);
+    expect(out.roll).toBe(0);
+    expect(Math.abs(rollOf(out.yaw, out.pitch, out.roll))).toBeLessThan(1e-12);
+    // Вид сверху: курсор и дыхание не двигают план.
+    const still = rig.update(1 / 60, 0.62, { x: 0, y: 0 }, 0.35, false, {}, pose);
+    expect(still.yaw).toBeCloseTo(out.yaw, 9);
+    expect(still.pitch).toBeCloseTo(out.pitch, 9);
+  });
+
+  it("поза сцены смешивается с путём по весу (вход и выход без рывка)", () => {
+    const rig = new CameraRigState();
+    const path = buildCameraPath();
+    const base = path.positionAt(0.62);
+    const pose = {
+      position: base.clone().add(new Vector3(0, 0, 2)),
+      target: path.targetAt(0.62),
+      focal: 50,
+      still: 0,
+      weight: 0.5,
+    };
+    rig.snap(0.62);
+    let out = rig.out;
+    for (let i = 0; i < 400; i++)
+      out = rig.update(1 / 60, 0.62, { x: 0, y: 0 }, 0.35, true, {}, pose);
+    expect(out.position.z).toBeCloseTo(Math.min(base.z + 1, Infinity), 2);
+  });
+
   it("шаг коня и композиция — только высота и тангаж, крен остаётся 0", () => {
     const rig = new CameraRigState();
     rig.snap(0.18);

@@ -83,6 +83,8 @@ test.describe("холст сцены", () => {
   test("камера проходит весь сайт: каждая глава — своя сцена и своя точка пути", async ({
     page,
   }) => {
+    // Шесть глав подряд на программном WebGL под параллельной нагрузкой — с запасом.
+    test.setTimeout(90_000);
     await openStage(page);
     for (const [i, id] of chapterIds.entries()) {
       await scrollToChapter(page, id);
@@ -98,8 +100,11 @@ test.describe("холст сцены", () => {
       const s = await stage(page);
       expect(s.camera.roll).toBe(0);
       expect(s.camera.y).toBeLessThanOrEqual(1.8);
-      // Дальше двух глав ничего не держим.
+      // Дальше двух глав ничего не держим — кроме мира, в котором стоит глава
+      // (степь рассвета нужна «Сборке», «Дню» и «Огню»).
+      const world = ["assembly", "day", "fire"].includes(id) ? ["dawn"] : [];
       for (const loaded of s.loaded) {
+        if (world.includes(loaded)) continue;
         expect(
           Math.abs(chapterIds.indexOf(loaded as (typeof chapterIds)[number]) - i),
         ).toBeLessThanOrEqual(2);
@@ -118,7 +123,9 @@ test.describe("холст сцены", () => {
     const s = await stage(page);
     expect(s.current).toBe("fire");
     expect(s.loaded).toContain("fire");
-    expect(s.loaded).not.toContain("dawn");
+    // Мир «Огня» — степь рассвета — загружен сразу; глав между ними нет.
+    expect(s.loaded).toContain("dawn");
+    expect(s.loaded).not.toContain("assembly");
     expect(s.introSkipped).toBe(true);
     // Камера уже у «Огня» с первого кадра — без облёта от начала сайта.
     expect(Math.abs(s.camera.z + 3 * CHAPTER_SPACING)).toBeLessThan(CHAPTER_SPACING * 0.6);

@@ -20,6 +20,15 @@ import {
  * и тангажом (порядок Эйлера YXZ, z = 0), а не lookAt.
  */
 
+/** Поза, которую сцена задаёт камере (мир), и её вес 0…1. */
+export type RigPose = {
+  position: Vector3;
+  target: Vector3;
+  focal: number;
+  still: number;
+  weight: number;
+};
+
 export const MAX_ANGULAR_SPEED = MathUtils.degToRad(25);
 export const CURSOR_YAW = MathUtils.degToRad(1.5);
 export const CURSOR_PITCH = MathUtils.degToRad(0.8);
@@ -62,6 +71,10 @@ export class CameraRigState {
   private offsetPitch = 0;
   private offsetYaw = 0;
   private offsetY = 0;
+  /** 0…1 — камера «замерла» (план «Огня»): без курсора и дыхания. */
+  private still = 0;
+  /** Вес внешней позы сцены: над степью можно подняться выше 1,8 м (вид сверху «Огня»). */
+  private poseWeight = 0;
   private scratchA = new Vector3();
   private scratchB = new Vector3();
   private angles = { yaw: 0, pitch: 0 };
@@ -115,16 +128,32 @@ export class CameraRigState {
      * и высота (м, шаг коня). Крен не трогается никогда.
      */
     offsets: { pitch?: number; yaw?: number; y?: number } = {},
+    /**
+     * Внешняя поза сцены (dolly zoom «Огня»): смешивается с путём по весу; при весе 1 — точно
+     * она, без пружин и ограничения угловой скорости (поза уже сглажена сценой по темпу главы).
+     */
+    pose: RigPose | null = null,
   ): RigOutput {
     this.time += dt;
     this.t = clamp01(t);
-    this.position.smoothTime = this.target.smoothTime = this.focal.smoothTime = smoothTime;
 
     const p = this.path.positionAt(clamp01(t), this.scratchA);
     const q = this.path.targetAt(clamp01(t), this.scratchB);
+    let focal = this.path.focal(t);
+    const w = pose ? Math.min(1, Math.max(0, pose.weight)) : 0;
+    if (pose && w > 0) {
+      p.lerp(pose.position, w);
+      q.lerp(pose.target, w);
+      focal = Math.exp(MathUtils.lerp(Math.log(focal), Math.log(pose.focal), w));
+    }
+    this.poseWeight = w;
+    this.still = pose ? pose.still * w : 0;
+    // Чем больше вес позы, тем меньше собственное сглаживание рига (при 1 — поза как есть).
+    const own = smoothTime * (1 - w);
+    this.position.smoothTime = this.target.smoothTime = this.focal.smoothTime = own;
     this.position.setTarget([p.x, p.y, p.z]);
     this.target.setTarget([q.x, q.y, q.z]);
-    this.focal.target = this.path.focal(t);
+    this.focal.target = focal;
     this.offsetPitch = offsets.pitch ?? 0;
     this.offsetYaw = offsets.yaw ?? 0;
     this.offsetY = offsets.y ?? 0;
@@ -136,7 +165,7 @@ export class CameraRigState {
     p.set(pos[0]!, pos[1]!, pos[2]!);
     q.set(tgt[0]!, tgt[1]!, tgt[2]!);
     lookAngles(p, q, this.angles);
-    const maxStep = MAX_ANGULAR_SPEED * dt;
+    const maxStep = w >= 1 ? Infinity : (MAX_ANGULAR_SPEED * dt) / Math.max(1 - w, 1e-3);
     this.baseYaw += MathUtils.clamp(angleDelta(this.baseYaw, this.angles.yaw), -maxStep, maxStep);
     this.basePitch += MathUtils.clamp(this.angles.pitch - this.basePitch, -maxStep, maxStep);
 
@@ -145,14 +174,16 @@ export class CameraRigState {
     this.cursorYaw.update(dt);
     this.cursorPitch.update(dt);
 
-    this.compose(!reduced);
+    this.compose(!reduced && this.still < 1);
     return this.out;
   }
 
   private compose(breath: boolean): void {
     const pos = this.position.value;
     const out = this.out;
-    out.position.set(pos[0]!, Math.min(pos[1]! + this.offsetY, MAX_CAMERA_HEIGHT), pos[2]!);
+    // Высота ≤ 1,8 м — в степи; вид сверху «Огня» (поза сцены) поднимается над ней.
+    const maxHeight = this.poseWeight > 0 ? Infinity : MAX_CAMERA_HEIGHT;
+    out.position.set(pos[0]!, Math.min(pos[1]! + this.offsetY, maxHeight), pos[2]!);
     out.focal = this.focal.value;
     out.fov = focalToFov(out.focal);
     out.focus = this.path.focus(this.t);
@@ -161,8 +192,9 @@ export class CameraRigState {
         BREATH_AMPLITUDE *
         Math.sin((this.time / BREATH_PERIOD) * Math.PI * 2)
       : 0;
-    out.yaw = this.baseYaw + this.offsetYaw + this.cursorYaw.value;
-    out.pitch = this.basePitch + this.offsetPitch + this.cursorPitch.value + breathPitch;
+    const live = 1 - this.still;
+    out.yaw = this.baseYaw + this.offsetYaw + this.cursorYaw.value * live;
+    out.pitch = this.basePitch + this.offsetPitch + (this.cursorPitch.value + breathPitch) * live;
     out.roll = 0;
   }
 }

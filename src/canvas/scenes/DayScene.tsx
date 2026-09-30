@@ -127,29 +127,38 @@ export default function DayScene({ anchor, data }: SceneProps) {
     }
     const p = f.p.value;
 
-    // Свет, время суток и завеса — степи.
+    // Свет, время суток и завеса — степи. Пишет только своя глава: в «Огне» свет задаёт он.
     const light = computeDayLight(p, order, f.light);
     const o = steppeOverride;
-    o.active = index >= 2;
-    o.sunElevation = light.sun;
-    o.dusk = light.dusk;
-    o.groundFog = reduced ? light.fog - 0.85 * light.veil : light.fog;
-    o.exposure = reduced ? light.exposure / (1 + 0.32 * light.veil) : light.exposure;
+    if (index < 2) o.active = false;
+    const own = index === 2;
+    if (own) {
+      o.active = true;
+      o.sunElevation = light.sun;
+      o.dusk = light.dusk;
+      o.night = 0;
+      o.sunX = 1;
+      o.sunZ = -0.35;
+      o.groundFog = reduced ? light.fog - 0.85 * light.veil : light.fog;
+      o.exposure = reduced ? light.exposure / (1 + 0.32 * light.veil) : light.exposure;
+    }
     // Темп кудалыка — и для камеры (Stage читает sceneTempo).
     sceneTempo.id = index === 2 && order[light.index] === "kudalyk" ? "dayKudalyk" : null;
 
     // Скошенные поляны — под текущей площадкой и соседями (в мире). Без аллокаций в кадре.
     let c = 0;
-    for (let k = light.index - 1; k <= light.index + 2 && c < o.clearings.length; k++) {
-      const slug = order[k];
-      if (!slug) continue;
-      const local = DAY_CLEARING[slug];
-      const out = o.clearings[c++]!;
-      out[0] = ax + SLOT_SIDE + local[0];
-      out[1] = az + slotZ(k) + local[1];
-      out[2] = local[2];
+    if (own) {
+      for (let k = light.index - 1; k <= light.index + 2 && c < o.clearings.length; k++) {
+        const slug = order[k];
+        if (!slug) continue;
+        const local = DAY_CLEARING[slug];
+        const out = o.clearings[c++]!;
+        out[0] = ax + SLOT_SIDE + local[0];
+        out[1] = az + slotZ(k) + local[1];
+        out[2] = local[2];
+      }
+      while (c < o.clearings.length) o.clearings[c++]![2] = 0;
     }
-    while (c < o.clearings.length) o.clearings[c++]![2] = 0;
 
     // Площадки: рисуем только текущую и соседние (остальные далеко и в тумане).
     for (const slug of world.slugs) {

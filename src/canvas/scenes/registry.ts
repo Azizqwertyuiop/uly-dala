@@ -60,7 +60,7 @@ const memory: Record<ChapterId, number> = {
   dawn: 24, // видео 4K с альфой
   assembly: 12,
   day: 10, // шесть площадок, env map 256²
-  fire: 6,
+  fire: 8, // очаг, дым, стол, три сета, env map
   world: 4,
   return: 4,
 };
@@ -69,6 +69,7 @@ const memory: Record<ChapterId, number> = {
 const requires: Partial<Record<ChapterId, readonly ChapterId[]>> = {
   assembly: ["dawn"],
   day: ["dawn"],
+  fire: ["dawn"],
 };
 
 const last = chapterIds.length - 1;

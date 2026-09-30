@@ -14,6 +14,7 @@ import { createAlphaVideoMaterial } from "../materials/alphaVideoMaterial";
 import { grade, STEPPE_LAYER } from "../PostFX";
 import { stageStats } from "../stats";
 import { createAtmosphere, sunDirection } from "../steppe/atmosphere";
+import { LIGHT_DAY, LIGHT_NIGHT, sceneLights } from "../lights";
 import { steppeOverride } from "../steppe/control";
 import {
   computeDawnState,
@@ -200,12 +201,21 @@ export default function DawnScene({ data }: SceneProps) {
       a.uGroundFog.value = o.groundFog;
       a.uDaylight.value = 1;
       a.uDusk.value = o.dusk;
+      a.uNight.value = o.night;
       sunDirection(o.sunX, o.sunZ, o.sunElevation, a.uSunDir.value);
+      // Ночью общий свет гаснет — главным становится очаг.
+      if (sceneLights.hemi)
+        sceneLights.hemi.intensity = MathUtils.lerp(LIGHT_DAY.hemi, LIGHT_NIGHT.hemi, o.night);
+      if (sceneLights.sun)
+        sceneLights.sun.intensity = MathUtils.lerp(LIGHT_DAY.sun, LIGHT_NIGHT.sun, o.night);
     } else {
       a.uSunElevation.value = m.sunElevation;
       a.uGroundFog.value = m.groundFog;
       a.uDaylight.value = m.daylight;
       a.uDusk.value = 0;
+      a.uNight.value = 0;
+      if (sceneLights.hemi) sceneLights.hemi.intensity = LIGHT_DAY.hemi;
+      if (sceneLights.sun) sceneLights.sun.intensity = LIGHT_DAY.sun;
       sunDirection(horseX, -HORSE_DISTANCE, m.sunElevation, a.uSunDir.value);
     }
     const boost = state.current?.boost;
@@ -217,7 +227,13 @@ export default function DawnScene({ data }: SceneProps) {
     world.shared.uWave.value = [s.waveFront, s.waveStrength];
     world.terrain.material.uniforms.uWave!.value = [s.waveFront, s.waveStrength];
     world.shared.uSway.value = reduced ? 0 : 1;
-    world.shared.uNearClip.value = MathUtils.mapLinear(stageStats.camera.fov, 10.2, 27, 6, 1.5);
+    // Ближняя граница стеблей: при 135 мм трава не заслоняет кадр; при «орто» плана «Огня»
+    // (угол < 10°) стебли растворяются совсем — сверху они шумят, план остаётся чистым.
+    const fov = stageStats.camera.fov;
+    world.shared.uNearClip.value =
+      fov >= 10.2
+        ? MathUtils.mapLinear(fov, 10.2, 27, 6, 1.5)
+        : MathUtils.mapLinear(fov, 1.5, 10.2, 500, 6);
     grade.exposure =
       progress.chapterIndex <= 1 ? m.exposure : steppeOverride.active ? steppeOverride.exposure : 1;
 

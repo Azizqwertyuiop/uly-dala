@@ -23,7 +23,7 @@ import { stageStats } from "./stats";
  *
  * Степь (небо, рельеф, трава, конь, юрта, площадки «Дня») — слой STEPPE_LAYER: рисуется только
  * в своих полосах (scissor): от верха «Рассвета» до конца дорожки «Сборки» (юрта встаёт в той же
- * степи) и на дорожке «Дня». Между ними и дальше страница — обычные блоки: фон и контраст не меняются.
+ * степи), на дорожках «Дня» и «Огня». Между ними и дальше страница — обычные блоки: фон и контраст не меняются.
  * Прямоугольник — из измеренных границ глав и дорожек, без чтения DOM в кадре.
  */
 
@@ -117,6 +117,8 @@ export function PostFX({ msaa }: { msaa: boolean }) {
         : b.top + b.height;
       renderSteppe(r, b.top, firstEnd);
       if (day) renderSteppe(r, day.top, day.top + day.height);
+      const fire = chapterTrack("fire");
+      if (fire) renderSteppe(r, fire.top, fire.top + fire.height);
     }
     // 2) Всё остальное — без ограничений.
     camera.layers.set(0);

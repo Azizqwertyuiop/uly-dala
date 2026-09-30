@@ -33,13 +33,15 @@ const SHARED = /* glsl */ `
   uniform vec3 uCircle;    // x, z центра круга примятой травы, радиус
   uniform float uSway;     // 0 — reduced motion (стебли неподвижны)
   uniform float uNearClip; // м: при 135 мм ближняя трава не заслоняет кадр
-  uniform vec3 uClearings[4]; // скошенные поляны под площадками «Дня»: x, z, радиус (0 — нет)
+  uniform vec3 uClearings[4]; // поляны: x, z, радиус (0 — нет; < 0 — травы нет совсем: под ковром)
   // Площадка события в степи — на скошенной траве: низкий дастархан и стулья не тонут в ковыле.
   float mown(vec2 p) {
     float m = 0.0;
     for (int i = 0; i < 4; i++) {
       vec3 c = uClearings[i];
-      if (c.z > 0.0) m = max(m, 1.0 - smoothstep(c.z - 0.5, c.z + 0.3, distance(p, c.xy)));
+      float r = abs(c.z);
+      float strength = c.z < 0.0 ? 1.25 : 1.0;
+      if (r > 0.0) m = max(m, strength * (1.0 - smoothstep(r - 0.5, r + 0.3, distance(p, c.xy))));
     }
     return m;
   }
@@ -81,7 +83,7 @@ const SHADING = /* glsl */ `
     float silver = awn * (aniso * 0.05 + pow(back, 12.0) * 0.16) * (1.0 + wave * 5.0 + gust * 1.5);
     vec3 col = base * (ambient + diffuse) + base * transmit * sunCol * 2.0;
     // Днём солнце высоко — контровой блик ости слабеет (иначе трава белеет); на закате возвращается.
-    col += silver * vec3(0.80, 0.85, 0.95) * (0.4 + 1.4 * sunUp) * uSkyReveal * mix(1.0, 0.25, uDaylight * (1.0 - uDusk));
+    col += silver * vec3(0.80, 0.85, 0.95) * (0.4 + 1.4 * sunUp) * uSkyReveal * mix(1.0, 0.25, uDaylight * (1.0 - uDusk)) * (1.0 - uNight);
     return col * dayGain();
   }
 `;
@@ -155,7 +157,7 @@ export function createBlades(
         // Не у самой камеры (не заслонять кадр) и растворение к краю плитки — там карточки.
         float fade = smoothstep(uNearClip, uNearClip + 2.0, d) * (1.0 - smoothstep(uTile * 0.36, uTile * 0.5, d));
         // Ковыль ниже камеры (0,6 м): ости серебрятся под линией горизонта, не заслоняя коня.
-        float height = mix(0.22, 0.5, aRand.x) * fade * (1.0 - 0.8 * mown(p));
+        float height = mix(0.22, 0.5, aRand.x) * fade * max(0.0, 1.0 - 0.8 * mown(p));
         float width = mix(0.010, 0.024, aRand.y);
         float ang = aRand.z * 6.2831853;
         vec2 side = vec2(cos(ang), sin(ang));
@@ -335,7 +337,7 @@ export function createCards(
         float d = distance(p, cameraPosition.xz);
         // Кольцо средней зоны: от края стеблей до растворения в поверхности.
         vFade = smoothstep(max(14.0, uNearClip + 8.0), max(20.0, uNearClip + 14.0), d) * (1.0 - smoothstep(170.0, 230.0, d));
-        float scale = mix(0.3, 0.55, aRand.x) * vFade * (1.0 - 0.8 * mown(p));
+        float scale = mix(0.3, 0.55, aRand.x) * vFade * max(0.0, 1.0 - 0.8 * mown(p));
         float ang = aRand.z * 6.2831853;
         mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
         vec2 xz = rot * position.xz * scale;

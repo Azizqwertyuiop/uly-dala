@@ -423,8 +423,11 @@
   transition: opacity var(--duration-slow) var(--ease-steppe);
 }
 
-/* Вращение юрты: область над юртой (правая часть экрана). Вертикальный свайп — это скролл. */
-:global(html[data-cinematic]:not([data-quality="fallback"])) .rotate {
+/*
+ * Вращение юрты: область над юртой (правая часть экрана). Вертикальный свайп — это скролл.
+ * Только когда сцена готова: без 3D вращать нечего (и фокусу там делать нечего).
+ */
+:global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"])) .rotate {
   display: block;
   position: absolute;
   top: 72px;
@@ -592,6 +595,297 @@
       var(--felt) 100%
     );
     mask-image: none;
+  }
+}
+
+/* ---------- Огонь ---------- */
+/*
+ * Обычная раскладка («Коротко», без WebGL, без JS): кадр, сеты, вертикальный список блюд.
+ * Кинорежим (есть 3D): дорожка 200vh, экран закреплён. Сцена пишет фазу (data-phase:
+ * gather → macro → dolly → plan): заголовок — у очага, план с подписями блюд — в виде сверху.
+ * Нужный сет показывает CSS по :checked — переключатель работает и без JS.
+ */
+.fireTrack,
+.fireStage,
+.firePlan {
+  display: grid;
+  gap: var(--space-block);
+}
+
+.firePlan {
+  gap: var(--space-4);
+}
+
+.fireSets {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.fireSetOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+}
+
+.fireSetOption {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 48px;
+  cursor: pointer;
+}
+
+.fireSetOption input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--ember);
+}
+
+.fireSetOption input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* Выбранный сет: его описание, подписи и список. */
+.firePlan [data-set] {
+  display: none;
+}
+
+.firePlan:has(input[value="coffeeBreak"]:checked) [data-set="coffeeBreak"],
+.firePlan:has(input[value="banquet"]:checked) [data-set="banquet"],
+.firePlan:has(input[value="traditional"]:checked) [data-set="traditional"] {
+  display: revert;
+}
+
+/* Без JS ничего не выбрано — показываем все сеты списком. */
+.firePlan:not(:has(input:checked)) .fireList [data-set],
+.firePlan:not(:has(input:checked)) .fireSetText {
+  display: revert;
+}
+
+.fireHotspots {
+  display: none;
+}
+
+.fireDishes {
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.fireDish {
+  display: grid;
+  gap: 2px;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--tone-line);
+}
+
+/* Кинорежим. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .fire {
+  padding-top: 0;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .fireTrack {
+  display: block;
+  height: 200svh;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .fireStage {
+  position: sticky;
+  top: 0;
+  display: block;
+  height: 100svh;
+  min-height: 560px;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .fireFrame {
+  display: block;
+  position: absolute;
+  inset: 0 calc(-1 * var(--grid-margin));
+  z-index: -1;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .fireFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .fireHead,
+:global(html[data-cinematic]:not([data-quality="fallback"])) .firePlan {
+  position: absolute;
+  left: 0;
+  max-width: 480px;
+  padding-right: var(--space-6);
+  transition:
+    transform calc(var(--duration-base) * 1.3) var(--ease-steppe),
+    opacity calc(var(--duration-base) * 1.3) var(--ease-steppe);
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .fireHead {
+  top: calc(72px + var(--space-4));
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .firePlan {
+  bottom: calc(var(--horizon-height) + var(--space-6));
+}
+
+/* Подложка под текстом над сценой (контраст ≥ 4.5:1): ночь от левого края. */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .fireHead::before,
+:global(html[data-cinematic]:not([data-quality="fallback"])) .firePlan::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -16% -30% -16% calc(-1 * var(--grid-margin));
+  background: linear-gradient(
+    90deg,
+    var(--indigo) 0%,
+    color-mix(in srgb, var(--indigo) 90%, transparent) 55%,
+    color-mix(in srgb, var(--indigo) 0%, transparent) 100%
+  );
+  mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%);
+  pointer-events: none;
+}
+
+/*
+ * Фазы: заголовок — у очага (gather, macro), план — в виде сверху (plan).
+ * Скрытое — прозрачностью, а не visibility: элементы остаются доступны с клавиатуры,
+ * при фокусе видны (:focus-within), а фокус на плане докручивает страницу до плана.
+ */
+:global(html[data-canvas="ready"])
+  .fireStage:is([data-phase="dolly"], [data-phase="plan"])
+  .fireHead:not(:focus-within) {
+  transform: translateY(-24px);
+  opacity: 0;
+  transition:
+    transform var(--duration-quick) var(--ease-exit),
+    opacity var(--duration-quick) var(--ease-exit);
+}
+
+:global(html[data-canvas="ready"])
+  .fireStage:not([data-phase="plan"])
+  .firePlan:not(:focus-within) {
+  transform: translateY(24px);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--duration-quick) var(--ease-exit),
+    opacity var(--duration-quick) var(--ease-exit);
+}
+
+/* Широкий экран: подписи над блюдами, список не нужен. */
+@media (min-width: 768px) {
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"])) .fireList {
+    display: none;
+  }
+
+  /* Подписи над блюдами — только когда сцена готова (позицию им даёт она). */
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"])) .fireHotspots {
+    display: block;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireHotspot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--kumys);
+    font: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+    transform: translate(var(--xy, -200px, -200px)) translate(-50%, -50%);
+  }
+
+  /* Подписи — только в виде сверху, пока экран закреплён (сцена пишет data-hotspots). */
+  .fireStage:not([data-hotspots="on"]) .fireHotspots {
+    opacity: 0;
+  }
+
+  .fireStage:not([data-hotspots="on"]) .fireHotspot:not(:focus-visible) {
+    pointer-events: none;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireHotspot:focus-visible {
+    outline: 2px solid var(--kumys);
+    outline-offset: 2px;
+  }
+
+  /* Подпись у блюда: название и строка — при наведении, фокусе или закреплении. */
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireHotspotName,
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireHotspotNote {
+    position: absolute;
+    left: 56px;
+    display: block;
+    width: max-content;
+    max-width: 260px;
+    padding: 2px var(--space-1);
+    background: color-mix(in srgb, var(--indigo) 92%, transparent);
+    text-align: left;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity var(--duration-quick) var(--ease-steppe),
+      transform var(--duration-quick) var(--ease-steppe);
+    pointer-events: none;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireHotspotName {
+    top: 0;
+    font-family: var(--font-family-heading);
+    font-size: 20px;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireHotspotNote {
+    top: 32px;
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]))
+    .fireHotspot:is(:hover, :focus-visible, [aria-pressed="true"])
+    :is(.fireHotspotName, .fireHotspotNote) {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Телефон: вместо вида сверху — вертикальный список блюд над сценой (камера у очага). */
+@media (max-width: 767px) {
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .firePlan {
+    right: 0;
+    max-width: none;
+    padding-right: 0;
+    max-height: calc(100svh - 72px - var(--horizon-height) - var(--space-8));
+    overflow-y: auto;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .firePlan::before,
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireHead::before {
+    inset: -10% calc(-1 * var(--grid-margin));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--indigo) 0%, transparent) 0%,
+      color-mix(in srgb, var(--indigo) 92%, transparent) 14%,
+      var(--indigo) 100%
+    );
+    mask-image: none;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireDishes {
+    gap: var(--space-1);
   }
 }
 

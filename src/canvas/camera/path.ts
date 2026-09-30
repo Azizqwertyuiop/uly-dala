@@ -2,6 +2,7 @@ import { CatmullRomCurve3, MathUtils, Vector3 } from "three";
 import { chapterIds } from "@/components/sections/chapters";
 import type { FormatSlug } from "@/content/formats";
 import { TRACK_CAMERA_SHARE } from "@/motion/progress";
+import { fireStartKey } from "../fire/camera";
 import {
   DAY_FRAMING,
   DAY_STATES,
@@ -49,8 +50,8 @@ export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
   assembly: { position: [-8, 1.6, 16], target: [-3.6, 1.5, 0], focal: 35, focus: 17 },
   // День: мир готов, 50 мм. Фактический ключ входа строится из порядка развилки (dayArrival).
   day: { position: [7, 1.7, 13], target: [0, 1.2, 0], focal: 50, focus: 14 },
-  // Огонь: над дастарханом, взгляд вниз (орто — позже, в главе 4).
-  fire: { position: [0, 1.8, 4], target: [0, 0.2, 0], focal: 35, focus: 4.5 },
+  // Огонь: макро у очага — ровно стартовая поза сцены (дальше камерой ведёт она: dolly zoom).
+  fire: { ...fireStartKey(), focus: 1.5 },
   // Этот мир существует: ночь, 50 мм.
   world: { position: [0, 1.5, 15], target: [0, 1, 0], focal: 50, focus: 15 },
   // Снова рассвет: та же оптика, что в начале.

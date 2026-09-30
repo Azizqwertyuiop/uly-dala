@@ -230,6 +230,43 @@ const en: Messages = {
       },
     },
     cta: "Request the menu",
+    planLabel: "The dastarkhan from above: dishes of the set",
+    listLabel: "Dishes of the set",
+    dishes: {
+      coffeeBreak: {
+        coffee: { name: "Coffee", note: "From our own coffee machines, on site." },
+        pastry: { name: "Chef's pastries", note: "Warm, for the start of the break." },
+        fruit: { name: "Seasonal fruit", note: "Sliced and whole — whatever is in season." },
+        sandwiches: {
+          name: "Mini sandwiches",
+          note: "Filling but light — until the next session.",
+        },
+        lemonade: { name: "Lemonades", note: "Homemade, no syrups from a carton." },
+        tea: { name: "Tea", note: "Black and herbal." },
+      },
+      banquet: {
+        salads: { name: "Salads", note: "Seasonal vegetables." },
+        starters: { name: "Cold starters", note: "The chef's selection." },
+        hot: {
+          name: "Hot from the fire",
+          note: "Cooked right here — over the fire and in the kazan.",
+        },
+        bread: { name: "Bread and flatbreads", note: "Warm, to go with the main course." },
+        dessert: { name: "Dessert", note: "The finale of the dinner." },
+        drinks: { name: "Drinks", note: "Berry drinks, lemonades, water." },
+      },
+      traditional: {
+        beshbarmak: {
+          name: "Beshbarmak",
+          note: "In the kazan, over the fire — the traditional way.",
+        },
+        kazy: { name: "Kazy and zhaya", note: "Cold meat starters." },
+        baursak: { name: "Baursaks", note: "Hot, served with tea." },
+        kurt: { name: "Kurt and irimshik", note: "For the table and for the road." },
+        fruit: { name: "Fruit", note: "Seasonal." },
+        tea: { name: "Tea", note: "With milk, from the samovar." },
+      },
+    },
   },
   world: {
     time: "Night",

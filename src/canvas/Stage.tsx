@@ -28,6 +28,9 @@ import { sceneRegistry, type LoadedScene } from "./scenes/registry";
 import { stageStats } from "./stats";
 import { dayControl } from "@/lib/dayControl";
 import { sceneTempo } from "./tempo";
+import { hearth } from "./hearth";
+import { LIGHT_DAY, sceneLights } from "./lights";
+import { scenePose } from "./camera/scenePose";
 import { assemblyYawOffset, dayYawOffset, sceneFov } from "./camera/framing";
 import { stateAt } from "./day/timeline";
 import { chapterAnchor, chapterTempoId } from "./world";
@@ -236,11 +239,19 @@ function Runtime({
       const yaw =
         assemblyYawOffset(rig.path, progress.camera, aspect) +
         dayYawOffset(rig.path, progress.camera, aspect, daySlot);
-      rig.update(dt, progress.camera, input, tempo.cameraSmoothing, reduced.matches, {
-        pitch,
-        yaw,
-        y,
-      });
+      rig.update(
+        dt,
+        progress.camera,
+        input,
+        tempo.cameraSmoothing,
+        reduced.matches,
+        {
+          pitch,
+          yaw,
+          y,
+        },
+        scenePose.active ? scenePose : null,
+      );
       rig.out.fov = sceneFov(rig.out.fov, progress.camera, aspect);
       applyCamera(camera, rig.out);
     });
@@ -366,8 +377,29 @@ function Runtime({
   return (
     <>
       {/* Свет — и для слоя степи (юрта, площадки «Дня»): в three.js свет тоже фильтруется слоями. */}
-      <hemisphereLight args={["#f7f4ee", "#6b4a33", 0.9]} ref={bothLayers} />
-      <directionalLight position={[20, 30, 10]} intensity={1.6} ref={bothLayers} />
+      <hemisphereLight
+        args={["#f7f4ee", "#6b4a33", LIGHT_DAY.hemi]}
+        ref={(light) => {
+          bothLayers(light);
+          sceneLights.hemi = light;
+        }}
+      />
+      <directionalLight
+        position={[20, 30, 10]}
+        intensity={LIGHT_DAY.sun}
+        ref={(light) => {
+          bothLayers(light);
+          sceneLights.sun = light;
+        }}
+      />
+      {/* Свет очага «Огня» — с самого начала, сила 0 (без пересборки шейдеров при появлении). */}
+      <pointLight
+        args={["#ff9a55", 0, 7, 1.4]}
+        ref={(light) => {
+          bothLayers(light);
+          hearth.light = light;
+        }}
+      />
       {sceneRegistry.map((entry) => {
         const loaded = scenes.get(entry.id);
         if (!loaded) return null;

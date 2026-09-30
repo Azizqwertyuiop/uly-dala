@@ -13,6 +13,7 @@ export const ATMOSPHERE_UNIFORMS = /* glsl */ `
   uniform float uGroundFog;    // плотность приземного тумана
   uniform float uDaylight;     // 0 — рассвет, 1 — утро «Сборки» (07:00)
   uniform float uDusk;         // 0 — полдень, 1 — тёплые сумерки («День»)
+  uniform float uNight;        // 0 — вечер, 1 — ночь («Огонь»)
   uniform float uHaze;         // дальняя дымка, 1/м
   uniform float uTime;
   uniform sampler2D tWind;     // поле ветра: RG — направление×сила, B — энергия
@@ -76,6 +77,8 @@ export const SKY_GLSL = /* glsl */ `
   const vec3 DAY_HORIZON = vec3(0.36, 0.33, 0.28);
   // Вечер: тёмный индиго сверху, тёплая широкая полоса у горизонта со стороны солнца.
   const vec3 DUSK_ZENITH = vec3(0.018, 0.024, 0.06);
+  const vec3 NIGHT_ZENITH = vec3(0.0014, 0.0018, 0.0045);
+  const vec3 NIGHT_HORIZON = vec3(0.0045, 0.0055, 0.01);
   const vec3 DUSK_HORIZON = vec3(0.5, 0.25, 0.1);
   vec3 daySky(vec3 dir, float toward) {
     float e = dir.y;
@@ -86,10 +89,13 @@ export const SKY_GLSL = /* glsl */ `
     vec3 dusk = mix(DUSK_HORIZON * (0.35 + 0.65 * pow(toward, 3.0)), DUSK_ZENITH, pow(smoothstep(0.0, 0.5, max(e, 0.0)), 0.5));
     dusk += vec3(0.7, 0.35, 0.12) * pow(max(dot(normalize(dir), uSunDir), 0.0), 24.0);
     col = mix(col, dusk, uDusk);
-    return mix(col, mix(DAY_HORIZON, DUSK_HORIZON * 0.4, uDusk) * 0.55, (1.0 - smoothstep(-0.08, 0.0, e)));
+    col = mix(col, mix(DAY_HORIZON, DUSK_HORIZON * 0.4, uDusk) * 0.55, (1.0 - smoothstep(-0.08, 0.0, e)));
+    // Ночь: глубокий индиго, у горизонта — едва заметное свечение ушедшего заката.
+    vec3 night = mix(NIGHT_HORIZON + DUSK_HORIZON * 0.02 * pow(toward, 4.0), NIGHT_ZENITH, pow(smoothstep(0.0, 0.5, max(e, 0.0)), 0.5));
+    return mix(col, night, uNight);
   }
   /** Сколько света добавляет день поверхностям степи (рельеф, трава, горы); вечером — меньше. */
-  float dayGain() { return mix(1.0, 10.0, uDaylight) * mix(1.0, 0.42, uDusk); }
+  float dayGain() { return mix(1.0, 10.0, uDaylight) * mix(1.0, 0.42, uDusk) * mix(1.0, 0.07, uNight); }
   vec3 skyColor(vec3 dir) {
     float e = dir.y;
     float sunUp = clamp((uSunElevation + 1.5) / 6.0, 0.0, 1.0); // восход по скроллу

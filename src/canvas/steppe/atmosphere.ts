@@ -14,6 +14,8 @@ export type Atmosphere = {
   uDaylight: IUniform<number>;
   /** 0 — полдень, 1 — тёплые сумерки («День»: свадьба, частный праздник). */
   uDusk: IUniform<number>;
+  /** 0 — вечер, 1 — ночь («Огонь»: закат переходит в ночь). */
+  uNight: IUniform<number>;
   uHaze: IUniform<number>;
   uTime: IUniform<number>;
   tWind: IUniform<Texture | null>;
@@ -30,6 +32,7 @@ export function createAtmosphere(): Atmosphere {
     uGroundFog: { value: 1 },
     uDaylight: { value: 0 },
     uDusk: { value: 0 },
+    uNight: { value: 0 },
     uHaze: { value: 0.00022 },
     uTime: { value: 0 },
     tWind: { value: null },
