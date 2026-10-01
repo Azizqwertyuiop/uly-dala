@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { getMessages } from "../src/content/messages";
 import { formats } from "../src/content/formats";
@@ -186,7 +187,7 @@ test.describe("запросы — в видимом тексте, без скр�
 });
 
 test.describe("плашка языка (вместо перенаправления)", () => {
-  test("браузер на английском: на /ru предлагается English, закрытие запоминается", async ({
+  test("браузер на английском: на /ru предлагается English — в потоке над хедером, ничего не перекрывает; закрытие запоминается", async ({
     browser,
   }) => {
     const context = await browser.newContext({ locale: "en-US" });
@@ -195,13 +196,21 @@ test.describe("плашка языка (вместо перенаправлен�
     const banner = page.getByRole("complementary", { name: "Site language" });
     await expect(banner).toBeVisible();
     await expect(banner).toHaveAttribute("lang", "en");
+    // В потоке, а не поверх страницы: ничего не перекрывает.
+    expect(await banner.evaluate((el) => getComputedStyle(el).position)).toBe("static");
+    // Доступность с видимой плашкой — без нарушений.
+    const axe = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa", "best-practice"])
+      .analyze();
+    expect(axe.violations.map((v) => v.id)).toEqual([]);
     await expect(banner.getByRole("link", { name: "Switch to English" })).toHaveAttribute(
       "href",
       "/en/fazenda",
     );
     await banner.getByRole("button", { name: "Close" }).click();
+    await expect(banner).toBeHidden();
     await page.reload();
-    await expect(page.getByRole("complementary", { name: "Site language" })).toHaveCount(0);
+    await expect(page.getByRole("complementary", { name: "Site language" })).toBeHidden();
     await context.close();
   });
 
@@ -210,7 +219,7 @@ test.describe("плашка языка (вместо перенаправлен�
     const page = await context.newPage();
     await page.goto("/ru");
     await page.waitForTimeout(800);
-    await expect(page.locator("aside[lang]")).toHaveCount(0);
+    await expect(page.locator("aside[data-for]:visible")).toHaveCount(0);
     await context.close();
   });
 });

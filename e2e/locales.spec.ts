@@ -12,9 +12,12 @@ for (const locale of locales) {
   });
 }
 
-test("корень / ведёт на русскую версию", async ({ page }) => {
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/ru$/);
+test("корень / — русская версия без перенаправления (раздел 11)", async ({ page }) => {
+  const response = await page.goto("/");
+  expect(response?.status()).toBe(200);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/ru$/);
 });
 
 test("неизвестный язык отдаёт свою 404", async ({ page }) => {

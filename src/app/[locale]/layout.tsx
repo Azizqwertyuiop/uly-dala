@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CanvasRoot } from "@/components/layout/CanvasRoot";
 import { SoundController } from "@/components/layout/SoundController";
 import { LanguageSuggest, type SuggestCopy } from "@/components/layout/LanguageSuggest";
+import { languageSuggestScript } from "@/components/layout/languageSuggestScript";
 import { getMessages } from "@/content/messages";
 import { MotionBootstrap } from "@/components/layout/MotionBootstrap";
 import { SkipLink } from "@/components/layout/SkipLink";
@@ -37,10 +38,10 @@ export const viewport: Viewport = {
 };
 
 /** Плашка предлагает только языки с готовым текстом (kk — когда напишет копирайтер). */
-function languageOffers(): Partial<Record<Locale, SuggestCopy>> {
+function languageOffers(current: Locale): Partial<Record<Locale, SuggestCopy>> {
   const offers: Partial<Record<Locale, SuggestCopy>> = {};
   for (const l of routing.locales)
-    if (contentLanguage(l) === l) offers[l] = getMessages(l).languageSuggest;
+    if (l !== current && contentLanguage(l) === l) offers[l] = getMessages(l).languageSuggest;
   return offers;
 }
 
@@ -63,6 +64,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "common" });
   const whatsapp = await getTranslations({ locale, namespace: "whatsapp" });
+  // Предлагаются другие языки с готовым текстом.
+  const offers = languageOffers(locale);
 
   return (
     // lang — язык текста страницы (на /kk пока русский: казахские тексты — у копирайтера).
@@ -70,14 +73,20 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
       <head>
         {/* Атрибут data-reveal ставится до первой отрисовки — отсюда suppressHydrationWarning. */}
         <script dangerouslySetInnerHTML={{ __html: REVEAL_HEAD_SCRIPT }} />
+        {/* Плашка языка — решение до первой отрисовки (без сдвига вёрстки). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: languageSuggestScript(locale, Object.keys(offers) as Locale[]),
+          }}
+        />
       </head>
       <body>
         {/* Клиенту передаётся только язык (для ссылок), тексты рендерятся на сервере. */}
         <NextIntlClientProvider messages={null}>
           <SkipLink label={t("skipLink")} />
+          <LanguageSuggest offers={offers} />
           <CanvasRoot />
           <SoundController />
-          <LanguageSuggest current={locale} offers={languageOffers()} />
           <SiteHeader />
           {children}
           <SiteFooter />

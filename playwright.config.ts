@@ -23,8 +23,11 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
+    // Браузер — на русском, как у основной аудитории: на /ru плашки языка нет
+    // (англоязычный сценарий — отдельный тест в e2e/seo.spec.ts).
+    locale: "ru-RU",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], locale: "ru-RU" } }],
   // e2e проверяет production-сборку: перед запуском нужен `npm run build`.
   webServer: [
     {

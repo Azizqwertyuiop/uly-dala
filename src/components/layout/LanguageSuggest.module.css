@@ -1,17 +1,20 @@
+/* Плашка в потоке над хедером: видна только при html[data-suggest="<язык>"] (скрипт в <head>). */
 .suggest {
-  position: fixed;
-  z-index: var(--z-ui);
-  left: max(var(--grid-margin), env(safe-area-inset-left));
-  bottom: calc(var(--horizon-height) + var(--space-2) + env(safe-area-inset-bottom));
-  display: flex;
+  display: none;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1) var(--space-3);
-  max-width: min(460px, calc(100vw - 2 * var(--grid-margin)));
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) max(var(--grid-margin), env(safe-area-inset-left));
+  padding-top: max(var(--space-1), env(safe-area-inset-top));
   background: var(--kumys);
   color: var(--indigo);
   font-size: 15px;
+}
+
+:global(html[data-suggest="kk"]) .suggest[data-for="kk"],
+:global(html[data-suggest="ru"]) .suggest[data-for="ru"],
+:global(html[data-suggest="en"]) .suggest[data-for="en"] {
+  display: flex;
 }
 
 .text {
@@ -20,6 +23,8 @@
 
 .action,
 .dismiss {
+  display: inline-flex;
+  align-items: center;
   min-height: 44px;
   color: inherit;
   font: inherit;
