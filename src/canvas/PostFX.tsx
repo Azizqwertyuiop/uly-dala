@@ -105,7 +105,9 @@ export function PostFX({ msaa }: { msaa: boolean }) {
     const u = r.material.uniforms;
     const frame = grainFrame(ticker.time);
     u.uGrainSeed!.value = frame % 1024;
-    u.uNoiseOffset!.value = [(frame * 23) % 64, (frame * 41) % 64];
+    const noise = u.uNoiseOffset!.value as number[];
+    noise[0] = (frame * 23) % 64;
+    noise[1] = (frame * 41) % 64;
     u.uExposure!.value = grade.exposure;
     gl.setRenderTarget(r.target);
     gl.setClearColor(0x000000, 0);
@@ -166,7 +168,9 @@ export function PostFX({ msaa }: { msaa: boolean }) {
       u.tReal!.value = r.real.texture;
       u.uRealOn!.value = 1;
       u.uLight!.value = realLayer.light;
-      u.uLightRect!.value = [realLayer.lightTop * ratio, realLayer.lightBottom * ratio];
+      const rect = u.uLightRect!.value as number[];
+      rect[0] = realLayer.lightTop * ratio;
+      rect[1] = realLayer.lightBottom * ratio;
     } else {
       u.uRealOn!.value = 0;
     }

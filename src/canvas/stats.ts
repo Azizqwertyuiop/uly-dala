@@ -11,6 +11,8 @@ export const stageStats = {
   memoryMb: 0,
   introSkipped: false,
   frames: 0,
+  /** Рендер стоит: сцены на экране нет (раздел 12). */
+  idle: false,
   renderMs: 0,
   gpuMs: null as number | null,
   drawCalls: 0,
@@ -28,6 +30,8 @@ export const stageStats = {
     textOut: false,
     fps: 0,
     video: false,
+    /** Видео коня сейчас играет (декодируется). */
+    decoding: false,
   },
   camera: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, fov: 0, pose: 0 },
   /** Кадры реального слоя (архив): отслеживаются, загружены в GPU, видны. */

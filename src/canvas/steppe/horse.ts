@@ -11,6 +11,8 @@ import type { HorseClip } from "./dawn";
 export class HorseClips {
   private clips = new Map<HorseClip, AlphaVideo>();
   private current: HorseClip | null = null;
+  /** Коня видно: иначе (глава ушла, конь растворился) видео стоит — не декодируется. */
+  private active = true;
 
   constructor(
     private tier: Tier,
@@ -23,6 +25,15 @@ export class HorseClips {
       video = createAlphaVideo(assets.horse, this.tier, (texture) => {
         if (this.current === clip) this.onTexture(texture);
       });
+      // Заранее загруженный следующий клип не играет, пока не нужен (декодер не тратится).
+      const v = video.video;
+      v.addEventListener(
+        "playing",
+        () => {
+          if (this.current !== clip || !this.active) v.pause();
+        },
+        { once: true },
+      );
       this.clips.set(clip, video);
     }
     return video;
@@ -33,13 +44,28 @@ export class HorseClips {
     if (clip === this.current) return;
     this.current = clip;
     const video = this.ensure(clip);
-    if (clip !== "idle") {
-      video.video.currentTime = 0;
-      void video.video.play().catch(() => {});
-    }
+    this.clips.forEach((other, id) => id !== clip && other.video.pause());
+    if (clip !== "idle") video.video.currentTime = 0;
+    if (this.active) void video.video.play().catch(() => {});
     this.onTexture(video.texture);
     if (clip === "idle") this.ensure("look");
     if (clip === "look") this.ensure("walk");
+  }
+
+  /** Коня видно или нет: видео играет только когда видно. */
+  setActive(active: boolean) {
+    if (active === this.active) return;
+    this.active = active;
+    const video = this.current ? this.clips.get(this.current)?.video : null;
+    if (!video) return;
+    if (active) void video.play().catch(() => {});
+    else video.pause();
+  }
+
+  /** Видео сейчас декодируется (играет): для e2e — неактивная глава видео не тратит. */
+  get decoding() {
+    const video = this.current ? this.clips.get(this.current)?.video : null;
+    return !!video && !video.paused;
   }
 
   get playing() {

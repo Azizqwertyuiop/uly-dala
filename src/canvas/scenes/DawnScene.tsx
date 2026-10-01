@@ -20,6 +20,8 @@ import { steppeOverride, steppeReturn } from "../steppe/control";
 import {
   CAMERA_Z,
   computeDawnState,
+  type DawnInputs,
+  type DawnState,
   computeMorning,
   HORSE_DISTANCE,
   horseOffsetX,
@@ -42,6 +44,12 @@ import type { SceneProps } from "./registry";
 const DAWN_FOV = 2 * Math.atan(24 / (2 * 135)) * (180 / Math.PI);
 const HERO_SELECTOR = "[data-hero-text]";
 const HOVER_SELECTOR = "[data-dawn-hover]";
+
+/** Один объект на страницу: matchMedia в кадре — лишняя аллокация. */
+const reducedMotion =
+  typeof window === "undefined"
+    ? { matches: false }
+    : window.matchMedia("(prefers-reduced-motion: reduce)");
 
 function setLayer(root: Object3D) {
   root.traverse((node) => node.layers.set(STEPPE_LAYER));
@@ -147,6 +155,11 @@ export default function DawnScene({ data }: SceneProps) {
     textSent: false,
   });
   const morning = useRef({ daylight: 0, sunElevation: 0, groundFog: 0, exposure: 1 });
+  // Состояние кадра — в одних и тех же объектах (без аллокаций в кадре).
+  const dawnInputs = useRef<DawnInputs>({ local: 0, introTime: 0, waveEnabled: false });
+  const dawnState = useRef<DawnState>(
+    computeDawnState({ local: 0, introTime: 0, waveEnabled: false }),
+  );
   const dom = useRef<{ hero: HTMLElement | null; textOut: boolean | null; hint: boolean }>({
     hero: null,
     textOut: null,
@@ -155,7 +168,7 @@ export default function DawnScene({ data }: SceneProps) {
 
   useFrame((_, rawDelta) => {
     const dt = Math.min(rawDelta, 0.1);
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = reducedMotion.matches;
     const html = document.documentElement;
     const inDawn = progress.chapterId === "dawn";
     const local = inDawn ? progress.local : progress.chapterIndex > 0 ? 1 : 0;
@@ -170,11 +183,11 @@ export default function DawnScene({ data }: SceneProps) {
       if (i.wave) markWaveSeen();
     }
     const introTime = i.start === null ? null : ticker.time - i.start;
-    const s = computeDawnState({
-      local,
-      introTime: i.decided ? introTime : 0,
-      waveEnabled: i.wave,
-    });
+    const inputs = dawnInputs.current;
+    inputs.local = local;
+    inputs.introTime = i.decided ? introTime : 0;
+    inputs.waveEnabled = i.wave;
+    const s = computeDawnState(inputs, dawnState.current);
 
     // Проявление текста светом — по таймлайну (4,2 с) или сразу, если интро нет.
     if (i.decided && !i.textSent && s.textReveal) {
@@ -249,8 +262,11 @@ export default function DawnScene({ data }: SceneProps) {
     for (let k = 0; k < 3; k++) bladesCircle[k] = terrainCircle[k] = circle[k]!;
     world.shared.uPressed.value = pressed;
     world.terrain.material.uniforms.uPressed!.value = pressed;
-    world.shared.uWave.value = [s.waveFront, s.waveStrength];
-    world.terrain.material.uniforms.uWave!.value = [s.waveFront, s.waveStrength];
+    // Без аллокаций в кадре: значения — в те же массивы.
+    const waveBlades = world.shared.uWave.value;
+    const waveTerrain = world.terrain.material.uniforms.uWave!.value as number[];
+    waveBlades[0] = waveTerrain[0] = s.waveFront;
+    waveBlades[1] = waveTerrain[1] = s.waveStrength;
     world.shared.uSway.value = reduced ? 0 : 1;
     // Ближняя граница стеблей: при 135 мм трава не заслоняет кадр; при «орто» плана «Огня»
     // (угол < 10°) стебли растворяются совсем — сверху они шумят, план остаётся чистым.
@@ -269,10 +285,9 @@ export default function DawnScene({ data }: SceneProps) {
 
     // Рельеф следует за камерой с шагом 4 м.
     const cam = camera.position;
-    world.terrain.material.uniforms.uCenter!.value = [
-      Math.round(cam.x / 4) * 4,
-      Math.round(cam.z / 4) * 4,
-    ];
+    const center = world.terrain.material.uniforms.uCenter!.value as number[];
+    center[0] = Math.round(cam.x / 4) * 4;
+    center[1] = Math.round(cam.z / 4) * 4;
 
     // Ветер: курсор / палец + программные порывы, затухание по delta.
     const forwardX = -Math.sin(camera.rotation.y);
@@ -286,6 +301,8 @@ export default function DawnScene({ data }: SceneProps) {
 
     // Конь: правая треть кадра, ~275 м; уходит шагом, тонет в утреннем тумане.
     state.current?.clips.show(s.horseClip);
+    // Конь растворился (глава ушла) — видео на паузе: неактивные главы не считают циклы.
+    state.current?.clips.setActive(s.horseAlpha > 0.001);
     if (horseRoot.current) {
       const z = CAMERA_Z - HORSE_DISTANCE - s.horseWalk * 140;
       const x = horseX + s.horseWalk * 6;
@@ -315,6 +332,7 @@ export default function DawnScene({ data }: SceneProps) {
     stageStats.dawn.textOut = s.textOut;
     // Видео коня играет (иначе — постер: автоплей запрещён, энергосбережение).
     stageStats.dawn.video = state.current?.clips.playing ?? false;
+    stageStats.dawn.decoding = state.current?.clips.decoding ?? false;
   }, 0);
 
   return (

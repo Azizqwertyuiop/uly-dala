@@ -22,6 +22,7 @@ import { CameraRigState } from "./camera/rig";
 import { horizonPitch, stepBob } from "./steppe/dawn";
 import { DebugHud, DebugSplines } from "./debug";
 import { configureLoaders } from "./loaders";
+import { sceneOnScreen } from "./onScreen";
 import { PostFX, STEPPE_LAYER } from "./PostFX";
 import { DomImages } from "./real/DomImages";
 import { planScenes } from "./scenes/plan";
@@ -57,6 +58,7 @@ type Props = {
 };
 
 const NO_POINTER = { x: 0, y: 0 } as const;
+const frameOffsets = { pitch: 0, yaw: 0, y: 0 };
 const DAWN_FOV = 2 * Math.atan(24 / (2 * 135)) * (180 / Math.PI);
 
 /** Сколько ждать восстановления контекста, прежде чем уйти в fallback, с. */
@@ -84,6 +86,9 @@ export default function Stage(props: Props) {
           gl.setClearColor(0x000000, 0);
           // Статистику кадра (draw calls) считаем за весь кадр — сцена + пост-процесс.
           gl.info.autoReset = false;
+          // Проверка шейдеров (getProgramInfoLog) синхронна: процессор ждёт видеокарту на каждой
+          // новой программе. В продакшене — без неё; в ?debug — с ней (ошибки шейдеров в консоли).
+          gl.debug.checkShaderErrors = props.debug;
         }}
       >
         <Runtime {...props} quality={quality} onDowngrade={() => setQuality("medium")} />
@@ -114,6 +119,9 @@ function Runtime({
   useEffect(() => configureLoaders(gl, quality, profile), [gl, quality, profile]);
   const loading = useRef(new Set<string>());
   const compiled = useRef(new Set<string>());
+  // Сцена рисуется, только когда её шейдеры скомпилированы (в простое, параллельно):
+  // иначе первый кадр новой главы компилирует синхронно — зависание на сотни миллисекунд.
+  const [shown, setShown] = useState<ReadonlySet<string>>(() => new Set());
   const ready = useRef(false);
   const paused = useRef(false);
   const dayVersion = useRef(-1);
@@ -163,6 +171,8 @@ function Runtime({
           });
           return next;
         });
+        // Выгруженная сцена при повторной загрузке снова ждёт компиляции.
+        setShown((prev) => new Set([...prev].filter((id) => !plan.dispose.includes(id))));
       }
       for (const id of plan.load) {
         const entry = sceneRegistry.find((e) => e.id === id);
@@ -192,7 +202,13 @@ function Runtime({
       void gl.compileAsync(scene, camera).then(() => {
         pending.forEach((id) => compiled.current.add(id));
         stageStats.compiled = [...compiled.current];
+        setShown(new Set(compiled.current));
       });
+    // До первого кадра — сразу (иначе готовность ждала бы простоя), дальше — в простое.
+    if (!ready.current) {
+      compile();
+      return;
+    }
     return whenIdle(compile, 1500);
   }, [scenes, gl, scene, camera]);
 
@@ -212,8 +228,8 @@ function Runtime({
     if (ready.current || progress.chapterId === null) return;
     // Готово, когда на месте и глава, и мир, в котором она стоит (степь).
     const entry = sceneRegistry.find((e) => e.id === progress.chapterId);
-    if (scenes.has(progress.chapterId) && (entry?.requires ?? []).every((id) => scenes.has(id)))
-      markReady();
+    const need = [progress.chapterId, ...(entry?.requires ?? [])];
+    if (need.every((id) => scenes.has(id) && shown.has(id))) markReady();
   }); // проверка после каждого обновления набора сцен
 
   // ---------- Кадр: камера (damping) и рендер (render) ----------
@@ -264,11 +280,8 @@ function Runtime({
         input.pointerType === "touch" ? NO_POINTER : input,
         tempo.cameraSmoothing,
         reduced.matches,
-        {
-          pitch,
-          yaw,
-          y,
-        },
+        // Без аллокаций в кадре: один объект сдвигов на всё время.
+        Object.assign(frameOffsets, { pitch, yaw, y }),
         scenePose.active ? scenePose : null,
       );
       rig.out.fov = sceneFov(rig.out.fov, progress.camera, aspect);
@@ -290,8 +303,20 @@ function Runtime({
     };
 
     let cleared = false;
+    let idleCleared = false;
     const offRender = ticker.add("render", (dt, time) => {
       if (!ready.current || paused.current) return;
+      // Статика: сцены на экране нет (бриф, футер, тексты) — один пустой кадр и стоп.
+      if (!sceneOnScreen()) {
+        if (idleCleared) {
+          stageStats.idle = true;
+          return;
+        }
+        idleCleared = true;
+      } else {
+        idleCleared = false;
+      }
+      stageStats.idle = false;
       // Страница без сцен: один пустой кадр (стереть прошлую сцену) — и дальше не рисуем.
       if (progress.chapterId === null) {
         if (!cleared) advance(time * 1000);
@@ -424,7 +449,11 @@ function Runtime({
         const loaded = scenes.get(entry.id);
         if (!loaded) return null;
         const Scene = loaded.Component;
-        return <Scene key={entry.id} anchor={chapterAnchor(entry.index)} data={loaded.data} />;
+        return (
+          <group key={entry.id} visible={shown.has(entry.id)}>
+            <Scene anchor={chapterAnchor(entry.index)} data={loaded.data} />
+          </group>
+        );
       })}
       <DomImages />
       <PostFX msaa={quality === "high"} />

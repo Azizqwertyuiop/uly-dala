@@ -23,6 +23,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run check
+      # Lighthouse CI на каждый PR (раздел 12): LCP, CLS, вес, доступность, SEO, лучшие практики.
+      - run: npm run lhci
+        if: github.event_name == 'pull_request'
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -30,4 +33,5 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            .lighthouseci/
           retention-days: 7

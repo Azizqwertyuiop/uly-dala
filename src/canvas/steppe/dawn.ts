@@ -67,7 +67,11 @@ export type DawnState = {
 
 const smooth = (edge0: number, edge1: number, x: number) => MathUtils.smoothstep(x, edge0, edge1);
 
-export function computeDawnState({ local, introTime, waveEnabled }: DawnInputs): DawnState {
+/** Пишет в out, если он передан (кадр — без аллокаций); иначе — новый объект. */
+export function computeDawnState(
+  { local, introTime, waveEnabled }: DawnInputs,
+  out?: DawnState,
+): DawnState {
   const t = introTime ?? Infinity;
   const done = t >= INTRO.end;
 
@@ -81,21 +85,21 @@ export function computeDawnState({ local, introTime, waveEnabled }: DawnInputs):
     waveStrength = Math.sin(w * Math.PI);
   }
 
-  return {
-    skyReveal: smooth(INTRO.sky[0], INTRO.sky[1], t),
-    horseAlpha: smooth(INTRO.horse[0], INTRO.horse[1], t) * (1 - smooth(0.85, 1, local)),
-    waveFront,
-    waveStrength,
-    sunElevation: MathUtils.lerp(-1, 3, smooth(0, 1, local)),
-    exposure: MathUtils.lerp(0.9, 1.35, smooth(0, 1, local)),
-    groundFog: MathUtils.lerp(1, 0.25, smooth(0.1, 0.8, local)),
-    textOut: local > 0.3,
-    textReveal: t >= INTRO.text,
-    horseClip: local < 0.35 ? "idle" : local < 0.55 ? "look" : "walk",
-    horseWalk: smooth(0.55, 1, local),
-    hintVisible: introTime !== null && t >= INTRO.hint && local < 0.02,
-    introDone: done,
-  };
+  const o = out ?? ({} as DawnState);
+  o.skyReveal = smooth(INTRO.sky[0], INTRO.sky[1], t);
+  o.horseAlpha = smooth(INTRO.horse[0], INTRO.horse[1], t) * (1 - smooth(0.85, 1, local));
+  o.waveFront = waveFront;
+  o.waveStrength = waveStrength;
+  o.sunElevation = MathUtils.lerp(-1, 3, smooth(0, 1, local));
+  o.exposure = MathUtils.lerp(0.9, 1.35, smooth(0, 1, local));
+  o.groundFog = MathUtils.lerp(1, 0.25, smooth(0.1, 0.8, local));
+  o.textOut = local > 0.3;
+  o.textReveal = t >= INTRO.text;
+  o.horseClip = local < 0.35 ? "idle" : local < 0.55 ? "look" : "walk";
+  o.horseWalk = smooth(0.55, 1, local);
+  o.hintVisible = introTime !== null && t >= INTRO.hint && local < 0.02;
+  o.introDone = done;
+  return o;
 }
 
 // ---------------------------------------------------------------------------

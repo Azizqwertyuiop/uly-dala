@@ -50,6 +50,11 @@ type Item = {
 };
 
 const SELECTOR = "img[data-gl-image]";
+/** Один объект на страницу: matchMedia в кадре — лишняя аллокация. */
+const reducedMotion =
+  typeof window === "undefined"
+    ? { matches: false }
+    : window.matchMedia("(prefers-reduced-motion: reduce)");
 
 function createMaterial(texture: Texture, kind: Transition) {
   return new ShaderMaterial({
@@ -201,7 +206,7 @@ export function DomImages() {
     world.time += dt;
     const vh = progress.viewportHeight || size.height;
     const scrollY = progress.scrollY;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = reducedMotion.matches;
     let visible = 0;
     let loaded = 0;
     for (const item of world.items.values()) {
@@ -261,7 +266,10 @@ export function DomImages() {
       const tex = item.texture!.image as { width: number; height: number };
       const rect = item.width / Math.max(1, item.height);
       const file = tex.width / Math.max(1, tex.height);
-      u.uCover!.value = rect > file ? [1, file / rect] : [rect / file, 1];
+      // Без аллокаций в кадре: пишем в тот же массив.
+      const cover = u.uCover!.value as number[];
+      cover[0] = rect > file ? 1 : rect / file;
+      cover[1] = rect > file ? file / rect : 1;
       mesh.scale.set(item.width, item.height, 1);
       mesh.position.set(item.left + item.width / 2, -(topOnScreen + item.height / 2), 0);
     }

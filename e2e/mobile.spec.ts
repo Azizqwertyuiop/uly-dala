@@ -108,22 +108,37 @@ test.describe("телефон: одной рукой", () => {
     await expectThumb(page, /^Приехать на просмотр$/, page.locator("[data-world-stage]"));
   });
 
-  test("адресная строка (меняется только высота окна) не дёргает прогресс", async ({ page }) => {
+  test("адресная строка не дёргает прогресс: высота — из svh, ресайз без смены ширины — без перемера", async ({
+    page,
+  }) => {
+    // Настоящая адресная строка меняет innerHeight, но не svh. В эмуляции смена размера окна
+    // меняет и svh — поэтому проверяем механизм: высота экрана для прогресса — пробник 100svh,
+    // а событие resize с той же шириной границы глав не пересчитывает.
     await page.goto("/ru?quality=medium");
     await scrollTrack(page, "day", 0.5);
-    await page.waitForTimeout(600);
     const read = () =>
       page.evaluate(() => {
-        const p = (window as unknown as { __progress: { track: number; chapterId: string } })
-          .__progress;
-        return { track: p.track, chapter: p.chapterId, y: window.scrollY };
+        const p = (
+          window as unknown as {
+            __progress?: { track: number; chapterId: string | null; viewportHeight: number };
+          }
+        ).__progress;
+        const probe = document.getElementById("svh-probe")?.getBoundingClientRect().height ?? 0;
+        return {
+          track: p?.track ?? 0,
+          chapter: p?.chapterId ?? null,
+          vh: p?.viewportHeight,
+          probe,
+        };
       });
+    await expect.poll(async () => (await read()).chapter, { timeout: 10_000 }).toBe("day");
     const before = await read();
-    // Адресная строка спряталась: окно выше на 56 px, ширина та же.
-    await page.setViewportSize({ width: PHONE.width, height: PHONE.height + 56 });
-    await page.waitForTimeout(400);
+    expect(before.vh).toBe(before.probe);
+    // Адресная строка спряталась: браузер шлёт resize, ширина та же.
+    await page.evaluate(() => window.dispatchEvent(new Event("resize")));
+    await page.waitForTimeout(300);
     const after = await read();
-    expect(after.chapter).toBe(before.chapter);
+    expect(after.chapter).toBe("day");
     expect(Math.abs(after.track - before.track)).toBeLessThan(0.005);
   });
 
