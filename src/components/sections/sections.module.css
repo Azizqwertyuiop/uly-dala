@@ -707,13 +707,14 @@
     white-space: nowrap;
   }
 
+  /* Подложка плотная с верхнего края: табы и время — у верха блока (≥ 4.5:1 над площадкой). */
   :global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead::before,
   :global(html[data-cinematic]:not([data-quality="fallback"])) .dayTabs::before {
-    inset: -10% calc(-1 * var(--grid-margin));
+    inset: -16% calc(-1 * var(--grid-margin)) -10%;
     background: linear-gradient(
       180deg,
       color-mix(in srgb, var(--felt) 0%, transparent) 0%,
-      color-mix(in srgb, var(--felt) 92%, transparent) 16%,
+      color-mix(in srgb, var(--felt) 94%, transparent) 9%,
       var(--felt) 100%
     );
     mask-image: none;
@@ -1215,12 +1216,15 @@
 }
 
 :global(html[data-cinematic]:not([data-quality="fallback"])) .worldHead::before {
-  inset: -30% -40% -30% calc(-1 * var(--grid-margin));
-  background: radial-gradient(
-    ellipse at 20% 50%,
-    color-mix(in srgb, var(--indigo) 88%, transparent) 30%,
-    color-mix(in srgb, var(--indigo) 0%, transparent) 72%
+  /* Плотная до конца строки CTA (обе ссылки ≥ 4.5:1 над фазендой), затем растворяется. */
+  inset: -30% -45% -30% calc(-1 * var(--grid-margin));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--indigo) 92%, transparent) 0%,
+    color-mix(in srgb, var(--indigo) 88%, transparent) 66%,
+    color-mix(in srgb, var(--indigo) 0%, transparent) 100%
   );
+  mask-image: linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
 }
 
 :global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock::before {
@@ -1261,12 +1265,13 @@
     bottom: auto;
   }
 
+  /* Плотная до конца плашки (подпись вместимости — внизу): растворяется уже ниже неё. */
   :global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock::before {
-    inset: calc(-1 * (72px + var(--space-4))) calc(-1 * var(--grid-margin)) -40%;
+    inset: calc(-1 * (72px + var(--space-4))) calc(-1 * var(--grid-margin)) -60%;
     background: linear-gradient(
       180deg,
       var(--indigo) 0%,
-      color-mix(in srgb, var(--indigo) 86%, transparent) 55%,
+      color-mix(in srgb, var(--indigo) 90%, transparent) 70%,
       color-mix(in srgb, var(--indigo) 0%, transparent) 100%
     );
   }

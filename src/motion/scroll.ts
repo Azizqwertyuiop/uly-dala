@@ -55,7 +55,32 @@ export async function startScroll(): Promise<ScrollRuntime> {
       prevent: (node) => node.closest("dialog") !== null,
     });
     lenis.on("scroll", ScrollTrigger.update);
-    offLenis = ticker.add("input", (_dt, time) => lenis?.raf(time * 1000));
+    const offRaf = ticker.add("input", (_dt, time) => lenis?.raf(time * 1000));
+    // Фокус с клавиатуры (WCAG 2.4.11): страница встаёт к элементу сразу, без плавного догона —
+    // иначе Lenis на полсекунды уводит сфокусированный элемент за край экрана.
+    let keyboard = false;
+    const onKey = (e: KeyboardEvent) => (keyboard = e.key === "Tab" || e.key.startsWith("Arrow"));
+    const onPointer = () => (keyboard = false);
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target;
+      if (!keyboard || !lenis || !(el instanceof HTMLElement) || el.closest("dialog")) return;
+      const r = el.getBoundingClientRect();
+      if (r.top >= 72 && r.bottom <= window.innerHeight) return; // на экране — прокрутку не трогаем
+      lenis.scrollTo(el, {
+        immediate: true,
+        force: true,
+        offset: -Math.round(window.innerHeight / 3),
+      });
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    window.addEventListener("pointerdown", onPointer, { capture: true, passive: true });
+    document.addEventListener("focusin", onFocus);
+    offLenis = () => {
+      offRaf();
+      window.removeEventListener("keydown", onKey, { capture: true });
+      window.removeEventListener("pointerdown", onPointer, { capture: true });
+      document.removeEventListener("focusin", onFocus);
+    };
   };
 
   const disableLenis = () => {
@@ -98,9 +123,10 @@ export async function startScroll(): Promise<ScrollRuntime> {
  * Прокрутка страницы к y (px): через Lenis на десктопе, нативно — на тач;
  * при prefers-reduced-motion — мгновенно. Для «пропустить сцену» и табов «Дня».
  */
-export function scrollToY(y: number): void {
+export function scrollToY(y: number, opts: { immediate?: boolean } = {}): void {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const immediate = reduced || !!opts.immediate;
   const lenis = runtime?.lenis;
-  if (lenis) lenis.scrollTo(y, { immediate: reduced, duration: 1.1 });
-  else window.scrollTo({ top: y, behavior: reduced ? "auto" : "smooth" });
+  if (lenis) lenis.scrollTo(y, { immediate, force: true, duration: 1.1 });
+  else window.scrollTo({ top: y, behavior: immediate ? "auto" : "smooth" });
 }

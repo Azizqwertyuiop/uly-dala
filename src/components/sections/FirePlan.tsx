@@ -46,13 +46,13 @@ export function FirePlan({ sets, labels, cta }: Props) {
   useEffect(() => setFireSet(set), [set]);
   useEffect(() => () => setFireHover(null), []);
 
-  /** Фокус на плане, пока камера у очага: доехать до плана. */
+  /** Фокус на плане, пока камера у очага: доехать до плана (сразу — фокус не ждёт анимации). */
   const ensurePlan = () => {
     const stage = document.querySelector<HTMLElement>("[data-fire-stage]");
     const track = chapterTrack("fire");
     if (!stage || !track || stage.dataset.phase === "plan") return;
     if (!document.documentElement.hasAttribute("data-cinematic")) return;
-    scrollToY(track.top + PLAN_AT * (track.height - progress.viewportHeight));
+    scrollToY(track.top + PLAN_AT * (track.height - progress.viewportHeight), { immediate: true });
   };
 
   const hover = (id: string | null) => setFireHover(id ?? pinned);

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageShell, pageStyles } from "@/components/layout/PageShell";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { resolveLocale } from "@/lib/intl/locale";
 
 const sections = ["operator", "data", "purpose", "storage", "rights"] as const;
@@ -12,7 +13,14 @@ export async function generateMetadata({
 }: PageProps<"/[locale]/privacy">): Promise<Metadata> {
   const locale = resolveLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: "privacyPage" });
-  return { title: t("metaTitle") };
+  return pageMetadata({
+    locale,
+    path: "/privacy",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
+    image: "return",
+    imageAlt: t("title"),
+  });
 }
 
 /* TODO(legal): окончательный текст — юрист заказчика (CLAUDE.md, раздел 14). */

@@ -7,11 +7,16 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CanvasRoot } from "@/components/layout/CanvasRoot";
 import { SoundController } from "@/components/layout/SoundController";
+import { LanguageSuggest, type SuggestCopy } from "@/components/layout/LanguageSuggest";
+import { getMessages } from "@/content/messages";
 import { MotionBootstrap } from "@/components/layout/MotionBootstrap";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { UiBootstrap } from "@/components/layout/UiBootstrap";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
 import { contacts, whatsappHref } from "@/content/contacts";
+import { contentLanguage } from "@/content/messages";
+import type { Locale } from "@/lib/i18n";
+import { siteUrl } from "@/lib/seo/site";
 import { resolveLocale } from "@/lib/intl/locale";
 import { routing } from "@/lib/intl/routing";
 import { REVEAL_HEAD_SCRIPT } from "@/motion/reveal-head";
@@ -31,6 +36,14 @@ export const viewport: Viewport = {
   themeColor: "#1C2230",
 };
 
+/** Плашка предлагает только языки с готовым текстом (kk — когда напишет копирайтер). */
+function languageOffers(): Partial<Record<Locale, SuggestCopy>> {
+  const offers: Partial<Record<Locale, SuggestCopy>> = {};
+  for (const l of routing.locales)
+    if (contentLanguage(l) === l) offers[l] = getMessages(l).languageSuggest;
+  return offers;
+}
+
 // Только kk, ru, en; любой другой первый сегмент пути — 404.
 export const dynamicParams = false;
 
@@ -41,7 +54,8 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Promise<Metadata> {
   const locale = resolveLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: "meta" });
-  return { title: t("title"), description: t("description") };
+  // База для всех страниц; страницы задают свои title, description, canonical, hreflang, OG.
+  return { metadataBase: new URL(siteUrl()), title: t("title"), description: t("description") };
 }
 
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
@@ -51,7 +65,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
   const whatsapp = await getTranslations({ locale, namespace: "whatsapp" });
 
   return (
-    <html lang={locale} className={fontVariables} suppressHydrationWarning>
+    // lang — язык текста страницы (на /kk пока русский: казахские тексты — у копирайтера).
+    <html lang={contentLanguage(locale)} className={fontVariables} suppressHydrationWarning>
       <head>
         {/* Атрибут data-reveal ставится до первой отрисовки — отсюда suppressHydrationWarning. */}
         <script dangerouslySetInnerHTML={{ __html: REVEAL_HEAD_SCRIPT }} />
@@ -62,6 +77,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           <SkipLink label={t("skipLink")} />
           <CanvasRoot />
           <SoundController />
+          <LanguageSuggest current={locale} offers={languageOffers()} />
           <SiteHeader />
           {children}
           <SiteFooter />

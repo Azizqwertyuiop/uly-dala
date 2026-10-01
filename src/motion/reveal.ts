@@ -1,5 +1,4 @@
 import { duration } from "./tokens";
-import { ticker } from "./ticker";
 
 /*
  * «Проявление светом» (CLAUDE.md, раздел 5) — фирменный приём вместо выезда строк из маски.
@@ -36,31 +35,18 @@ export function startReveal(): () => void {
   }
   html.dataset.revealJs = "";
 
-  const pending = new Map<HTMLElement, number>();
-  let offTimer: (() => void) | null = null;
-
-  // Страховка — по времени ticker (приостанавливается вместе со скрытой вкладкой).
-  const ensureTimer = () => {
-    if (offTimer) return;
-    offTimer = ticker.add("render", (_dt, time) => {
-      pending.forEach((deadline, el) => {
-        if (time >= deadline) {
-          finish(el);
-          pending.delete(el);
-        }
-      });
-      if (pending.size === 0) {
-        offTimer?.();
-        offTimer = null;
-      }
-    });
-  };
-
+  // Страховка — по настоящим часам (раздел 5: «через 1,5 с текст принудительно полностью виден»).
+  // Не по времени ticker: его шаг ограничен 0,1 с, и на медленном устройстве (кадр — секунда)
+  // 1,5 с ticker растягивались бы на 15 с — всё это время текст оставался бы приглушённым.
+  const timers = new Set<number>();
   const run = (el: HTMLElement) => {
     el.dataset.revealState = "run";
     el.addEventListener("animationend", () => finish(el), { once: true });
-    pending.set(el, ticker.time + REVEAL_SAFETY_S);
-    ensureTimer();
+    const id = window.setTimeout(() => {
+      timers.delete(id);
+      finish(el);
+    }, REVEAL_SAFETY_S * 1000);
+    timers.add(id);
   };
 
   const observer = new IntersectionObserver(
@@ -135,6 +121,6 @@ export function startReveal(): () => void {
     stageObserver.disconnect();
     window.removeEventListener("uly:intro-text", release);
     window.clearTimeout(safety);
-    offTimer?.();
+    timers.forEach((id) => window.clearTimeout(id));
   };
 }

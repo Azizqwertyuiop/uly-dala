@@ -21,6 +21,8 @@ module.exports = {
         "http://localhost:3300/ru/fazenda",
         "http://localhost:3300/ru/cases/kudalyk-two-families",
         "http://localhost:3300/ru/services/conference",
+        "http://localhost:3300/en/services/wedding",
+        "http://localhost:3300/kk/services/kudalyk",
       ],
       numberOfRuns: 3,
       settings: {

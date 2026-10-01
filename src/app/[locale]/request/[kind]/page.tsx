@@ -6,6 +6,7 @@ import { getBriefProps } from "@/components/brief/briefProps";
 import { PageShell, pageStyles } from "@/components/layout/PageShell";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { resolveLocale } from "@/lib/intl/locale";
 
 const kinds = ["menu", "visit"] as const;
@@ -27,11 +28,17 @@ async function load(params: PageProps<"/[locale]/request/[kind]">["params"]) {
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/request/[kind]">): Promise<Metadata> {
-  const { kind, brief } = await load(params);
-  return {
+  const { locale, kind, brief } = await load(params);
+  // Служебная форма для CTA без JS — не для поиска (noindex), но с canonical и hreflang.
+  return pageMetadata({
+    locale,
+    path: `/request/${kind}`,
     title: `${brief.copy.variants[kind].title} — ULY DALA`,
-    robots: { index: false, follow: true },
-  };
+    description: brief.copy.variants[kind].lead,
+    image: kind === "menu" ? "fire" : "world",
+    imageAlt: brief.copy.variants[kind].title,
+    index: false,
+  });
 }
 
 /*

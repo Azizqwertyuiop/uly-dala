@@ -11,10 +11,10 @@ const nextConfig: NextConfig = {
     // Своя 404 для адресов вне /kk, /ru, /en (src/app/global-not-found.tsx).
     globalNotFound: true,
   },
-  async redirects() {
-    // Корень ведёт на язык по умолчанию. По Accept-Language НЕ перенаправляем (CLAUDE.md, раздел 11):
-    // позже здесь появится плашка с предложением языка.
-    return [{ source: "/", destination: `/${defaultLocale}`, permanent: false }];
+  async rewrites() {
+    // Корень без перенаправления (CLAUDE.md, раздел 11): / показывает страницу языка по умолчанию,
+    // canonical — /ru (без дубля). Язык браузера предлагает плашка (LanguageSuggest), а не редирект.
+    return { beforeFiles: [{ source: "/", destination: `/${defaultLocale}` }] };
   },
 };
 

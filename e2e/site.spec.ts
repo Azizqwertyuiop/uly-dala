@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { contentLanguage } from "../src/content/messages";
 import { allPaths, chapterIds, formatSlugs, locales } from "./pages";
 
 test.describe("главная: все главы на трёх языках", () => {
@@ -38,7 +39,8 @@ test.describe("внутренние страницы на трёх языках"
       test(path, async ({ page }) => {
         const response = await page.goto(path);
         expect(response?.status()).toBe(200);
-        await expect(page.locator("html")).toHaveAttribute("lang", locale);
+        // lang — язык текста (на /kk пока русский, WCAG 3.1.1).
+        await expect(page.locator("html")).toHaveAttribute("lang", contentLanguage(locale));
         await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
         await expect(page.locator("main#main")).toHaveCount(1);
       });

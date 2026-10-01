@@ -36,9 +36,14 @@ html[data-canvas="ready"] picture:has(> img[data-gl="ready"]) {
   background: transparent;
 }
 
-/* 3D-сцена готова — статичные кадры глав уступают ей место (размер сохраняется). */
+/*
+ * 3D-сцена готова — статичные кадры глав уступают ей место (размер сохраняется).
+ * Прозрачность, а не visibility: hidden — описание сцены (alt / aria-label) остаётся
+ * в дереве доступности: холст aria-hidden, а скринридер читает описание (раздел 10, WCAG 1.1.1).
+ */
 html[data-canvas="ready"] [data-scene-slot] {
-  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Открытое меню блокирует прокрутку страницы под ним. */

@@ -61,3 +61,22 @@
     width: 104px;
   }
 }
+
+/* Увеличение 400% (окно 320 CSS px, WCAG 1.4.10): три элемента хедера — в одну строку без прокрутки вбок. */
+@media (max-width: 340px) {
+  .bar {
+    gap: var(--space-1);
+  }
+
+  .wordmark {
+    width: 88px;
+  }
+
+  .actions {
+    gap: var(--space-1);
+  }
+
+  .actions :where(a, button) {
+    font-size: 14px;
+  }
+}

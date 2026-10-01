@@ -78,6 +78,7 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
     setSwitched(true);
   }, [active]);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const root = useRef<HTMLDivElement>(null);
   const baseId = useId();
   const pending = useRef<{ index: number; until: number } | null>(null);
   const order = items.map((i) => i.slug).join(",");
@@ -102,6 +103,10 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
         items.length - 1,
         Math.floor(Math.min(progress.track, 0.9999) * items.length),
       );
+      // Фокус клавиатуры внутри табов — формат меняют стрелки, а не скролл. Иначе браузер,
+      // подкручивая страницу к сфокусированной ссылке, переключал формат, панель со ссылкой
+      // скрывалась и фокус терялся (WCAG 2.4.3).
+      if (root.current?.contains(document.activeElement)) return;
       const p = pending.current;
       if (p) {
         // Прокрутка по клику ещё едет — не перебиваем выбранный таб промежуточными состояниями.
@@ -161,6 +166,7 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
 
   return (
     <div
+      ref={root}
       className={styles.tabs}
       data-day-state={enhanced ? active : undefined}
       data-switched={switched ? "" : undefined}

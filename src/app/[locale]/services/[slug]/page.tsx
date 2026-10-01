@@ -9,6 +9,9 @@ import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
 import { findFormat, formatImage, formats } from "@/content/formats";
 import { Link } from "@/lib/intl/navigation";
+import { faqLd } from "@/lib/seo/jsonld";
+import { pageMetadata } from "@/lib/seo/metadata";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { resolveLocale } from "@/lib/intl/locale";
 
 export const dynamicParams = false;
@@ -30,7 +33,14 @@ export async function generateMetadata({
 }: PageProps<"/[locale]/services/[slug]">): Promise<Metadata> {
   const { locale, format } = await load(params);
   const t = await getTranslations({ locale, namespace: "formats" });
-  return { title: `${t(`${format.key}.title`)} — ULY DALA`, description: t(`${format.key}.lead`) };
+  return pageMetadata({
+    locale,
+    path: `/services/${format.slug}`,
+    title: t(`${format.key}.metaTitle`),
+    description: t(`${format.key}.metaDescription`),
+    image: format.slug,
+    imageAlt: t(`${format.key}.sceneAlt`),
+  });
 }
 
 /** Страница формата: /[locale]/services/[slug]. */
@@ -40,6 +50,11 @@ export default async function ServicePage({ params }: PageProps<"/[locale]/servi
   const t = await getTranslations("formats");
   const page = await getTranslations("servicePage");
   const { key, slug } = format;
+  // Частые вопросы — видимым текстом на странице и в FAQPage (раздел 11; скрытого текста нет).
+  const faq = ([1, 2, 3] as const).map((n) => ({
+    q: t(`${key}.faq.q${n}`),
+    a: t(`${key}.faq.a${n}`),
+  }));
 
   return (
     <PageShell>
@@ -79,6 +94,21 @@ export default async function ServicePage({ params }: PageProps<"/[locale]/servi
           </BriefLink>
         </div>
       </section>
+
+      <section className={pageStyles.section} aria-labelledby="faq-title">
+        <h2 id="faq-title" className={type.subTitle}>
+          {page("faqLabel")}
+        </h2>
+        <dl className={layout.stack}>
+          {faq.map(({ q, a }) => (
+            <div key={q} className={layout.stack}>
+              <dt className={type.lead}>{q}</dt>
+              <dd className={type.body}>{a}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <JsonLd data={faqLd(faq)} />
 
       <nav className={pageStyles.section} aria-labelledby="other-formats">
         <h2 id="other-formats" className={type.subTitle}>

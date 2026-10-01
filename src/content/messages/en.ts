@@ -26,6 +26,12 @@ const en: Messages = {
     ru: "Русский",
     en: "English",
   },
+  languageSuggest: {
+    label: "Site language",
+    text: "This site is available in English.",
+    action: "Switch to English",
+    dismiss: "Close",
+  },
   menu: {
     title: "Menu",
     open: "Menu",
@@ -137,13 +143,25 @@ const en: Messages = {
     conference: {
       title: "Conference",
       phrase: "An LED wall in a tent in the middle of the steppe.",
-      lead: "Conferences and business events at our own venue near Almaty — with our own equipment, our own kitchen and one team from the idea to the last guest.",
+      lead: "Conference organization and business events at our own venue near Almaty — with our own equipment, our own kitchen and one team from the idea to the last guest.",
       facts: {
         one: "Our own sound, light and LED screens — no contractors.",
         two: "Stage, registration and timing — one team.",
         three: "Coffee breaks and lunch by our in-house chef.",
       },
       cta: "Discuss a conference",
+      metaTitle: "Conference organization in Almaty — ULY DALA",
+      metaDescription:
+        "Conference organization and business events near Almaty: our own venue in the steppe, our own sound, light and LED screens, an in-house chef.",
+      // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
+      faq: {
+        q1: "Can the conference run on your equipment?",
+        a1: "Yes. Sound, light and LED screens are our own equipment — no subcontractors.",
+        q2: "Where does the conference take place?",
+        a2: "At our venue in the steppe near Almaty — in a tent or a yurt — or at a venue of your choice.",
+        q3: "Who handles coffee breaks and lunch?",
+        a3: "Our in-house chef and our own kitchen: we cook on site.",
+      },
       sceneAlt:
         "A tent in the steppe with an LED wall and rows of chairs inside; grass and the horizon visible through the opening.",
     },
@@ -157,18 +175,42 @@ const en: Messages = {
         three: "Table setting in the style of the event.",
       },
       cta: "Discuss a coffee break",
+      metaTitle: "Coffee breaks for conferences in Almaty — ULY DALA",
+      metaDescription:
+        "Coffee breaks for conferences and business meetings in Almaty: our own coffee machines, pastries and snacks by our in-house chef.",
+      // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
+      faq: {
+        q1: "What does a coffee break include?",
+        a1: "Coffee from our own machines, pastries and snacks made by our in-house chef.",
+        q2: "Can you serve a coffee break at another venue?",
+        a2: "Yes, we bring the equipment and the team to your venue in Almaty.",
+        q3: "How do we agree on the menu?",
+        a3: "Send us a brief — we will send a menu for your event.",
+      },
       sceneAlt: "A table with porcelain cups and copper coffee pots, steam rising above the cups.",
     },
     teamBuilding: {
       title: "Team building",
       phrase: "The open steppe — a playing field for your team.",
-      lead: "Team building tailored to your team in the open spaces of the venue — with a scenario, equipment and lunch cooked over fire.",
+      lead: "Team building tailored to your team in the open spaces of the venue near Almaty — with a scenario, equipment and lunch cooked over fire.",
       facts: {
         one: "A scenario built around your team’s goals.",
         two: "Our own venue: no need to find and book a location.",
         three: "Lunch over fire by our in-house chef.",
       },
       cta: "Discuss team building",
+      metaTitle: "Team building near Almaty — ULY DALA",
+      metaDescription:
+        "Team building in the open steppe near Almaty: a scenario built around your team, our own equipment and lunch cooked over fire.",
+      // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
+      faq: {
+        q1: "Where does team building take place?",
+        a1: "In the open spaces of our venue in the steppe near Almaty.",
+        q2: "Who writes the scenario?",
+        a2: "We do: the scenario, equipment and lunch over fire — all in one team.",
+        q3: "What if the weather turns?",
+        a3: "The venue has covered areas — a tent and a yurt — so the programme continues indoors.",
+      },
       sceneAlt: "The open steppe by day, a field for a team game marked out on the grass.",
     },
     kudalyk: {
@@ -181,19 +223,43 @@ const en: Messages = {
         three: "We take care of everything — you stay with your family.",
       },
       cta: "Discuss a kudalyk",
+      metaTitle: "Kudalyk in Almaty — ceremony planning | ULY DALA",
+      metaDescription:
+        "Kudalyk planning in Almaty: the order of the day, a dastarkhan by our in-house chef and our own venue in the steppe.",
+      // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
+      faq: {
+        q1: "What is kudalyk?",
+        a1: "Kudalyk is a traditional Kazakh engagement ceremony — the day two families become one.",
+        q2: "Do you know the order of the ceremony?",
+        a2: "Yes. We know the order of this day and take care of the preparations, so you can be with your loved ones.",
+        q3: "Who prepares the dastarkhan?",
+        a3: "Our in-house chef: traditional dishes are cooked on site.",
+      },
       sceneAlt:
         "White cloth on a long dastarkhan, its two halves coming together. Only hands and tableware are in the frame.",
     },
     wedding: {
       title: "Wedding",
       phrase: "Evening light over the steppe.",
-      lead: "Weddings at our own venue in the steppe: decor, light, sound and banquet — all in-house, with one coordinator.",
+      lead: "Weddings at our own venue in the steppe near Almaty: decor, light, sound and banquet — all in-house, with one coordinator.",
       facts: {
         one: "Venue, decor, light and sound — all our own.",
         two: "A banquet by our in-house chef.",
         three: "One coordinator from the idea to the last guest.",
       },
       cta: "Discuss a wedding",
+      metaTitle: "Wedding venue near Almaty — ULY DALA",
+      metaDescription:
+        "A wedding at our own venue in the steppe near Almaty: decor, light, sound and banquet all in-house, with one coordinator.",
+      // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
+      faq: {
+        q1: "Where can we hold a wedding near Almaty?",
+        a1: "At our own venue in the steppe near Almaty — or at a venue of your choice.",
+        q2: "What do you take care of?",
+        a2: "Decor, light, sound and banquet — all in-house, with one coordinator from the first meeting to the last guest.",
+        q3: "Can we visit the venue first?",
+        a3: "Yes, come and see the venue — we will agree on a time.",
+      },
       sceneAlt: "The evening steppe, a long set table under strings of warm lights.",
     },
     privateParty: {
@@ -206,6 +272,18 @@ const en: Messages = {
         three: "The venue is yours alone.",
       },
       cta: "Discuss a celebration",
+      metaTitle: "Private party venue near Almaty — ULY DALA",
+      metaDescription:
+        "Anniversaries, birthdays and family celebrations at our venue in the steppe near Almaty: kitchen, equipment and full-cycle service.",
+      // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
+      faq: {
+        q1: "What celebrations do you host?",
+        a1: "Anniversaries, birthdays and family celebrations.",
+        q2: "Where does the party take place?",
+        a2: "At our venue in the steppe near Almaty or at a venue of your choice.",
+        q3: "Who cooks?",
+        a3: "Our in-house chef and our own kitchen.",
+      },
       sceneAlt: "A small table by a yurt in warm light, the empty steppe all around.",
     },
   },
@@ -442,6 +520,7 @@ const en: Messages = {
   },
   servicePage: {
     factsLabel: "In short",
+    faqLabel: "Frequently asked questions",
     otherFormats: "Other formats",
   },
   fazendaPage: {
@@ -461,6 +540,8 @@ const en: Messages = {
   },
   privacyPage: {
     metaTitle: "Privacy policy — ULY DALA",
+    metaDescription:
+      "How ULY DALA processes personal data from the brief: what we collect, why, where it is stored and how to withdraw consent.",
     title: "Privacy policy",
     draftNote: "Draft. The final text is to be approved by a lawyer.",
     sections: {

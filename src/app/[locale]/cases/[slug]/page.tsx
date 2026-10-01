@@ -11,6 +11,9 @@ import type from "@/components/ui/type.module.css";
 import { caseText, cases, findCase } from "@/content/cases";
 import { findFormat } from "@/content/formats";
 import { Link } from "@/lib/intl/navigation";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { caseLd } from "@/lib/seo/jsonld";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { resolveLocale } from "@/lib/intl/locale";
 
 export const dynamicParams = false;
@@ -30,8 +33,16 @@ async function load(params: PageProps<"/[locale]/cases/[slug]">["params"]) {
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/cases/[slug]">): Promise<Metadata> {
-  const { text } = await load(params);
-  return { title: `${text.title} — ULY DALA`, description: text.summary };
+  const { locale, item, text } = await load(params);
+  return pageMetadata({
+    locale,
+    path: `/cases/${item.slug}`,
+    title: `${text.title} — ULY DALA`,
+    description: text.summary,
+    image: item.format,
+    imageAlt: text.coverAlt,
+    type: "article",
+  });
 }
 
 /** Страница кейса. Контент — src/content/cases/. */
@@ -44,6 +55,16 @@ export default async function CasePage({ params }: PageProps<"/[locale]/cases/[s
 
   return (
     <PageShell>
+      <JsonLd
+        data={caseLd({
+          locale,
+          path: `/cases/${item.slug}`,
+          name: text.title,
+          description: text.summary,
+          image: item.format,
+          about: format ? formatsT(`${format.key}.title`) : text.title,
+        })}
+      />
       <div className={layout.grid}>
         <div className={`${pageStyles.head} ${layout.main}`}>
           <p className={type.eyebrow}>{t("label")}</p>

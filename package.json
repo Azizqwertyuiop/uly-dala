@@ -25,7 +25,8 @@
     "assets:splat": "node scripts/generate-splat.mjs",
     "assets:flyover": "node scripts/make-flyover-video.mjs",
     "assets:audio": "node scripts/make-audio-placeholders.mjs",
-    "assets:fallback": "node scripts/render-fallback-clips.mjs"
+    "assets:fallback": "node scripts/render-fallback-clips.mjs",
+    "assets:og": "node scripts/render-og-images.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",
@@ -59,6 +60,7 @@
     "ktx2-encoder": "^0.6.0",
     "meshoptimizer": "^1.2.0",
     "prettier": "^3.9.9",
+    "schema-dts": "^2.0.0",
     "sharp": "^0.35.4",
     "typescript": "^5",
     "vitest": "^5.0.1",

@@ -25,3 +25,13 @@ describe("messages", () => {
     expect(getMessages("ru").notFound.title).toBe(`Здесь пока ничего не${NBSP}поставлено.`);
   });
 });
+
+describe("язык страницы (WCAG 3.1.1)", () => {
+  it("ru и en — свои; kk — русский, пока казахский перевод неполный", async () => {
+    const { contentLanguage } = await import("./index");
+    expect(contentLanguage("ru")).toBe("ru");
+    expect(contentLanguage("en")).toBe("en");
+    // TODO(kk-copywriter): когда kk.ts покроет все строки — здесь станет "kk".
+    expect(contentLanguage("kk")).toBe("ru");
+  });
+});

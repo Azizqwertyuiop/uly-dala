@@ -50,7 +50,8 @@ test.describe("холст сцены", () => {
       return { position: cs.position, z: cs.zIndex, events: cs.pointerEvents };
     });
     expect(style).toEqual({ position: "fixed", z: "0", events: "none" });
-    await expect(page.locator("#dawn [data-scene-slot]")).toHaveCSS("visibility", "hidden");
+    // Кадр уступает место прозрачностью — описание сцены остаётся для скринридера (WCAG 1.1.1).
+    await expect(page.locator("#dawn [data-scene-slot]")).toHaveCSS("opacity", "0");
     // Текст — над холстом: клик по CTA доходит до ссылки.
     await expect(
       page.locator("#dawn").getByRole("link", { name: "Смотреть фазенду" }),

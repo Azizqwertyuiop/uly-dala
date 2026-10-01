@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
+import { contentLanguage } from "../src/content/messages";
 import { locales } from "./pages";
 
 for (const locale of locales) {
   test(`/${locale} открывается и отдаёт правильный lang`, async ({ page }) => {
     const response = await page.goto(`/${locale}`);
     expect(response?.status()).toBe(200);
-    await expect(page.locator("html")).toHaveAttribute("lang", locale);
+    // lang — язык текста: на /kk русский, пока копирайтер не дописал казахские тексты (WCAG 3.1.1).
+    await expect(page.locator("html")).toHaveAttribute("lang", contentLanguage(locale));
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   });
 }

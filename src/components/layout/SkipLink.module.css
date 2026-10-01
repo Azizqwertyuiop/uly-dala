@@ -1,5 +1,6 @@
 .skip {
-  position: absolute;
+  /* fixed: при фокусе ссылка всегда на экране, где бы ни была страница (WCAG 2.4.11). */
+  position: fixed;
   top: var(--space-1);
   left: var(--space-1);
   z-index: var(--z-modal);

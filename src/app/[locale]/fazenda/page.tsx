@@ -7,6 +7,9 @@ import { briefFallbackHref } from "@/components/brief/briefProps";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { placeLd } from "@/lib/seo/jsonld";
+import { pageMetadata } from "@/lib/seo/metadata";
 import { resolveLocale } from "@/lib/intl/locale";
 
 export async function generateMetadata({
@@ -14,7 +17,15 @@ export async function generateMetadata({
 }: PageProps<"/[locale]/fazenda">): Promise<Metadata> {
   const locale = resolveLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: "fazendaPage" });
-  return { title: t("metaTitle"), description: t("metaDescription") };
+  const world = await getTranslations({ locale, namespace: "world" });
+  return pageMetadata({
+    locale,
+    path: "/fazenda",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
+    image: "world",
+    imageAlt: world("sceneAlt"),
+  });
 }
 
 /*
@@ -28,6 +39,7 @@ export default async function FazendaPage({ params }: PageProps<"/[locale]/fazen
 
   return (
     <PageShell tone="dark">
+      <JsonLd data={placeLd({ locale, name: t("metaTitle"), description: t("metaDescription") })} />
       <div className={layout.grid}>
         <div className={`${pageStyles.head} ${layout.main}`}>
           <h1 className={type.chapterTitle} data-reveal="">

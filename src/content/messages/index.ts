@@ -42,6 +42,24 @@ function raw(locale: Locale): Messages {
   }
 }
 
+/** Число строк в дереве сообщений. */
+function countStrings(tree: Tree): number {
+  let n = 0;
+  for (const value of Object.values(tree)) n += typeof value === "string" ? 1 : countStrings(value);
+  return n;
+}
+
+/**
+ * Язык, на котором страница на самом деле написана (атрибут lang, WCAG 3.1.1).
+ * Казахские тексты пишет копирайтер (TODO(kk-copywriter)); пока перевод неполный, на /kk
+ * показывается русский — и lang="ru", чтобы скринридер читал его русским голосом.
+ * Как только kk.ts покрывает все строки ru.ts, страница объявляет kk сама.
+ */
+export function contentLanguage(locale: Locale): Locale {
+  if (locale !== "kk") return locale;
+  return countStrings(kk as Tree) >= countStrings(ru as Tree) ? "kk" : "ru";
+}
+
 const cache = new Map<Locale, Messages>();
 
 export function getMessages(locale: Locale): Messages {
