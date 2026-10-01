@@ -2,6 +2,8 @@
   position: sticky;
   top: 0;
   z-index: var(--z-ui);
+  /* Safe-area: под «чёлкой» и статус-баром (viewport-fit=cover). */
+  padding-top: env(safe-area-inset-top);
   transition: transform var(--duration-base) var(--ease-steppe);
 }
 

@@ -53,6 +53,7 @@ const en: Messages = {
     contacts: "Contacts",
     city: "Almaty",
     contactsPending: "Phone and messengers will appear here once confirmed.",
+    whatsapp: "Message on WhatsApp",
     privacy: "Privacy policy",
     rights: "ULY DALA",
   },

@@ -12,6 +12,7 @@ import {
   slotCenter,
 } from "../day/timeline";
 import { horizonPitch } from "../steppe/dawn";
+import { terrainHeight } from "../steppe/terrain";
 import { chapterAnchor } from "../world";
 
 /*
@@ -35,12 +36,21 @@ export type CameraKey = {
 /** Первый экран (раздел 2): 60 см, 135 мм, крен 0, горизонт на 72% высоты, взгляд по −Z. */
 const DAWN_FOV = 2 * Math.atan(24 / (2 * 135)) * (180 / Math.PI);
 const DAWN_PITCH = horizonPitch(DAWN_FOV, 16 / 9);
-const dawnFrame = (focus: number): CameraKey => ({
-  position: [0, 0.6, 12],
-  target: [0, 0.6 + Math.tan(DAWN_PITCH) * 50, -38],
+const dawnFrame = (focus: number, lift = 0): CameraKey => ({
+  position: [0, 0.6 + lift, 12],
+  target: [0, 0.6 + lift + Math.tan(DAWN_PITCH) * 50, -38],
   focal: 135,
   focus,
 });
+
+/**
+ * Финал — тот же кадр, что первый экран (петля): та же высота над травой.
+ * Рельеф вдоль пути почти ровный, но не нулевой — поправка на разницу высот под камерами.
+ */
+const returnLift = () => {
+  const z = chapterAnchor(chapterIds.length - 1)[2] + 12;
+  return terrainHeight(0, z) - terrainHeight(0, 12);
+};
 
 /** Ключевые кадры по главам. TODO(assets): подогнать под настоящие сцены. */
 export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
@@ -54,8 +64,8 @@ export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
   fire: { ...fireStartKey(), focus: 1.5 },
   // Этот мир существует: ночь, 50 мм.
   world: { position: [0, 1.5, 15], target: [0, 1, 0], focal: 50, focus: 15 },
-  // Снова рассвет: та же оптика, что в начале.
-  return: dawnFrame(275),
+  // Снова рассвет: тот же кадр, что в начале (петля), над той же травой.
+  return: dawnFrame(275, returnLift()),
 };
 
 /**
@@ -95,6 +105,32 @@ export const EXTRA_KEYS: { t: number; chapter: number; key: CameraKey }[] = [
     key: { position: [0, 1.45, 1.9], target: [0, 1.7, -2.4], focal: 24, focus: 3.5 },
   },
 ];
+
+/**
+ * Набор ключей по экрану и уровню качества (CLAUDE.md, разделы 2, 6, 13):
+ * portrait — портрет телефона: юрта по центру кадра (текст над и под ней);
+ * flyover — облёт юрты в «Сборке»; на medium его нет — камера стоит, юрта собирается в кадре.
+ */
+export type PathLayout = { portrait: boolean; flyover: boolean };
+export const DEFAULT_LAYOUT: PathLayout = { portrait: false, flyover: true };
+
+/** Портрет: ключи «Сборки» по оси юрты — без боковых смещений (по бокам нет места). */
+const PORTRAIT_KEYS: Partial<Record<(typeof chapterIds)[number], CameraKey>> = {
+  assembly: { position: [0, 1.6, 22], target: [0, 1.5, 0], focal: 35, focus: 22 },
+};
+const PORTRAIT_EXTRA: Record<number, CameraKey> = {
+  [trackT(1, 0.45)]: { position: [0, 1.7, 17], target: [0, 1.7, 0], focal: 35, focus: 17 },
+  [trackT(1, 0.78)]: { position: [0, 1.6, 12.5], target: [0, 1.5, 0], focal: 32, focus: 12.5 },
+};
+
+/** Ключи «Сборки» (глава 1) по набору: облёт, портрет или неподвижная камера. */
+function assemblyKeys(layout: PathLayout): { t: number; chapter: number; key: CameraKey }[] {
+  const inAssembly = (t: number) => t > trackT(1, 0) && t <= trackT(1, 1);
+  // Без облёта: внутренних ключей нет, камера стоит (holdAssembly), затем — дальше по пути.
+  if (!layout.flyover) return EXTRA_KEYS.filter((e) => !inAssembly(e.t));
+  if (!layout.portrait) return EXTRA_KEYS;
+  return EXTRA_KEYS.map((e) => ({ ...e, key: PORTRAIT_EXTRA[e.t] ?? e.key }));
+}
 
 /** Ключей на отрезке «стояния» у площадки. */
 const HOLD_STEPS = 6;
@@ -169,7 +205,10 @@ function remap(times: number[]) {
   };
 }
 
-export function buildCameraPath(dayOrder: readonly FormatSlug[] = DEFAULT_ORDER): CameraPath {
+export function buildCameraPath(
+  dayOrder: readonly FormatSlug[] = DEFAULT_ORDER,
+  layout: PathLayout = DEFAULT_LAYOUT,
+): CameraPath {
   const add = (anchor: [number, number, number], offset: [number, number, number]) =>
     new Vector3(anchor[0] + offset[0], anchor[1] + offset[1], anchor[2] + offset[2]);
   const n = chapterIds.length;
@@ -178,10 +217,13 @@ export function buildCameraPath(dayOrder: readonly FormatSlug[] = DEFAULT_ORDER)
   const keys = [
     ...chapterIds.map((id, i) => ({
       t: keyT(i),
-      key: id === "day" ? dayArrival(dayOrder) : CAMERA_KEYS[id],
+      key:
+        id === "day"
+          ? dayArrival(dayOrder)
+          : ((layout.portrait ? PORTRAIT_KEYS[id] : undefined) ?? CAMERA_KEYS[id]),
       anchor: chapterAnchor(i),
     })),
-    ...EXTRA_KEYS.map((e) => ({ t: e.t, key: e.key, anchor: chapterAnchor(e.chapter) })),
+    ...assemblyKeys(layout).map((e) => ({ t: e.t, key: e.key, anchor: chapterAnchor(e.chapter) })),
     ...dayCameraKeys(dayOrder).map((e) => ({ ...e, anchor: chapterAnchor(dayIndex) })),
   ].sort((a, b) => a.t - b.t);
   const map = remap(keys.map((k) => k.t));
@@ -196,15 +238,23 @@ export function buildCameraPath(dayOrder: readonly FormatSlug[] = DEFAULT_ORDER)
     false,
     "centripetal",
   );
-  const scalar = (pick: (k: CameraKey) => number) => (t: number) => {
-    const { k, frac } = map(t);
+  // medium: всю дорожку «Сборки» камера стоит на ключе главы, а в хвосте главы проходит
+  // весь путь до «Дня» (непрерывно — без скачка в конце дорожки).
+  const holdEnd = trackT(1, 1);
+  const hold = (t: number) => {
+    if (layout.flyover || t <= keyT(1) || t >= keyT(2)) return t;
+    if (t <= holdEnd) return keyT(1);
+    return keyT(1) + ((t - holdEnd) / (keyT(2) - holdEnd)) * (keyT(2) - keyT(1));
+  };
+  const scalar = (pick: (k: CameraKey) => number) => (raw: number) => {
+    const { k, frac } = map(hold(raw));
     return smooth(pick(keys[k]!.key), pick(keys[k + 1]!.key), frac);
   };
   return {
     position,
     target,
-    positionAt: (t, out = new Vector3()) => position.getPoint(map(t).u, out),
-    targetAt: (t, out = new Vector3()) => target.getPoint(map(t).u, out),
+    positionAt: (t, out = new Vector3()) => position.getPoint(map(hold(t)).u, out),
+    targetAt: (t, out = new Vector3()) => target.getPoint(map(hold(t)).u, out),
     focal: scalar((k) => k.focal),
     focus: scalar((k) => k.focus),
     keyT,

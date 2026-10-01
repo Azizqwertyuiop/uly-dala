@@ -30,6 +30,7 @@
   display: grid;
   gap: var(--space-1);
   list-style: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .links a {
@@ -47,6 +48,7 @@
   display: grid;
   gap: var(--space-1);
   list-style: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .languages a {
@@ -56,4 +58,13 @@
 
 .languages a[aria-current="page"] {
   font-weight: 600;
+}
+
+.contactLinks {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
 }

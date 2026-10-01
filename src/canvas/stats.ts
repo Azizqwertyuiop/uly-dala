@@ -21,12 +21,20 @@ export const stageStats = {
   post: "",
   /** Средняя энергия поля ветра (чтение с GPU по запросу — для тестов). */
   windProbe: null as null | (() => number),
-  dawn: { introTime: null as number | null, wave: false, clip: "", textOut: false, fps: 0 },
-  camera: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, fov: 0 },
+  dawn: {
+    introTime: null as number | null,
+    wave: false,
+    clip: "",
+    textOut: false,
+    fps: 0,
+    video: false,
+  },
+  camera: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, fov: 0, pose: 0 },
   /** Кадры реального слоя (архив): отслеживаются, загружены в GPU, видны. */
   realImages: { tracked: 0, loaded: 0, visible: 0 },
   /** Фазенда: способ показа (splats / video / photo), прогресс дорожки, зона, «свет». */
   world: { mode: "", p: 0, zone: 0, light: 0, roll: 0 },
+  return: { p: 0, stars: 0, predawn: 0, pressed: 0, handoff: 0, active: false },
   /** Огонь: прогресс, фаза, насколько вид «орто», фокусное, сет, блюдо под курсором. */
   fire: { p: 0, phase: "", ortho: 0, focal: 50, set: "", hover: "", night: 0 },
   /** День: прогресс сцены (сглаженный), текущий формат, слот, завеса, темп. */

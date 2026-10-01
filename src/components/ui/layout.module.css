@@ -3,7 +3,9 @@
   width: 100%;
   max-width: 1920px;
   margin-inline: auto;
-  padding-inline: var(--grid-margin);
+  /* Safe-area: «чёлка» и скругления в альбомной ориентации телефона (viewport-fit=cover). */
+  padding-inline: max(var(--grid-margin), env(safe-area-inset-left))
+    max(var(--grid-margin), env(safe-area-inset-right));
 }
 
 .grid {

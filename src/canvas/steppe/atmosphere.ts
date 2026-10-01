@@ -16,6 +16,10 @@ export type Atmosphere = {
   uDusk: IUniform<number>;
   /** 0 — вечер, 1 — ночь («Огонь»: закат переходит в ночь). */
   uNight: IUniform<number>;
+  /** 0 — рассвет, 1 — глубокая ночь перед ним («Снова рассвет»). */
+  uPredawn: IUniform<number>;
+  /** 0…1 — звёзды («Снова рассвет»). */
+  uStars: IUniform<number>;
   uHaze: IUniform<number>;
   uTime: IUniform<number>;
   tWind: IUniform<Texture | null>;
@@ -33,6 +37,8 @@ export function createAtmosphere(): Atmosphere {
     uDaylight: { value: 0 },
     uDusk: { value: 0 },
     uNight: { value: 0 },
+    uPredawn: { value: 0 },
+    uStars: { value: 0 },
     uHaze: { value: 0.00022 },
     uTime: { value: 0 },
     tWind: { value: null },

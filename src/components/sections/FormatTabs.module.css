@@ -205,3 +205,67 @@
     font-size: 16px;
   }
 }
+
+/*
+ * Телефон в альбомной ориентации (высота ≤ 500 px): табы — одной строкой с прокруткой внутри
+ * полосы, панель — в две колонки (фраза и факты | действия): CTA формата видна без прокрутки.
+ */
+@media (orientation: landscape) and (max-height: 500px) {
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tabs {
+    gap: var(--space-2);
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tablist {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tab {
+    flex: none;
+    min-height: 40px;
+    white-space: nowrap;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panelText {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    column-gap: var(--grid-gutter);
+    row-gap: var(--space-1);
+    align-items: start;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
+    .panelText
+    h3 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
+    .panelText
+    > :last-child {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .phrase {
+    font-size: 17px;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .facts {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
+    .panelImage {
+    display: none;
+  }
+}

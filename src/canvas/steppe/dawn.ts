@@ -116,13 +116,21 @@ export function horizonPitch(fovDeg: number, aspect: number): number {
   return Math.atan(-ndc * Math.tan(MathUtils.degToRad(fovDeg) / 2));
 }
 
+/** Камера первого кадра: z от якоря главы, м (camera/path.ts, dawnFrame). */
+export const CAMERA_Z = 12;
+
 /** Дистанция до коня, м (раздел 2: ~250–300 м). */
 export const HORSE_DISTANCE = 275;
 
-/** Смещение коня вправо (м) на правую треть кадра при данной оптике и пропорциях экрана. */
+/**
+ * Смещение коня вправо (м) при данной оптике и пропорциях экрана: на широком экране — правая
+ * треть кадра (x_ndc = +1/3), в портрете телефона — по центру-правее (x_ndc = +0,2): кадр узкий,
+ * текст над и под горизонтом, а не слева.
+ */
+export const HORSE_NDC = { landscape: 1 / 3, portrait: 0.2 } as const;
 export function horseOffsetX(fovDeg: number, aspect: number, distance = HORSE_DISTANCE): number {
   const halfWidth = Math.tan(MathUtils.degToRad(fovDeg) / 2) * aspect * distance;
-  return halfWidth / 3; // x_ndc = +1/3 — правая треть
+  return halfWidth * (aspect < 1 ? HORSE_NDC.portrait : HORSE_NDC.landscape);
 }
 
 // ---------------------------------------------------------------------------

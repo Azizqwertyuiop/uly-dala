@@ -7,6 +7,7 @@ import { SceneImage } from "@/components/ui/SceneImage";
 import type from "@/components/ui/type.module.css";
 import { Chapter, ChapterTime } from "./Chapter";
 import { FirePlan, type FireSetItem } from "./FirePlan";
+import { FallbackClip } from "./FallbackClip";
 import styles from "./sections.module.css";
 
 /*
@@ -35,15 +36,16 @@ export async function FireSection() {
     <Chapter id="fire" time={t("time")} name={chapters("fire")} className={styles.fire} hideTime>
       <div className={styles.fireTrack} data-track="fire">
         <div className={styles.fireStage} data-fire-stage="" data-phase="gather">
-          <SceneImage
-            sceneSlot
-            className={styles.fireFrame}
-            src="/assets/placeholders/fire.svg"
-            alt={t("sceneAlt")}
-            width={1600}
-            height={900}
-            sizes="100vw"
-          />
+          <FallbackClip chapter="fire" className={styles.fireFrame}>
+            <SceneImage
+              sceneSlot
+              src="/assets/placeholders/fire.svg"
+              alt={t("sceneAlt")}
+              width={1600}
+              height={900}
+              sizes="100vw"
+            />
+          </FallbackClip>
           <div className={`${styles.textBlock} ${styles.fireHead}`}>
             <ChapterTime time={t("time")} name={chapters("fire")} />
             <h2 id="fire-title" className={type.chapterTitle} data-reveal="">

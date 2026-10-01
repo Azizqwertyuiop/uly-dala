@@ -31,6 +31,7 @@ import {
   zoneAt,
   zoneView,
 } from "../world/timeline";
+import { handoff } from "../return/timeline";
 import type { SceneProps } from "./registry";
 
 /*
@@ -44,10 +45,14 @@ import type { SceneProps } from "./registry";
 
 const INDEX = 4;
 const STAGE_SELECTOR = "[data-world-stage]";
-/** Минимальная высота экрана дорожки (как в CSS .worldStage). */
+/** Минимальная высота экрана дорожки (как в CSS .worldStage; в альбомной ориентации телефона — нет). */
 const STAGE_MIN_HEIGHT = 560;
 /** Перемотка видео — только если кадр ушёл дальше, с. */
 const SEEK_EPSILON = 0.05;
+const shortLandscape =
+  typeof window === "undefined"
+    ? { matches: false }
+    : window.matchMedia("(orientation: landscape) and (max-height: 500px)");
 
 type WorldData =
   { mode: "splats"; spark: typeof SparkModule; bytes: ArrayBuffer } | { mode: "video" };
@@ -272,6 +277,7 @@ export default function WorldScene({ data }: SceneProps) {
       content.dispose();
       if (realLayer.world === view.real) realLayer.world = null;
       realLayer.light = 1;
+      realLayer.handoff = 0;
     };
   }, [view, content]);
 
@@ -301,7 +307,8 @@ export default function WorldScene({ data }: SceneProps) {
     const track = chapterTrack("world");
     const cinematic = document.documentElement.hasAttribute("data-cinematic");
     const vh = progress.viewportHeight || size.height;
-    const stageH = Math.max(vh, STAGE_MIN_HEIGHT);
+    // Телефон в альбомной ориентации — экран без минимальной высоты (как в CSS).
+    const stageH = shortLandscape.matches ? vh : Math.max(vh, STAGE_MIN_HEIGHT);
     let top = 0;
     let bottom = 0;
     if (track && cinematic) {
@@ -313,7 +320,10 @@ export default function WorldScene({ data }: SceneProps) {
       bottom = top + stageH;
     }
     const onScreen = bottom > 0 && top < size.height;
-    const light = reduced ? (p > 0 ? 1 : 0) : worldLight(p);
+    // Уход в ночную степь: фазенда гаснет по яркости — тени первыми, огни последними.
+    const leave = handoff(p);
+    const light = Math.min(reduced ? (p > 0 ? 1 : 0) : worldLight(p), 1 - leave);
+    realLayer.handoff = index === INDEX ? leave : index > INDEX ? 1 : 0;
     realLayer.lightTop = top;
     realLayer.lightBottom = bottom;
     realLayer.light = light;

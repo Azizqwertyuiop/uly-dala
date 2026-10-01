@@ -57,6 +57,7 @@ const ru = {
     city: "Алматы",
     // TODO(client-data): телефон, WhatsApp, Telegram, email, адрес фазенды.
     contactsPending: "Телефон и мессенджеры появятся здесь после подтверждения.",
+    whatsapp: "Написать в WhatsApp",
     privacy: "Политика конфиденциальности",
     rights: "ULY DALA",
   },

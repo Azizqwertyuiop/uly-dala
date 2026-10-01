@@ -61,6 +61,8 @@ export function startInput(): () => void {
   if (started) return () => {};
   started = true;
   const raw: RawPointer = { x: 0, y: 0, moved: false };
+  // Для e2e и отладки: только чтение (как window.__stage).
+  (window as unknown as { __input: InputState }).__input = input;
   let width = window.innerWidth;
   let height = window.innerHeight;
 
@@ -75,6 +77,21 @@ export function startInput(): () => void {
   const onLeave = () => {
     input.active = false;
   };
+  // Тач: свайп прокручивает страницу — браузер отменяет pointer-события (pointercancel),
+  // а касания (touchmove) продолжают приходить: ветер идёт и от касания, и от свайпа.
+  const onTouch = (event: TouchEvent) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    const n = normalize(touch.clientX, touch.clientY, width, height);
+    raw.x = n.x;
+    raw.y = n.y;
+    raw.moved = true;
+    input.active = true;
+    input.pointerType = "touch";
+  };
+  const onTouchEnd = (event: TouchEvent) => {
+    if (event.touches.length === 0) onLeave();
+  };
   const onResize = () => {
     width = window.innerWidth;
     height = window.innerHeight;
@@ -86,6 +103,10 @@ export function startInput(): () => void {
     passive: true,
   });
   document.documentElement.addEventListener("pointerleave", onLeave, { passive: true });
+  window.addEventListener("touchstart", onTouch, { passive: true });
+  window.addEventListener("touchmove", onTouch, { passive: true });
+  window.addEventListener("touchend", onTouchEnd, { passive: true });
+  window.addEventListener("touchcancel", onTouchEnd, { passive: true });
   window.addEventListener("resize", onResize, { passive: true });
 
   const off = ticker.add("input", (dt) => updateInput(input, raw, dt));
@@ -94,6 +115,10 @@ export function startInput(): () => void {
     window.removeEventListener("pointermove", onMove);
     window.removeEventListener("pointerdown", onMove);
     document.documentElement.removeEventListener("pointerleave", onLeave);
+    window.removeEventListener("touchstart", onTouch);
+    window.removeEventListener("touchmove", onTouch);
+    window.removeEventListener("touchend", onTouchEnd);
+    window.removeEventListener("touchcancel", onTouchEnd);
     window.removeEventListener("resize", onResize);
     started = false;
   };

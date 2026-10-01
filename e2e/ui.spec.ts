@@ -130,7 +130,7 @@ test.describe("меню", () => {
     await expect(page).toHaveURL(/#fire$/);
   });
 
-  test("звук — только состояние, по умолчанию выключен и не запоминается", async ({ page }) => {
+  test("звук по умолчанию выключен и не запоминается", async ({ page }) => {
     await page.goto("/ru");
     await menuButton(page).click();
     const sound = dialog(page).getByRole("button", { name: /Звук/ });

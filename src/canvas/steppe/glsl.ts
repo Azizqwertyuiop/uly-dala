@@ -14,6 +14,8 @@ export const ATMOSPHERE_UNIFORMS = /* glsl */ `
   uniform float uDaylight;     // 0 — рассвет, 1 — утро «Сборки» (07:00)
   uniform float uDusk;         // 0 — полдень, 1 — тёплые сумерки («День»)
   uniform float uNight;        // 0 — вечер, 1 — ночь («Огонь»)
+  uniform float uPredawn;      // 0 — рассвет, 1 — глубокая ночь перед ним («Снова рассвет»)
+  uniform float uStars;        // 0…1 — звёзды («Снова рассвет»: гаснут к рассвету)
   uniform float uHaze;         // дальняя дымка, 1/м
   uniform float uTime;
   uniform sampler2D tWind;     // поле ветра: RG — направление×сила, B — энергия
@@ -95,7 +97,23 @@ export const SKY_GLSL = /* glsl */ `
     return mix(col, night, uNight);
   }
   /** Сколько света добавляет день поверхностям степи (рельеф, трава, горы); вечером — меньше. */
-  float dayGain() { return mix(1.0, 10.0, uDaylight) * mix(1.0, 0.42, uDusk) * mix(1.0, 0.07, uNight); }
+  float dayGain() {
+    return mix(1.0, 10.0, uDaylight) * mix(1.0, 0.42, uDusk) * mix(1.0, 0.07, uNight) * mix(1.0, 0.3, uPredawn);
+  }
+  // Звёзды: неподвижные, мерцание медленное (≤ 0,3 Гц — ничего не мигает, раздел 10).
+  vec3 starField(vec3 dir) {
+    if (dir.y <= 0.004) return vec3(0.0);
+    vec2 uv = vec2(atan(dir.z, dir.x), asin(clamp(dir.y, -1.0, 1.0))) * 1300.0;
+    vec2 cell = floor(uv);
+    float h = hash12(cell);
+    if (h < 0.996) return vec3(0.0);
+    vec2 center = vec2(hash12(cell + 7.1), hash12(cell + 3.7)) * 0.6 + 0.2;
+    float r = length(fract(uv) - center);
+    float core = exp(-r * r * 18.0);
+    float twinkle = 0.8 + 0.2 * sin(uTime * 1.7 + h * 400.0);
+    float bright = mix(0.4, 1.0, hash12(cell + 1.3));
+    return vec3(0.09, 0.095, 0.11) * core * twinkle * bright * smoothstep(0.004, 0.08, dir.y);
+  }
   vec3 skyColor(vec3 dir) {
     float e = dir.y;
     float sunUp = clamp((uSunElevation + 1.5) / 6.0, 0.0, 1.0); // восход по скроллу
@@ -113,6 +131,10 @@ export const SKY_GLSL = /* glsl */ `
     col += WARM * glow * (0.25 + 1.4 * sunUp) * uDawnBoost;
     // Под горизонтом — сумрак земли (виден в дымке).
     col = mix(col, MID * 0.6, (1.0 - smoothstep(-0.08, 0.0, e)));
+    // Перед рассветом: глубокий индиго, полоса у горизонта ещё не проснулась; звёзды.
+    vec3 night = mix(NIGHT_HORIZON + WARM * 0.004 * pow(toward, 4.0), NIGHT_ZENITH, pow(smoothstep(0.0, 0.5, max(e, 0.0)), 0.5));
+    col = mix(col, night, uPredawn);
+    col += starField(dir) * uStars;
     col = mix(col, daySky(dir, toward), uDaylight);
     return col * mix(0.15, 1.0, uSkyReveal);
   }

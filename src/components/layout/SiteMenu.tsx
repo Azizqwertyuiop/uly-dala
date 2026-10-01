@@ -199,7 +199,7 @@ export function SiteMenu({ locale, labels, chapters, pages, languageNames }: Sit
 
               <h3 className={type.eyebrow}>{labels.settings}</h3>
               <div>
-                {/* TODO(sound): звуки фазенды — шаг 14; пока только состояние. */}
+                {/* Звук — SoundController (Web Audio): включается только этой кнопкой. */}
                 <button
                   type="button"
                   className={styles.toggle}

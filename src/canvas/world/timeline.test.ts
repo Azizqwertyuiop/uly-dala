@@ -13,6 +13,7 @@ import {
   WORLD_ZONES,
   worldLight,
   ZONE_POSITIONS,
+  ZONES_END,
   zoneAt,
 } from "./timeline";
 
@@ -44,7 +45,7 @@ describe("таймлайн фазенды", () => {
   });
 
   it("на остановке камера почти стоит, между зонами — едет", () => {
-    const span = (1 - LIGHT_END) / WORLD_ZONES.length;
+    const span = (ZONES_END - LIGHT_END) / WORLD_ZONES.length;
     for (let k = 0; k < WORLD_ZONES.length; k++) {
       const mid = LIGHT_END + span * (k + 0.5);
       expect(Math.abs(flyoverPosition(mid) - k)).toBeLessThan(0.01);

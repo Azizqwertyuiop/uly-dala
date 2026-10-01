@@ -1,13 +1,16 @@
 import { MathUtils, Vector3 } from "three";
 import type { FormatSlug } from "@/content/formats";
+import { DEFAULT_ORDER } from "../day/timeline";
 import { Spring, VectorSpring } from "@/motion/spring";
 import {
   angleDelta,
   buildCameraPath,
+  DEFAULT_LAYOUT,
   focalToFov,
   lookAngles,
   MAX_CAMERA_HEIGHT,
   type CameraPath,
+  type PathLayout,
 } from "./path";
 
 /*
@@ -74,10 +77,14 @@ export class CameraRigState {
   /** 0…1 — камера «замерла» (план «Огня»): без курсора и дыхания. */
   private still = 0;
   /** Вес внешней позы сцены: над степью можно подняться выше 1,8 м (вид сверху «Огня»). */
-  private poseWeight = 0;
+  /** Вес внешней позы сцены (0 — камера на общем пути). */
+  poseWeight = 0;
   private scratchA = new Vector3();
   private scratchB = new Vector3();
   private angles = { yaw: 0, pitch: 0 };
+
+  private dayOrder: readonly FormatSlug[] = DEFAULT_ORDER;
+  layout: PathLayout = { ...DEFAULT_LAYOUT };
 
   constructor(smoothTime = 0.45) {
     this.path = buildCameraPath();
@@ -92,7 +99,18 @@ export class CameraRigState {
    * Пружины не сбрасываются: камера плавно переходит на новый путь.
    */
   setDayOrder(order: readonly FormatSlug[]): void {
-    this.path = buildCameraPath(order);
+    this.dayOrder = order;
+    this.path = buildCameraPath(order, this.layout);
+  }
+
+  /**
+   * Набор ключей по экрану и уровню (портрет телефона, облёт «Сборки» только на high).
+   * Перестраивается только при изменении; пружины не сбрасываются — переход плавный.
+   */
+  setLayout(layout: PathLayout): void {
+    if (layout.portrait === this.layout.portrait && layout.flyover === this.layout.flyover) return;
+    this.layout = { ...layout };
+    this.path = buildCameraPath(this.dayOrder, this.layout);
   }
 
   /** Мгновенно в точку t — восстановление после обновления страницы, без облёта. */
@@ -148,6 +166,9 @@ export class CameraRigState {
     }
     this.poseWeight = w;
     this.still = pose ? pose.still * w : 0;
+    // Высота ≤ 1,8 м в степи — ограничение цели пути (а не сглаженного положения): после вида
+    // сверху «Огня» камера спускается плавно, без прыжка в момент, когда поза отпускает.
+    if (w === 0) p.y = Math.min(p.y, MAX_CAMERA_HEIGHT);
     // Чем больше вес позы, тем меньше собственное сглаживание рига (при 1 — поза как есть).
     const own = smoothTime * (1 - w);
     this.position.smoothTime = this.target.smoothTime = this.focal.smoothTime = own;
@@ -181,8 +202,10 @@ export class CameraRigState {
   private compose(breath: boolean): void {
     const pos = this.position.value;
     const out = this.out;
-    // Высота ≤ 1,8 м — в степи; вид сверху «Огня» (поза сцены) поднимается над ней.
-    const maxHeight = this.poseWeight > 0 ? Infinity : MAX_CAMERA_HEIGHT;
+    // Высота ≤ 1,8 м — в степи; вид сверху «Огня» (поза сцены) поднимается над ней,
+    // и спуск после него тоже не обрезается (иначе — прыжок кадра).
+    const descending = pos[1]! > MAX_CAMERA_HEIGHT + 1e-3;
+    const maxHeight = this.poseWeight > 0 || descending ? Infinity : MAX_CAMERA_HEIGHT;
     out.position.set(pos[0]!, Math.min(pos[1]! + this.offsetY, maxHeight), pos[2]!);
     out.focal = this.focal.value;
     out.fov = focalToFov(out.focal);

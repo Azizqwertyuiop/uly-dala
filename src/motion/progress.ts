@@ -218,6 +218,9 @@ export function startProgress(): () => void {
     document.body.appendChild(svh);
   }
 
+  // Для e2e и отладки: только чтение (как window.__stage).
+  (window as unknown as { __progress: ProgressState }).__progress = progress;
+
   const anchor: DirectionAnchor = { y: window.scrollY };
   progress.scrollY = window.scrollY;
   measureChapters();

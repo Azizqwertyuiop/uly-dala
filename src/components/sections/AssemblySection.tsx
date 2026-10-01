@@ -8,6 +8,7 @@ import { AssemblyRotate } from "./AssemblyRotate";
 import { AudienceText } from "./AudienceText";
 import { Chapter, ChapterTime } from "./Chapter";
 import { ForkLinks } from "./ForkLinks";
+import { FallbackClip } from "./FallbackClip";
 import styles from "./sections.module.css";
 
 const parts = ["kerege", "uyki", "shanyrak", "kiiz"] as const;
@@ -38,15 +39,16 @@ export async function AssemblySection() {
     >
       <div className={styles.assemblyTrack} data-track="assembly">
         <div className={styles.assemblyStage} data-assembly-stage="" data-phase="kerege">
-          <SceneImage
-            sceneSlot
-            className={styles.assemblyFrame}
-            src="/assets/placeholders/assembly.svg"
-            alt={t("sceneAlt")}
-            width={1600}
-            height={900}
-            sizes="100vw"
-          />
+          <FallbackClip chapter="assembly" className={styles.assemblyFrame}>
+            <SceneImage
+              sceneSlot
+              src="/assets/placeholders/assembly.svg"
+              alt={t("sceneAlt")}
+              width={1600}
+              height={900}
+              sizes="100vw"
+            />
+          </FallbackClip>
 
           <div className={`${styles.textBlock} ${styles.assemblyText}`}>
             <ChapterTime time={t("time")} name={chapters("assembly")} />

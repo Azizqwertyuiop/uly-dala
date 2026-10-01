@@ -67,19 +67,20 @@ test.describe("«Этот мир существует» — фазенда", () 
     await expect
       .poll(async () => (await world(page)).light, { timeout: 10_000 })
       .toBeLessThan(0.05);
+    // Остановки — в середине отрезков зон; ждём зону на экране (не точное число прогресса:
+    // под нагрузкой замер дорожки сайтом и тестом может расходиться на десятки пикселей).
     const stage = page.locator("[data-world-stage]");
-    const zones: string[] = [];
-    for (const p of [0.3, 0.5, 0.72, 0.95]) {
+    for (const [p, zone] of [
+      [0.25, "field"],
+      [0.42, "tent"],
+      [0.58, "yurt"],
+      [0.75, "kitchen"],
+    ] as const) {
       await scrollWorld(page, p);
-      await expect
-        .poll(async () => (await world(page)).p, { timeout: 10_000 })
-        .toBeGreaterThan(p - 0.02);
-      const w = await world(page);
-      expect(w.light).toBe(1);
-      expect(w.roll).toBe(0);
-      zones.push((await stage.getAttribute("data-zone"))!);
+      await expect(stage).toHaveAttribute("data-zone", zone, { timeout: 10_000 });
+      await expect.poll(async () => (await world(page)).light, { timeout: 10_000 }).toBe(1);
+      expect((await world(page)).roll).toBe(0);
     }
-    expect(zones).toEqual(["field", "tent", "yurt", "kitchen"]);
   });
 
   for (const [name, device] of [

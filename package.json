@@ -22,7 +22,9 @@
     "assets:video": "node scripts/make-test-video.mjs",
     "assets:2d": "node scripts/generate-placeholders-2d.mjs && node scripts/generate-pdf-stub.mjs",
     "assets:splat": "node scripts/generate-splat.mjs",
-    "assets:flyover": "node scripts/make-flyover-video.mjs"
+    "assets:flyover": "node scripts/make-flyover-video.mjs",
+    "assets:audio": "node scripts/make-audio-placeholders.mjs",
+    "assets:fallback": "node scripts/render-fallback-clips.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",

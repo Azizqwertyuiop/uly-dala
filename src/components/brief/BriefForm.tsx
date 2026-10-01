@@ -1,5 +1,6 @@
 "use client";
 
+import { BRIEF_SENT_EVENT } from "@/lib/sound/bus";
 import { startTransition, useActionState, useEffect, useId, useRef, useState } from "react";
 import type { Messages } from "@/content/messages";
 import {
@@ -95,6 +96,7 @@ export function BriefForm({
   useEffect(() => {
     if (!state.submittedAt) return;
     if (state.status === "success") {
+      window.dispatchEvent(new Event(BRIEF_SENT_EVENT));
       clear();
       resultRef.current?.focus();
     } else if (state.status === "invalid") {

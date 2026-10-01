@@ -1,5 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { chapterIds } from "@/components/sections/chapters";
+import { contacts, formatPhone, telHref, whatsappHref } from "@/content/contacts";
 import { formats } from "@/content/formats";
 import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/intl/navigation";
@@ -74,7 +75,26 @@ export async function SiteFooter() {
           <div className={styles.column}>
             <h2 className={type.eyebrow}>{t("contacts")}</h2>
             <p>{t("city")}</p>
-            <p className={type.caption}>{t("contactsPending")}</p>
+            {contacts.phone || contacts.whatsapp ? (
+              <ul className={styles.contactLinks}>
+                {contacts.phone && (
+                  <li>
+                    <a href={telHref(contacts.phone)} className={type.link}>
+                      {formatPhone(contacts.phone)}
+                    </a>
+                  </li>
+                )}
+                {contacts.whatsapp && (
+                  <li>
+                    <a href={whatsappHref(contacts.whatsapp)} className={type.link}>
+                      {t("whatsapp")}
+                    </a>
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p className={type.caption}>{t("contactsPending")}</p>
+            )}
           </div>
         </div>
         <p className={`${type.caption} ${styles.bottom}`}>© {t("rights")}</p>

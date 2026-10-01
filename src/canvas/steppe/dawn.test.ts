@@ -103,6 +103,13 @@ describe("композиция первого экрана", () => {
     const ndc = x / (Math.tan(MathUtils.degToRad(fov) / 2) * aspect * 275);
     expect(ndc).toBeCloseTo(1 / 3, 6);
   });
+
+  it("портрет телефона: конь по центру-правее, а не на краю", () => {
+    const aspect = 390 / 844;
+    const x = horseOffsetX(fov, aspect);
+    const ndc = x / (Math.tan(MathUtils.degToRad(fov) / 2) * aspect * 275);
+    expect(ndc).toBeCloseTo(0.2, 6);
+  });
 });
 
 describe("шаг коня на переходе в Сборку", () => {

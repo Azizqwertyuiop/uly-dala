@@ -80,7 +80,7 @@ const memory: Record<ChapterId, number> = {
   day: 10, // шесть площадок, env map 256²
   fire: 8, // очаг, дым, стол, три сета, env map
   world: 16, // сплаты фазенды (заглушка 31k) или кадр видео облёта 960×540
-  return: 4,
+  return: 2, // своё — только состояние; степь — у «Рассвета»
 };
 
 /** Юрта и площадки «Дня» стоят в степи рассвета (DawnScene: небо, рельеф, трава, ветер). */
@@ -88,6 +88,8 @@ const requires: Partial<Record<ChapterId, readonly ChapterId[]>> = {
   assembly: ["dawn"],
   day: ["dawn"],
   fire: ["dawn"],
+  // Финал — та же степь рассвета (петля), без коня и юрты.
+  return: ["dawn"],
 };
 
 const last = chapterIds.length - 1;

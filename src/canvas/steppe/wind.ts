@@ -60,6 +60,9 @@ export class WindField {
   private gust: { x: number; z: number; dx: number; dz: number; life: number } | null = null;
   /** Суммарная сила порывов, поданных за всё время (для отладки). */
   injected = 0;
+  /** Сила порывов (программных и от курсора), 0…1 — сглаженная; для звука шелеста. */
+  gustLevel = 0;
+  private lastInjected = 0;
 
   constructor() {
     this.material = new ShaderMaterial({
@@ -175,6 +178,14 @@ export class WindField {
     programmatic: boolean,
   ) {
     if (programmatic) this.gusts(dt, camera.x, camera.z, camera.forwardX, camera.forwardZ);
+    // Сколько «ветра» вброшено за кадр → сила порыва (затухает, как само поле).
+    if (dt > 0) {
+      const rate = (this.injected - this.lastInjected) / dt;
+      const target = 1 - Math.exp(-rate / 30);
+      const k = 1 - Math.exp(-dt / (target > this.gustLevel ? 0.15 : WIND_DECAY));
+      this.gustLevel += (target - this.gustLevel) * k;
+    }
+    this.lastInjected = this.injected;
 
     // Поле держится вокруг камеры и чуть впереди — с шагом в тексель, чтобы не дрожало.
     const texel = WIND_SIZE / WIND_RESOLUTION;

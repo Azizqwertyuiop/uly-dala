@@ -182,6 +182,123 @@
   }
 }
 
+.heroHead,
+.heroFoot {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/*
+ * Портрет телефона: заголовок — сверху, строка доказательств и CTA — снизу (под большим пальцем),
+ * середина открыта: горизонт на 68% и конь (раздел 2). Подложки — у каждой группы своя.
+ */
+@media (max-width: 767px) and (orientation: portrait) {
+  :global(html[data-cinematic]) .dawnStage {
+    align-content: stretch;
+    grid-template-rows: auto 1fr;
+    padding-top: calc(72px + var(--space-2));
+    /* CTA — над подсказкой «Листайте» (она на horizon + 64px) и над навигацией-горизонтом. */
+    padding-bottom: calc(var(--horizon-height) + var(--space-12) + env(safe-area-inset-bottom));
+  }
+
+  :global(html[data-cinematic]) .heroText {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: 0;
+  }
+
+  :global(html[data-cinematic]) .heroText::before {
+    display: none;
+  }
+
+  :global(html[data-cinematic]) .heroHead,
+  :global(html[data-cinematic]) .heroFoot {
+    position: relative;
+  }
+
+  :global(html[data-cinematic]) .heroHead::before,
+  :global(html[data-cinematic]) .heroFoot::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  :global(html[data-cinematic]) .heroHead::before {
+    inset: calc(-1 * (72px + var(--space-8))) calc(-1 * var(--grid-margin)) -28%;
+    background: linear-gradient(
+      180deg,
+      var(--indigo) 0%,
+      color-mix(in srgb, var(--indigo) 90%, transparent) 70%,
+      color-mix(in srgb, var(--indigo) 0%, transparent) 100%
+    );
+  }
+
+  :global(html[data-cinematic]) .heroFoot::before {
+    inset: -40% calc(-1 * var(--grid-margin))
+      calc(-1 * (var(--horizon-height) + var(--space-12) + env(safe-area-inset-bottom)));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--indigo) 0%, transparent) 0%,
+      color-mix(in srgb, var(--indigo) 90%, transparent) 40%,
+      var(--indigo) 100%
+    );
+  }
+}
+
+/*
+ * Телефон в альбомной ориентации (высота ~ 320–430 px): закреплённые экраны — ровно в экран,
+ * без минимальной высоты; первый экран — компактнее, чтобы CTA помещались.
+ */
+@media (orientation: landscape) and (max-height: 500px) {
+  :global(html[data-cinematic]) .dawnStage {
+    min-height: 0;
+    align-content: end;
+    gap: var(--space-1);
+    padding-top: calc(64px + var(--space-1));
+    padding-bottom: calc(var(--horizon-height) + var(--space-2) + env(safe-area-inset-bottom));
+  }
+
+  :global(html[data-cinematic]) .heroText,
+  :global(html[data-cinematic]) .heroHead,
+  :global(html[data-cinematic]) .heroFoot {
+    gap: var(--space-1);
+  }
+
+  :global(html[data-cinematic]) .heroText {
+    max-width: none;
+  }
+
+  :global(html[data-cinematic]) .heroHead h1 {
+    font-size: clamp(32px, 11vh, 56px);
+  }
+
+  :global(html[data-cinematic]) .heroHead p {
+    font-size: 15px;
+    max-width: 62ch;
+  }
+
+  /* Строка доказательств и CTA — одним рядом: в низком экране на две строки места нет. */
+  :global(html[data-cinematic]) .heroFoot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+  }
+
+  :global(html[data-cinematic]) .heroFoot > p {
+    max-width: none;
+  }
+
+  /* Подсказка «Листайте» в низком экране наезжала бы на CTA — без неё (она декоративная). */
+  :global(html[data-cinematic]) .scrollHint {
+    display: none;
+  }
+}
+
 /* ---------- Сборка ---------- */
 /*
  * Обычная раскладка («Коротко», без WebGL, без JS): текст, четыре этапа со статичными кадрами,
@@ -199,6 +316,11 @@
 .assemblyFrame,
 .rotate {
   display: none;
+}
+
+/* fallback: общий кадр «Сборки» — с видео-секвенцией сборки юрты (FallbackClip). */
+:global(html[data-quality="fallback"]:not([data-mode="brief"])) .assemblyFrame {
+  display: block;
 }
 
 .parts {
@@ -1032,7 +1154,11 @@
   object-fit: contain;
 }
 
-/* Кинорежим. */
+/* Кинорежим. Дорожка фазенды — вплотную к финалу: степь идёт одной полосой (переход раздела 5). */
+:global(html[data-cinematic]:not([data-quality="fallback"])) .world {
+  padding-bottom: 0;
+}
+
 :global(html[data-cinematic]:not([data-quality="fallback"])) .worldTrack {
   display: block;
   height: 200svh;
@@ -1108,6 +1234,45 @@
 }
 
 /*
+ * Портрет телефона: заголовок фазенды с CTA «Приехать на просмотр» — внизу, под большим пальцем;
+ * плашка текущей зоны — наверху. Подложки — от своих краёв экрана.
+ */
+@media (max-width: 767px) and (orientation: portrait) {
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .worldHead {
+    top: auto;
+    right: 0;
+    max-width: none;
+    bottom: calc(var(--horizon-height) + var(--space-3) + env(safe-area-inset-bottom));
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .worldHead::before {
+    inset: -30% calc(-1 * var(--grid-margin))
+      calc(-1 * (var(--horizon-height) + var(--space-3) + env(safe-area-inset-bottom)));
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--indigo) 0%, transparent) 0%,
+      color-mix(in srgb, var(--indigo) 88%, transparent) 40%,
+      var(--indigo) 100%
+    );
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock {
+    top: calc(72px + var(--space-2) + env(safe-area-inset-top));
+    bottom: auto;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock::before {
+    inset: calc(-1 * (72px + var(--space-4))) calc(-1 * var(--grid-margin)) -40%;
+    background: linear-gradient(
+      180deg,
+      var(--indigo) 0%,
+      color-mix(in srgb, var(--indigo) 86%, transparent) 55%,
+      color-mix(in srgb, var(--indigo) 0%, transparent) 100%
+    );
+  }
+}
+
+/*
  * Телефон: четыре плашки не помещаются над фазендой — видна плашка текущей зоны,
  * остальные скрыты только визуально (экранный диктор читает список целиком).
  */
@@ -1147,6 +1312,94 @@
 }
 
 /* ---------- Снова рассвет ---------- */
+/*
+ * Обычная раскладка («Коротко», без WebGL, без JS): кадр, фраза, бриф — подряд.
+ * Кинорежим: дорожка 180vh, экран закреплён — степь первого экрана (петля), фраза слева,
+ * на подложке, как текст первого экрана (контраст ≥ 4.5:1 над 3D).
+ */
+.finaleTrack,
+.finaleStage {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.finaleText {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 820px;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .finale {
+  padding-top: 0;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .finaleTrack {
+  display: block;
+  height: 180svh;
+  margin-bottom: var(--space-block);
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .finaleStage {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-content: center;
+  height: 100svh;
+  min-height: 480px;
+  padding-block: calc(72px + var(--space-4)) var(--space-10);
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .finaleFrame {
+  display: block;
+  position: absolute;
+  inset: 0 calc(-1 * var(--grid-margin));
+  z-index: -1;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .finaleFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .finaleText {
+  position: relative;
+  padding: var(--space-3) var(--space-4) var(--space-3) 0;
+}
+
+:global(html[data-cinematic]:not([data-quality="fallback"])) .finaleText::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -20% -30% -20% calc(-1 * var(--grid-margin));
+  /* Цвет подложки — небо: ночью почти чёрное, к рассвету — индиго первого экрана. */
+  --finale-shade: color-mix(in srgb, #05070b calc(var(--finale-night, 0) * 100%), var(--indigo));
+  background: linear-gradient(
+    90deg,
+    var(--finale-shade) 0%,
+    color-mix(in srgb, var(--finale-shade) 92%, transparent) 45%,
+    color-mix(in srgb, var(--finale-shade) 0%, transparent) 100%
+  );
+  mask-image: linear-gradient(to bottom, transparent 0%, black 22%, black 78%, transparent 100%);
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .finaleStage {
+    align-content: start;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .finaleText::before {
+    inset: -12% calc(-1 * var(--grid-margin)) -40%;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--finale-shade) 92%, transparent) 0%,
+      color-mix(in srgb, var(--finale-shade) 80%, transparent) 60%,
+      color-mix(in srgb, var(--finale-shade) 0%, transparent) 100%
+    );
+  }
+}
+
 .brief {
   display: grid;
   gap: var(--space-3);
@@ -1160,4 +1413,78 @@
   font-size: clamp(28px, 3vw, 48px);
   line-height: 1.2;
   max-width: 30ch;
+}
+
+/* ---------- Телефон в альбомной ориентации: все закреплённые экраны ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyStage,
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayStage,
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .fireStage,
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .worldStage,
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .finaleStage {
+    min-height: 0;
+  }
+
+  /* «День»: заголовок и табы — на всю ширину, ближе к хедеру; лид — для экранного диктора. */
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayStage {
+    gap: var(--space-2);
+    padding-block: calc(56px + var(--space-1))
+      calc(var(--horizon-height) + var(--space-2) + env(safe-area-inset-bottom));
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead,
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayTabs {
+    max-width: none;
+    padding-right: 0;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead > p:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Фазенда: заголовок с CTA — слева сверху, плашка текущей зоны — справа снизу. */
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .worldHead {
+    top: calc(56px + var(--space-1));
+    gap: var(--space-1);
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .worldHint {
+    display: none;
+  }
+
+  :global(html[data-cinematic]:not([data-quality="fallback"])) .worldZonesBlock {
+    left: auto;
+    width: min(44%, 360px);
+    bottom: calc(var(--horizon-height) + var(--space-2) + env(safe-area-inset-bottom));
+    gap: var(--space-1);
+  }
+
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"])) .worldZones {
+    grid-template-columns: 1fr;
+  }
+
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"]))
+    .worldStage:not([data-zone="field"])
+    [data-zone-item="field"],
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"]))
+    .worldStage:not([data-zone="tent"])
+    [data-zone-item="tent"],
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"]))
+    .worldStage:not([data-zone="yurt"])
+    [data-zone-item="yurt"],
+  :global(html[data-cinematic][data-canvas="ready"]:not([data-quality="fallback"]))
+    .worldStage:not([data-zone="kitchen"])
+    [data-zone-item="kitchen"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }

@@ -105,6 +105,7 @@ export function createTerrain(atmosphere: Record<string, IUniform>) {
       uCenter: { value: [0, 0] },
       uWave: { value: [-100, 0] },
       uCircle: { value: [0, -60, 3.2] },
+      uPressed: { value: 1 },
     },
     vertexShader: /* glsl */ `
       ${STEPPE_HEAD}
@@ -126,6 +127,7 @@ export function createTerrain(atmosphere: Record<string, IUniform>) {
       ${STEPPE_HEAD}
       uniform vec2 uWave;
       uniform vec3 uCircle;
+      uniform float uPressed;
       varying vec3 vWorld;
       varying vec3 vNormalW;
       void main() {
@@ -145,7 +147,7 @@ export function createTerrain(atmosphere: Record<string, IUniform>) {
         col += vec3(0.62, 0.66, 0.74) * sheen * 0.05 * (0.25 + 0.9 * sunUp) * uSkyReveal;
         // Круг примятой травы — светлее: стебли лежат.
         float circle = 1.0 - smoothstep(uCircle.z - 0.3, uCircle.z + 0.3, distance(vWorld.xz, uCircle.xy));
-        col = mix(col, col * 1.6 + vec3(0.01), circle * 0.6);
+        col = mix(col, col * 1.6 + vec3(0.01), circle * 0.6 * uPressed);
         col *= dayGain();
         col = applyFog(col, vWorld);
         gl_FragColor = vec4(col, 1.0);

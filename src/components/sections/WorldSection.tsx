@@ -13,6 +13,7 @@ import type from "@/components/ui/type.module.css";
 import { CaseLink } from "./CaseLink";
 import { Chapter } from "./Chapter";
 import { FazendaMap } from "./FazendaMap";
+import { FallbackClip } from "./FallbackClip";
 import styles from "./sections.module.css";
 
 export const zones = WORLD_ZONES;
@@ -21,9 +22,11 @@ export const zones = WORLD_ZONES;
  * Глава 5. Этот мир существует (CLAUDE.md, раздел 2).
  * 1) Лента реальных событий: кадры архива — WebGL-двойники поверх <img>, проявляются «дымом»;
  *    клик → страница кейса общим элементом (CaseLink).
- * 2) Фазенда: дорожка 200vh, экран закреплён; «свет» → облёт с остановками в четырёх зонах
- *    (сплаты на high, видео на medium; сцена пишет data-zone). Без 3D — фото и список зон.
- * 3) Дорога (схема, время в пути, 2GIS / Google Maps), клиенты и отзывы, «Приехать на просмотр».
+ * 2) Дорога (схема, время в пути, 2GIS / Google Maps), клиенты и отзывы.
+ * 3) Фазенда: дорожка 200vh, экран закреплён; «свет» → облёт с остановками в четырёх зонах
+ *    (сплаты на high, видео на medium; сцена пишет data-zone), CTA «Приехать на просмотр».
+ *    В конце дорожки фазенда гаснет — под ней уже ночная степь финала (глава 6, вплотную).
+ *    Без 3D — фото и список зон.
  * TODO(client-data): вместимость, адрес и время в пути, кейсы, логотипы, отзывы.
  */
 export async function WorldSection() {
@@ -68,46 +71,6 @@ export async function WorldSection() {
             );
           })}
         </ul>
-      </div>
-
-      <div className={styles.worldTrack} data-track="world">
-        <div className={styles.worldStage} data-world-stage="" data-zone={zones[0]}>
-          <SceneImage
-            sceneSlot
-            className={styles.worldFrame}
-            src="/assets/placeholders/fazenda.svg"
-            alt={t("sceneAlt")}
-            width={1600}
-            height={900}
-            sizes="100vw"
-          />
-          <div className={`${styles.textBlock} ${styles.worldHead}`}>
-            <h3 className={type.subTitle}>{t("fazendaLabel")}</h3>
-            <p className={type.body}>{t("location")}</p>
-            <p className={`${type.caption} ${styles.worldHint}`}>{t("zonesHint")}</p>
-          </div>
-          <div className={styles.worldZonesBlock}>
-            <h3 className={type.eyebrow} id="world-zones">
-              {t("zonesLabel")}
-            </h3>
-            <ol className={styles.worldZones} aria-labelledby="world-zones">
-              {zones.map((zone) => {
-                const capacity = fazenda.capacity[zone];
-                return (
-                  <li key={zone} className={styles.worldZone} data-zone-item={zone}>
-                    <p className={type.subTitle}>{t(`zones.${zone}.name`)}</p>
-                    <p className={type.body}>{t(`zones.${zone}.text`)}</p>
-                    <p className={`${type.caption} ${styles.tabular}`}>
-                      {capacity === null
-                        ? t("capacityPending")
-                        : t("capacity", { count: capacity })}
-                    </p>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        </div>
       </div>
 
       <div className={styles.worldInfo}>
@@ -183,13 +146,53 @@ export async function WorldSection() {
         </div>
       </div>
 
-      <div className={layout.actions}>
-        <BriefLink href={briefFallbackHref(locale, "visit")} source="visit">
-          {t("cta")}
-        </BriefLink>
-        <ButtonLink href="/fazenda" variant="secondary">
-          {t("fazendaLink")}
-        </ButtonLink>
+      <div className={styles.worldTrack} data-track="world">
+        <div className={styles.worldStage} data-world-stage="" data-zone={zones[0]}>
+          <FallbackClip chapter="world" className={styles.worldFrame}>
+            <SceneImage
+              sceneSlot
+              src="/assets/placeholders/fazenda.svg"
+              alt={t("sceneAlt")}
+              width={1600}
+              height={900}
+              sizes="100vw"
+            />
+          </FallbackClip>
+          <div className={`${styles.textBlock} ${styles.worldHead}`}>
+            <h3 className={type.subTitle}>{t("fazendaLabel")}</h3>
+            <p className={type.body}>{t("location")}</p>
+            <p className={`${type.caption} ${styles.worldHint}`}>{t("zonesHint")}</p>
+            <div className={layout.actions}>
+              <BriefLink href={briefFallbackHref(locale, "visit")} source="visit">
+                {t("cta")}
+              </BriefLink>
+              <ButtonLink href="/fazenda" variant="secondary">
+                {t("fazendaLink")}
+              </ButtonLink>
+            </div>
+          </div>
+          <div className={styles.worldZonesBlock}>
+            <h3 className={type.eyebrow} id="world-zones">
+              {t("zonesLabel")}
+            </h3>
+            <ol className={styles.worldZones} aria-labelledby="world-zones">
+              {zones.map((zone) => {
+                const capacity = fazenda.capacity[zone];
+                return (
+                  <li key={zone} className={styles.worldZone} data-zone-item={zone}>
+                    <p className={type.subTitle}>{t(`zones.${zone}.name`)}</p>
+                    <p className={type.body}>{t(`zones.${zone}.text`)}</p>
+                    <p className={`${type.caption} ${styles.tabular}`}>
+                      {capacity === null
+                        ? t("capacityPending")
+                        : t("capacity", { count: capacity })}
+                    </p>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </div>
       </div>
     </Chapter>
   );

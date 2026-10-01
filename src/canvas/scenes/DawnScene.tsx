@@ -8,6 +8,7 @@ import { input } from "@/motion/input";
 import { progress } from "@/motion/progress";
 import { Spring } from "@/motion/spring";
 import { ticker } from "@/motion/ticker";
+import { soundBus } from "@/lib/sound/bus";
 import { isSoftwareRenderer } from "@/lib/capabilities";
 import { currentTier } from "../loaders";
 import { createAlphaVideoMaterial } from "../materials/alphaVideoMaterial";
@@ -15,8 +16,9 @@ import { grade, STEPPE_LAYER } from "../PostFX";
 import { stageStats } from "../stats";
 import { createAtmosphere, sunDirection } from "../steppe/atmosphere";
 import { LIGHT_DAY, LIGHT_NIGHT, sceneLights } from "../lights";
-import { steppeOverride } from "../steppe/control";
+import { steppeOverride, steppeReturn } from "../steppe/control";
 import {
+  CAMERA_Z,
   computeDawnState,
   computeMorning,
   HORSE_DISTANCE,
@@ -24,7 +26,7 @@ import {
   markWaveSeen,
   waveAlreadySeen,
 } from "../steppe/dawn";
-import { createBlades, createCards, createGrassShared } from "../steppe/grass";
+import { createBlades, createCards, createGrassShared, DEFAULT_CIRCLE } from "../steppe/grass";
 import { HorseClips } from "../steppe/horse";
 import { createMountains, createSky } from "../steppe/sky";
 import { createTerrain, terrainHeight } from "../steppe/terrain";
@@ -38,7 +40,6 @@ import type { SceneProps } from "./registry";
  */
 
 const DAWN_FOV = 2 * Math.atan(24 / (2 * 135)) * (180 / Math.PI);
-const CAMERA_Z = 12; // камера первого кадра (path.ts, dawnFrame)
 const HERO_SELECTOR = "[data-hero-text]";
 const HOVER_SELECTOR = "[data-dawn-hover]";
 
@@ -195,7 +196,22 @@ export default function DawnScene({ data }: SceneProps) {
       const c = o.active ? o.clearings[k]! : null;
       clearings[k]!.set(c ? c[0] : 0, c ? c[1] : 0, c ? c[2] : 0);
     }
-    if (o.active && progress.chapterIndex >= 2) {
+    const r = steppeReturn;
+    a.uPredawn.value = r.active ? r.predawn : 0;
+    a.uStars.value = r.active ? r.stars : 0;
+    if (r.active) {
+      // «Снова рассвет»: та же степь рассвета, из ночи — к первому кадру сайта.
+      a.uSunElevation.value = r.sunElevation;
+      a.uGroundFog.value = r.groundFog;
+      a.uDaylight.value = 0;
+      a.uDusk.value = 0;
+      a.uNight.value = 0;
+      sunDirection(horseX, -HORSE_DISTANCE, r.sunElevation, a.uSunDir.value);
+      if (sceneLights.hemi)
+        sceneLights.hemi.intensity = MathUtils.lerp(LIGHT_DAY.hemi, LIGHT_NIGHT.hemi, r.predawn);
+      if (sceneLights.sun)
+        sceneLights.sun.intensity = MathUtils.lerp(LIGHT_DAY.sun, LIGHT_NIGHT.sun, r.predawn);
+    } else if (o.active && progress.chapterIndex >= 2) {
       // «День» и дальше: время суток и завесу задаёт сцена главы.
       a.uSunElevation.value = o.sunElevation;
       a.uGroundFog.value = o.groundFog;
@@ -224,6 +240,15 @@ export default function DawnScene({ data }: SceneProps) {
       else boost.update(dt);
       a.uDawnBoost.value = boost.value;
     }
+    // Круг примятой травы: на месте юрты — или перед камерой финала, поднимается по прогрессу.
+    const circle = r.active ? r.circle : DEFAULT_CIRCLE;
+    const pressed = r.active ? r.pressed : 1;
+    // Без аллокаций в кадре: значения пишутся в те же массивы.
+    const bladesCircle = world.shared.uCircle.value;
+    const terrainCircle = world.terrain.material.uniforms.uCircle!.value as number[];
+    for (let k = 0; k < 3; k++) bladesCircle[k] = terrainCircle[k] = circle[k]!;
+    world.shared.uPressed.value = pressed;
+    world.terrain.material.uniforms.uPressed!.value = pressed;
     world.shared.uWave.value = [s.waveFront, s.waveStrength];
     world.terrain.material.uniforms.uWave!.value = [s.waveFront, s.waveStrength];
     world.shared.uSway.value = reduced ? 0 : 1;
@@ -234,8 +259,13 @@ export default function DawnScene({ data }: SceneProps) {
       fov >= 10.2
         ? MathUtils.mapLinear(fov, 10.2, 27, 6, 1.5)
         : MathUtils.mapLinear(fov, 1.5, 10.2, 500, 6);
-    grade.exposure =
-      progress.chapterIndex <= 1 ? m.exposure : steppeOverride.active ? steppeOverride.exposure : 1;
+    grade.exposure = r.active
+      ? r.exposure
+      : progress.chapterIndex <= 1
+        ? m.exposure
+        : steppeOverride.active
+          ? steppeOverride.exposure
+          : 1;
 
     // Рельеф следует за камерой с шагом 4 м.
     const cam = camera.position;
@@ -250,6 +280,8 @@ export default function DawnScene({ data }: SceneProps) {
     if (!reduced && input.active) world.wind.pointer(camera, input.x, input.y, input.vx, input.vy);
     world.wind.update(gl, dt, { x: cam.x, z: cam.z, forwardX, forwardZ }, !reduced);
     a.tWind.value = world.wind.texture;
+    soundBus.gust = world.wind.gustLevel;
+    soundBus.gustAt = ticker.time;
     a.uWindOrigin.value.copy(world.wind.origin);
 
     // Конь: правая треть кадра, ~275 м; уходит шагом, тонет в утреннем тумане.
@@ -281,6 +313,8 @@ export default function DawnScene({ data }: SceneProps) {
     stageStats.dawn.wave = s.waveStrength > 0;
     stageStats.dawn.clip = s.horseClip;
     stageStats.dawn.textOut = s.textOut;
+    // Видео коня играет (иначе — постер: автоплей запрещён, энергосбережение).
+    stageStats.dawn.video = state.current?.clips.playing ?? false;
   }, 0);
 
   return (

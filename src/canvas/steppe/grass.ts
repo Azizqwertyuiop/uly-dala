@@ -31,6 +31,10 @@ const SHARED = /* glsl */ `
   uniform float uTile;
   uniform vec2 uWave;      // x — расстояние фронта от камеры, y — сила
   uniform vec3 uCircle;    // x, z центра круга примятой травы, радиус
+  uniform float uPressed;  // 1 — трава в круге лежит, 0 — поднялась («Снова рассвет»)
+  float circleMask(vec2 p) {
+    return uPressed * (1.0 - smoothstep(uCircle.z - 0.35, uCircle.z + 0.25, distance(p, uCircle.xy)));
+  }
   uniform float uSway;     // 0 — reduced motion (стебли неподвижны)
   uniform float uNearClip; // м: при 135 мм ближняя трава не заслоняет кадр
   uniform vec3 uClearings[4]; // поляны: x, z, радиус (0 — нет; < 0 — травы нет совсем: под ковром)
@@ -165,7 +169,7 @@ export function createBlades(
         float wave;
         vec3 bend = windBend(p, aRand.w, wave);
         // Круг примятой травы: стебли лежат от центра наружу.
-        float flatten = 1.0 - smoothstep(uCircle.z - 0.35, uCircle.z + 0.25, distance(p, uCircle.xy));
+        float flatten = circleMask(p);
         vec2 outward = normalize(p - uCircle.xy + 1e-4);
         float k = y * y;
         vec3 root = vec3(p.x, terrainHeight(p), p.y);
@@ -337,7 +341,7 @@ export function createCards(
         float d = distance(p, cameraPosition.xz);
         // Кольцо средней зоны: от края стеблей до растворения в поверхности.
         vFade = smoothstep(max(14.0, uNearClip + 8.0), max(20.0, uNearClip + 14.0), d) * (1.0 - smoothstep(170.0, 230.0, d));
-        float scale = mix(0.3, 0.55, aRand.x) * vFade * max(0.0, 1.0 - 0.8 * mown(p));
+        float scale = mix(0.3, 0.55, aRand.x) * vFade * max(0.0, 1.0 - 0.8 * max(mown(p), circleMask(p)));
         float ang = aRand.z * 6.2831853;
         mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
         vec2 xz = rot * position.xz * scale;
@@ -388,6 +392,9 @@ export function createCards(
   return { mesh, material };
 }
 
+/** Круг примятой травы: на месте юрты (конец «Рассвета», x, z, радиус). */
+export const DEFAULT_CIRCLE = [0, -60, 3.2] as const;
+
 /** Сколько скошенных полян одновременно (текущая площадка «Дня» и соседние). */
 export const CLEARINGS = 4;
 
@@ -395,7 +402,8 @@ export const CLEARINGS = 4;
 export function createGrassShared() {
   return {
     uWave: { value: [-100, 0] },
-    uCircle: { value: [0, -60, 3.2] },
+    uCircle: { value: [...DEFAULT_CIRCLE] as number[] },
+    uPressed: { value: 1 },
     uClearings: { value: Array.from({ length: CLEARINGS }, () => new Vector3()) },
     uSway: { value: 1 },
     uNearClip: { value: 6 },

@@ -22,3 +22,19 @@ export const steppeOverride = {
     [0, 0, 0],
   ] as [number, number, number][],
 };
+
+/*
+ * «Снова рассвет» (и хвост «Этот мир существует»): та же степь рассвета, но из ночи —
+ * звёзды, предрассветная тьма, круг примятой травы перед камерой. Главнее steppeOverride.
+ */
+export const steppeReturn = {
+  active: false,
+  sunElevation: -7,
+  groundFog: 0.35,
+  exposure: 0.8,
+  predawn: 1,
+  stars: 1,
+  /** Круг примятой травы: x, z, радиус; pressed — 1 лежит, 0 поднялась. */
+  circle: [0, 0, 3.2] as [number, number, number],
+  pressed: 1,
+};

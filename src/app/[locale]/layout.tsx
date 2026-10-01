@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BriefModal } from "@/components/brief/BriefModal";
@@ -6,6 +6,7 @@ import { getBriefProps } from "@/components/brief/briefProps";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CanvasRoot } from "@/components/layout/CanvasRoot";
+import { SoundController } from "@/components/layout/SoundController";
 import { MotionBootstrap } from "@/components/layout/MotionBootstrap";
 import { SkipLink } from "@/components/layout/SkipLink";
 import { UiBootstrap } from "@/components/layout/UiBootstrap";
@@ -18,6 +19,17 @@ import { fontVariables } from "@/styles/fonts";
 import "lenis/dist/lenis.css";
 import "@/styles/tokens.css";
 import "../globals.css";
+
+/*
+ * Вьюпорт (CLAUDE.md, раздел 13): viewport-fit=cover — страница под «чёлкой» и полосой «Домой»,
+ * отступы — через env(safe-area-inset-*). Масштабирование не запрещается (доступность).
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#1C2230",
+};
 
 // Только kk, ru, en; любой другой первый сегмент пути — 404.
 export const dynamicParams = false;
@@ -49,6 +61,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
         <NextIntlClientProvider messages={null}>
           <SkipLink label={t("skipLink")} />
           <CanvasRoot />
+          <SoundController />
           <SiteHeader />
           {children}
           <SiteFooter />

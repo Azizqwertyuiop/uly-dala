@@ -101,8 +101,8 @@ test.describe("холст сцены", () => {
       expect(s.camera.roll).toBe(0);
       expect(s.camera.y).toBeLessThanOrEqual(1.8);
       // Дальше двух глав ничего не держим — кроме мира, в котором стоит глава
-      // (степь рассвета нужна «Сборке», «Дню» и «Огню»).
-      const world = ["assembly", "day", "fire"].includes(id) ? ["dawn"] : [];
+      // (степь рассвета нужна «Сборке», «Дню», «Огню» и финалу; финал грузится уже в «Мире»).
+      const world = ["assembly", "day", "fire", "world", "return"].includes(id) ? ["dawn"] : [];
       for (const loaded of s.loaded) {
         if (world.includes(loaded)) continue;
         expect(

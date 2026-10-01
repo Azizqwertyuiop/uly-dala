@@ -228,3 +228,42 @@ describe("камера: путь по всему сайту", () => {
     expect(pitch).toBeGreaterThan(0.8 - breath - 0.01);
   });
 });
+
+describe("наборы ключей: портрет и уровень качества", () => {
+  const yurt = new Vector3(0, 1.5, -60);
+  const aimError = (path: ReturnType<typeof buildCameraPath>, t: number) => {
+    const p = path.positionAt(t);
+    const q = path.targetAt(t);
+    const look = q.clone().sub(p).normalize();
+    const toYurt = yurt.clone().sub(p).normalize();
+    return look.angleTo(toYurt);
+  };
+
+  it("портрет: в «Сборке» камера смотрит на юрту (по центру кадра)", () => {
+    const portrait = buildCameraPath(undefined, { portrait: true, flyover: true });
+    const wide = buildCameraPath();
+    for (const p of [0, 0.3, 0.45, 0.6, 0.78]) {
+      expect(aimError(portrait, trackT(1, p))).toBeLessThan(0.05);
+    }
+    // На широком экране юрта — справа от текста (камера смотрит мимо центра юрты).
+    expect(aimError(wide, trackT(1, 0.45))).toBeGreaterThan(0.05);
+  });
+
+  it("medium: «Сборка» без облёта — камера стоит всю дорожку", () => {
+    const still = buildCameraPath(undefined, { portrait: false, flyover: false });
+    const a = still.positionAt(trackT(1, 0));
+    for (const p of [0.25, 0.5, 0.75, 1]) {
+      expect(still.positionAt(trackT(1, p)).distanceTo(a)).toBeLessThan(0.01);
+    }
+  });
+
+  it("смена набора — без рывка: пружины не сбрасываются", () => {
+    const rig = new CameraRigState(0.35);
+    const t = trackT(1, 0.45);
+    rig.snap(t);
+    const before = rig.out.position.clone();
+    rig.setLayout({ portrait: true, flyover: true });
+    rig.update(1 / 60, t, { x: 0, y: 0 }, 0.35, true);
+    expect(rig.out.position.distanceTo(before)).toBeLessThan(0.5);
+  });
+});

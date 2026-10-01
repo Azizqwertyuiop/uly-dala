@@ -56,6 +56,7 @@ type Props = {
   onFallback: (reason: string) => void;
 };
 
+const NO_POINTER = { x: 0, y: 0 } as const;
 const DAWN_FOV = 2 * Math.atan(24 / (2 * 135)) * (180 / Math.PI);
 
 /** Сколько ждать восстановления контекста, прежде чем уйти в fallback, с. */
@@ -168,8 +169,12 @@ function Runtime({
         if (!entry || loading.current.has(id)) continue;
         loading.current.add(id);
         void entry.loader().then((loaded) => {
-          loading.current.delete(id);
-          setScenes((prev) => new Map(prev).set(id, loaded));
+          // «Загружается» → «загружена» — в одном обновлении состояния: иначе между ними план
+          // (при параллельной догрузке другой сцены) видит главу ни там, ни там и грузит её снова.
+          setScenes((prev) => {
+            loading.current.delete(id);
+            return new Map(prev).set(id, loaded);
+          });
         });
       }
       if (!hasChapters && !ready.current) markReady();
@@ -225,13 +230,23 @@ function Runtime({
           ? chapterTempo[chapterTempoId[progress.chapterId as keyof typeof chapterTempoId]]
           : chapterTempo.dawn;
       // Порядок форматов «Дня» (развилка) изменился — путь камеры перестраивается.
+      // Набор ключей камеры: портрет телефона — свой; облёт «Сборки» — только на high.
+      rig.setLayout({
+        portrait: size.width < size.height,
+        flyover: quality === "high",
+      });
       if (dayVersion.current !== dayControl.version) {
         dayVersion.current = dayControl.version;
         rig.setDayOrder(dayControl.order);
       }
-      // Композиция первого экрана по пропорциям (горизонт 72% / 68% на мобильных) — только в начале.
+      // Композиция первого экрана по пропорциям (горизонт 72% / 68% на мобильных) — в начале…
       const aspect = size.width / Math.max(size.height, 1);
-      const framing = 1 - Math.min(Math.max(progress.horizon / 0.12, 0), 1);
+      // …и в финале: «Снова рассвет» — тот же кадр (петля).
+      const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
+      const framing = Math.max(
+        1 - clamp01(progress.horizon / 0.12),
+        clamp01((progress.horizon - 0.9) / 0.1),
+      );
       const pitch = (horizonPitch(DAWN_FOV, aspect) - horizonPitch(DAWN_FOV, 16 / 9)) * framing;
       // Шаг коня (ритм 0,6 с) — только на переходе Рассвет → Сборка, 40vh.
       const transition =
@@ -245,7 +260,8 @@ function Runtime({
       rig.update(
         dt,
         progress.camera,
-        input,
+        // Смещение кадра за курсором — только мышь: палец прокручивает страницу, а не «смотрит».
+        input.pointerType === "touch" ? NO_POINTER : input,
         tempo.cameraSmoothing,
         reduced.matches,
         {
@@ -371,6 +387,7 @@ function Runtime({
         stageStats.camera.pitch = o.pitch;
         stageStats.camera.roll = camera.rotation.z;
         stageStats.camera.fov = o.fov;
+        stageStats.camera.pose = rig.poseWeight;
         stageStats.current = progress.chapterId;
         stageStats.frames++;
       }),
