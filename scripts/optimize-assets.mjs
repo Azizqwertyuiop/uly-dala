@@ -9,7 +9,7 @@
  * Запуск: npm run assets        (после изменения исходников)
  * Без системных программ: KTX2 — ktx2-encoder (WASM Basis Universal), картинки — sharp.
  */
-import { copyFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { copyFileSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { Logger, NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import {
@@ -24,6 +24,7 @@ import {
 import { ktx2 } from "ktx2-encoder/gltf-transform";
 import { MeshoptEncoder, MeshoptSimplifier } from "meshoptimizer";
 import sharp from "sharp";
+import { KTX2_WORKER_FILE, ktx2WorkerSource } from "./ktx2-worker.mjs";
 
 const ROOT = new URL("../", import.meta.url);
 const SRC = new URL("assets-src/models/", ROOT);
@@ -62,6 +63,8 @@ function copyDecoders() {
   for (const file of ["basis_transcoder.js", "basis_transcoder.wasm"]) {
     copyFileSync(new URL(file, libs), new URL(file, DECODERS));
   }
+  // Воркер отдельным файлом — для CSP (scripts/ktx2-worker.mjs).
+  writeFileSync(KTX2_WORKER_FILE, ktx2WorkerSource());
   console.log("  декодеры KTX2 → public/assets/decoders/basis/");
 }
 

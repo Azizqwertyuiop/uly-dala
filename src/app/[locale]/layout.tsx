@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { CanvasRoot } from "@/components/layout/CanvasRoot";
 import { SoundController } from "@/components/layout/SoundController";
+import { TelemetryBootstrap } from "@/components/layout/TelemetryBootstrap";
 import { LanguageSuggest, type SuggestCopy } from "@/components/layout/LanguageSuggest";
 import { languageSuggestScript } from "@/components/layout/languageSuggestScript";
 import { getMessages } from "@/content/messages";
@@ -96,6 +97,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           <BriefModal {...getBriefProps(locale)} />
           <UiBootstrap />
           <MotionBootstrap />
+          <TelemetryBootstrap />
         </NextIntlClientProvider>
       </body>
     </html>

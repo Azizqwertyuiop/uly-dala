@@ -98,6 +98,8 @@ export const assets = {
 
 /** Транскодер KTX2 (Basis) — локально, без CDN. */
 export const BASIS_TRANSCODER_PATH = "/assets/decoders/basis/";
+/** Воркер KTX2 файлом — со своей CSP (scripts/ktx2-worker.mjs). */
+export const KTX2_WORKER_URL = "/assets/decoders/basis/ktx2-worker.js";
 
 export function assetsOfChapter(chapter: ChapterId) {
   return Object.values(assets).filter((a) => a.chapter === chapter);

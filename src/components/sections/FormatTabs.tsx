@@ -245,7 +245,12 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
                 >
                   <strong>{item.cta}</strong>
                 </BriefLink>
-                <Link href={item.pageHref} className={type.link}>
+                <Link
+                  href={item.pageHref}
+                  className={type.link}
+                  data-cta="format"
+                  data-format={isEventType(item.slug) ? item.slug : undefined}
+                >
                   {formatPageLabel}
                   <span className={layout.visuallyHidden}>: {item.title}</span>
                 </Link>

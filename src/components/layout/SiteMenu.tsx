@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { track } from "@/lib/analytics/track";
 import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/intl/navigation";
 import { useHydrated } from "@/lib/useHydrated";
@@ -66,6 +67,7 @@ export function SiteMenu({ locale, labels, chapters, pages, languageNames }: Sit
     document.documentElement.dataset.menuOpen = "true";
     setOpen(true);
     closeRef.current?.focus();
+    track("menu_open", {});
   };
 
   const hide = useCallback((restoreFocus: boolean) => {
@@ -133,6 +135,7 @@ export function SiteMenu({ locale, labels, chapters, pages, languageNames }: Sit
         ref={dialogRef}
         id="site-menu"
         className={styles.dialog}
+        data-place="menu"
         aria-labelledby="site-menu-title"
         data-tone="dark"
         onKeyDown={trapFocus}

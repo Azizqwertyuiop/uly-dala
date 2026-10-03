@@ -44,6 +44,9 @@ export function BriefLink({
       href={href}
       className={[base, className].filter(Boolean).join(" ")}
       aria-haspopup={hydrated ? "dialog" : undefined}
+      // Аналитика: CTA с главой (TelemetryBootstrap).
+      data-cta={source}
+      data-format={eventType}
       onClick={(event) => {
         if (!hydrated || event.metaKey || event.ctrlKey || event.shiftKey) return;
         event.preventDefault();

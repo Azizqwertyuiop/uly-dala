@@ -5,7 +5,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import type { DeviceProfile } from "@/lib/capabilities";
-import { BASIS_TRANSCODER_PATH, type Tier } from "./assets";
+import { BASIS_TRANSCODER_PATH, KTX2_WORKER_URL, type Tier } from "./assets";
 
 /*
  * Загрузчики моделей: glTF + KTX2 (Basis, транскодер локально) + meshopt (декодер в бандле).
@@ -23,8 +23,41 @@ export function configureLoaders(gl: WebGLRenderer, quality: Tier, device?: Devi
   tier = quality;
   if (device) profile = device;
   if (!ktx2) {
-    ktx2 = new KTX2Loader().setTranscoderPath(BASIS_TRANSCODER_PATH).detectSupport(gl);
+    ktx2 = withFileWorker(
+      new KTX2Loader().setTranscoderPath(BASIS_TRANSCODER_PATH).detectSupport(gl),
+    );
   }
+}
+
+/** Внутренности KTX2Loader, которые подменяются (three 0.186). */
+type KTX2Internals = {
+  init: () => Promise<void>;
+  workerPool: { setWorkerCreator: (create: () => Worker) => void };
+  workerConfig: unknown;
+  transcoderBinary: ArrayBuffer;
+};
+
+/*
+ * Воркер транскодера — из файла, а не из blob: (CSP, раздел 14). Транскодер Basis использует
+ * new Function, а blob-воркер наследует CSP страницы без 'unsafe-eval'. Файл ktx2-worker.js —
+ * тот же код, что собирает KTX2Loader, и отдаётся со своей узкой CSP (next.config.ts).
+ * init() по-прежнему грузит wasm и передаёт его воркеру тем же сообщением.
+ */
+function withFileWorker(loader: KTX2Loader): KTX2Loader {
+  const l = loader as unknown as KTX2Internals;
+  const init = l.init.bind(loader);
+  l.init = () =>
+    init().then(() => {
+      l.workerPool.setWorkerCreator(() => {
+        const worker = new Worker(KTX2_WORKER_URL);
+        const transcoderBinary = l.transcoderBinary.slice(0);
+        worker.postMessage({ type: "init", config: l.workerConfig, transcoderBinary }, [
+          transcoderBinary,
+        ]);
+        return worker;
+      });
+    });
+  return loader;
 }
 
 export function currentTier(): Tier {

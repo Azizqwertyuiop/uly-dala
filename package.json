@@ -18,6 +18,7 @@
     "e2e": "playwright test",
     "e2e:install": "playwright install chromium",
     "lhci": "node scripts/lhci.mjs",
+    "audit:deps": "npm audit --omit=dev --audit-level=high && npm audit --audit-level=critical",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run e2e",
     "assets": "node scripts/generate-3d-sources.mjs && node scripts/optimize-assets.mjs",
     "assets:video": "node scripts/make-test-video.mjs",
@@ -26,7 +27,8 @@
     "assets:flyover": "node scripts/make-flyover-video.mjs",
     "assets:audio": "node scripts/make-audio-placeholders.mjs",
     "assets:fallback": "node scripts/render-fallback-clips.mjs",
-    "assets:og": "node scripts/render-og-images.mjs"
+    "assets:og": "node scripts/render-og-images.mjs",
+    "assets:ktx2-worker": "node scripts/ktx2-worker.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",
@@ -39,6 +41,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "^0.186.1",
+    "web-vitals": "^5.3.0",
     "zod": "^4.6.5",
     "zustand": "^5.0.15"
   },

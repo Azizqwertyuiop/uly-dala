@@ -14,6 +14,9 @@ import {
   type DeviceProfile,
 } from "@/lib/capabilities";
 import { whenIdle } from "@/lib/idle";
+import { track } from "@/lib/analytics/track";
+import { reportError } from "@/lib/monitoring/report";
+import { failedPrograms } from "./shaderCheck";
 import { input } from "@/motion/input";
 import { chapterStartScroll, progress } from "@/motion/progress";
 import { chapterTempo } from "@/motion/tokens";
@@ -91,7 +94,15 @@ export default function Stage(props: Props) {
           gl.debug.checkShaderErrors = props.debug;
         }}
       >
-        <Runtime {...props} quality={quality} onDowngrade={() => setQuality("medium")} />
+        <Runtime
+          {...props}
+          quality={quality}
+          onDowngrade={() => {
+            setQuality("medium");
+            document.documentElement.dataset.quality = "medium";
+            track("quality", { tier: "medium", reason: "firefox-fps" });
+          }}
+        />
       </Canvas>
       {props.debug && <DebugHud />}
     </>
@@ -200,6 +211,20 @@ function Runtime({
     if (pending.length === 0) return;
     const compile = () =>
       void gl.compileAsync(scene, camera).then(() => {
+        // Шейдер не собрался (в продакшене checkShaderErrors выключен — проверяем сами, после
+        // готовности программ это не ждёт видеокарту) → мониторинг с тегом webgl и fallback.
+        const failed = failedPrograms(gl);
+        if (failed.length > 0) {
+          reportError({
+            tag: "webgl",
+            kind: "shader_link",
+            message: `shader program failed to link: ${failed.map((f) => f.name).join(", ")}`,
+            detail: { programs: failed.length, scenes: pending.join(",") },
+          });
+          stageStats.context = "fallback";
+          onFallback("shader");
+          return;
+        }
         pending.forEach((id) => compiled.current.add(id));
         stageStats.compiled = [...compiled.current];
         setShown(new Set(compiled.current));
@@ -210,7 +235,7 @@ function Runtime({
       return;
     }
     return whenIdle(compile, 1500);
-  }, [scenes, gl, scene, camera]);
+  }, [scenes, gl, scene, camera, onFallback]);
 
   // ---------- Готовность: сцена текущей главы на месте → камера сразу в точку, первый кадр ----------
   function markReady() {
@@ -370,6 +395,7 @@ function Runtime({
       event.preventDefault(); // разрешить восстановление
       paused.current = true;
       stageStats.context = "lost";
+      reportError({ tag: "webgl", kind: "context_lost", message: "webglcontextlost" });
       const deadline = ticker.time + CONTEXT_RESTORE_TIMEOUT;
       offTimeout?.();
       // Ticker тикает, пока есть подписчик; таймаут считаем по его времени.
@@ -378,6 +404,11 @@ function Runtime({
         offTimeout?.();
         offTimeout = null;
         stageStats.context = "fallback";
+        reportError({
+          tag: "webgl",
+          kind: "fallback",
+          message: `context not restored in ${CONTEXT_RESTORE_TIMEOUT}s → fallback`,
+        });
         onFallback("webglcontextlost");
       });
     };

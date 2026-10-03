@@ -2,6 +2,9 @@
 
 import { useEffect, useState, type ComponentType } from "react";
 import { whenIdle } from "@/lib/idle";
+import { isOneOf } from "@/lib/analytics/place";
+import { qualityReasons } from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/track";
 import { decideQuality, readDeviceProfile, type DeviceProfile } from "@/lib/capabilities";
 import { useUiStore } from "@/store/ui";
 import styles from "./CanvasRoot.module.css";
@@ -37,6 +40,10 @@ export function CanvasRoot() {
       setQuality(decision.quality);
       setDebug(new URLSearchParams(window.location.search).has("debug"));
       document.documentElement.dataset.quality = decision.quality;
+      track("quality", {
+        tier: decision.quality,
+        reason: decision.reasons.includes("override") ? "override" : "auto",
+      });
       if (decision.quality === "fallback") return;
       // Прелоадер-горизонт (раздел 2): линия прочерчивается по прогрессу загрузки 3D.
       setLoad(0.35);
@@ -84,10 +91,14 @@ export function CanvasRoot() {
             setLoad(1);
             document.documentElement.dataset.canvas = "ready";
           }}
-          onFallback={() => {
+          onFallback={(reason) => {
             // Без перезагрузки: Canvas размонтируется, возвращаются статичные кадры.
             document.documentElement.dataset.quality = "fallback";
             setQuality("fallback");
+            track("quality", {
+              tier: "fallback",
+              reason: isOneOf(qualityReasons, reason) ? reason : "auto",
+            });
           }}
         />
       )}

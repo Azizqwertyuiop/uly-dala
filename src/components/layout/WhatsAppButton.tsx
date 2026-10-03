@@ -32,6 +32,7 @@ export function WhatsAppButton({ href, label, fromChapter = 2 }: Props) {
       href={href}
       className={styles.button}
       data-visible={visible}
+      data-place="float"
       // Без target: во встроенных браузерах (Instagram, Telegram) переход wa.me открывает
       // приложение WhatsApp, а не новое окно внутри встроенного браузера.
       aria-hidden={visible ? undefined : true}

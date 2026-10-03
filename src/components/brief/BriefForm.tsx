@@ -1,6 +1,9 @@
 "use client";
 
 import { BRIEF_SENT_EVENT } from "@/lib/sound/bus";
+import { briefFields, enumBriefFields, type BriefField } from "@/lib/analytics/events";
+import { isOneOf, placeOf } from "@/lib/analytics/place";
+import { track } from "@/lib/analytics/track";
 import { startTransition, useActionState, useEffect, useId, useRef, useState } from "react";
 import type { Messages } from "@/content/messages";
 import {
@@ -55,6 +58,37 @@ const FIELDS: Record<Source, readonly (keyof BriefValues)[]> = {
 };
 
 /*
+ * Аналитика (раздел 14): начало брифа и заполнение полей — только имя поля;
+ * значение — лишь у полей с закрытым списком (тип события, гости…). Имя, телефон, текст — никогда.
+ * Что уже отмечено — по id экземпляра формы (вне React: только обработчики событий).
+ */
+const noted = new Map<string, Set<string>>();
+const notedFor = (form: string) => noted.get(form) ?? noted.set(form, new Set()).get(form)!;
+
+function noteBriefStart(form: string, variant: Source) {
+  const set = notedFor(form);
+  if (set.has("start")) return;
+  set.add("start");
+  track("brief_start", { form: variant });
+}
+
+function noteBriefField(form: string, variant: Source, field: string, value: unknown) {
+  if (!isOneOf(briefFields, field) || value === undefined || value === "" || value === false)
+    return;
+  const enumValue = isOneOf(enumBriefFields, field) ? String(value) : undefined;
+  const key = `${field}=${enumValue ?? ""}`;
+  const set = notedFor(form);
+  if (set.has(key)) return;
+  set.add(key);
+  noteBriefStart(form, variant);
+  track("brief_field", {
+    form: variant,
+    field: field as BriefField,
+    ...(enumValue ? { value: enumValue } : {}),
+  });
+}
+
+/*
  * Бриф и мини-формы. Одна форма, один эндпоинт (Server Action submitBrief).
  * Без JS — обычный POST: сервер валидирует и перерисовывает форму с ошибками и введёнными данными.
  * С JS — то же действие без перезагрузки, черновик в sessionStorage, фокус на первой ошибке.
@@ -85,6 +119,9 @@ export function BriefForm({
   const clear = useBriefStore((s) => s.clear);
   const [consent, setConsent] = useState(false);
 
+  const noteStart = () => noteBriefStart(uid, variant);
+  const noteField = (field: string, value: unknown) => noteBriefField(uid, variant, field, value);
+
   // До гидрации — значения, которые вернул сервер (важно для формы без JS), потом — черновик.
   const values: BriefValues = storeReady ? draft : (state.values ?? {});
   const show = (field: keyof BriefValues) => FIELDS[variant].includes(field);
@@ -96,10 +133,19 @@ export function BriefForm({
   useEffect(() => {
     if (!state.submittedAt) return;
     if (state.status === "success") {
+      track("brief_submit", {
+        form: variant,
+        ...(state.values?.eventType ? { eventType: state.values.eventType } : {}),
+      });
+      if (variant === "visit")
+        track("visit_request", { place: formRef.current ? placeOf(formRef.current) : "page" });
       window.dispatchEvent(new Event(BRIEF_SENT_EVENT));
       clear();
       resultRef.current?.focus();
     } else if (state.status === "invalid") {
+      // Только имена полей с ошибкой.
+      const fields = Object.keys(state.errors ?? {}).filter((f) => isOneOf(briefFields, f));
+      track("brief_error", { form: variant, kind: "invalid", fields: fields.join(",") });
       if (state.values) merge(state.values);
       formRef.current
         ?.querySelector<HTMLElement>(
@@ -107,16 +153,21 @@ export function BriefForm({
         )
         ?.focus();
     } else {
+      if (state.status === "error" || state.status === "rateLimited")
+        track("brief_error", { form: variant, kind: state.status });
       resultRef.current?.focus();
     }
-  }, [state.submittedAt, state.status, state.values, clear, merge]);
+    // variant постоянен для формы; события — по каждой отправке (submittedAt).
+  }, [state.submittedAt, state.status, state.values, state.errors, clear, merge]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useKeepFocusedAboveKeyboard(formRef, hydrated && layout === "lines");
 
   const set =
     <K extends keyof BriefValues>(field: K) =>
-    (value: BriefValues[K]) =>
+    (value: BriefValues[K]) => {
       setField(field, value);
+      noteField(field, value);
+    };
 
   const errorText = (field: keyof BriefValues | "consent") => {
     const code = state.status === "invalid" ? state.errors?.[field] : undefined;
@@ -183,6 +234,7 @@ export function BriefForm({
       noValidate
       className={styles.form}
       data-layout={withSentence && hydrated && layout === "sentence" ? "sentence" : "lines"}
+      onFocus={noteStart}
       onSubmit={(event) => {
         // С JS — отправка без сброса формы; без JS — обычный POST (action).
         event.preventDefault();
@@ -200,7 +252,10 @@ export function BriefForm({
           values={values}
           locale={locale}
           fieldIds={{ name: id("name"), phone: id("phone") }}
-          onChange={(next) => merge(next)}
+          onChange={(next) => {
+            merge(next);
+            Object.entries(next).forEach(([field, value]) => noteField(field, value));
+          }}
         />
       )}
 
@@ -243,7 +298,10 @@ export function BriefForm({
               name={FIELD.month}
               label={copy.monthLabel}
               value={values.month ?? ""}
-              onChange={(v) => setField("month", (v || undefined) as BriefValues["month"])}
+              onChange={(v) => {
+                setField("month", (v || undefined) as BriefValues["month"]);
+                noteField("month", v);
+              }}
               options={months.map((m) => ({ value: m, label: copy.months[m].name }))}
             />
           )}
@@ -253,7 +311,10 @@ export function BriefForm({
               name={FIELD.date}
               label={copy.dateLabel}
               value={values.date ?? ""}
-              onChange={(v) => setField("date", v || undefined)}
+              onChange={(v) => {
+                setField("date", v || undefined);
+                noteField("date", v);
+              }}
             />
           )}
         </ChoiceField>
@@ -318,7 +379,11 @@ export function BriefForm({
         onFocus={() => {
           if (!values.phone) setField("phone", "+7 ");
         }}
-        onChange={(v) => setField("phone", formatPhoneMask(v))}
+        onChange={(v) => {
+          setField("phone", formatPhoneMask(v));
+          // «+7 » — маска, ещё не номер.
+          if (v.replace(/\D/g, "").length > 1) noteField("phone", true);
+        }}
       />
 
       {show("channel") && (
@@ -372,7 +437,10 @@ export function BriefForm({
             type="checkbox"
             name={FIELD.consent}
             checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
+            onChange={(e) => {
+              setConsent(e.target.checked);
+              noteField("consent", e.target.checked);
+            }}
             required
             aria-invalid={errorText("consent") ? true : undefined}
             aria-describedby={[

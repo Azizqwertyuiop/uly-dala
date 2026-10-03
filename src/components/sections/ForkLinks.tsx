@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { track } from "@/lib/analytics/track";
 import { useBriefStore, type Audience } from "@/store/brief";
 import type from "@/components/ui/type.module.css";
 import styles from "./sections.module.css";
@@ -28,7 +29,10 @@ export function ForkLinks({ labels }: Props) {
             href="#day"
             className={type.link}
             aria-current={a === audience && a !== "all" ? "true" : undefined}
-            onClick={() => setAudience(a)}
+            onClick={() => {
+              setAudience(a);
+              track("fork", { audience: a });
+            }}
           >
             {labels[a]}
           </a>
