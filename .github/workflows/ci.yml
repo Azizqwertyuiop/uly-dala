@@ -1,7 +1,7 @@
 # Проверки на каждый push и pull request (CLAUDE.md, разделы 12 и 16).
 # Бюджеты размера: статически — src/canvas/assets.test.ts (vitest), по трафику — e2e/budgets.spec.ts.
 # Любое превышение бюджета, ошибка типов, lint, тестов или сборки — CI красный.
-# Мёрж в main — только при зелёных задачах check и audit (защита ветки, docs/deploy.md);
+# Мёрж в main — только при зелёных задачах check, e2e и audit (защита ветки, docs/deploy.md);
 # после мёржа — выкладка в production (deploy.yml).
 name: CI
 
@@ -21,8 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -31,6 +31,8 @@ jobs:
       # Подписи пакетов реестра npm: пакет не подменён по дороге.
       - run: npm audit signatures
 
+  # Быстрые проверки: типы, lint, формат, unit (в т.ч. бюджеты ассетов), сборка релиза,
+  # выкладка и откат теми же скриптами, что на сервере; Lighthouse CI — на PR.
   check:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
@@ -39,27 +41,61 @@ jobs:
       CI: "true"
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      # typecheck, lint, формат, unit (в т.ч. бюджеты ассетов), сборка релиза, e2e (в т.ч. бюджеты
-      # по трафику и curl-тест SEO: e2e/seo.spec.ts).
-      - run: npm run check
+      - run: npm run check:fast
       # Выкладка и откат теми же скриптами, что на сервере: откат < 1 мин, без сбоев запросов.
       - run: npm run verify:rollback
       # Lighthouse CI на каждый PR (раздел 12): LCP, CLS, вес, доступность, SEO, лучшие практики.
       - run: npm run lhci
         if: github.event_name == 'pull_request'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: failure()
         with:
-          name: playwright-report
+          name: lighthouse
+          path: .lighthouseci/
+          retention-days: 7
+
+  # e2e (в т.ч. бюджеты по трафику и curl-тест SEO) — на 4 параллельных машинах: на 4 ядрах
+  # GitHub без видеокарты 3D рисуется процессором, одной машине не хватает 30 минут.
+  e2e-shard:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx playwright test --shard=${{ matrix.shard }}/4
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: playwright-report-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
-            .lighthouseci/
           retention-days: 7
+
+  # Одна отметка для защиты ветки: зелёная, только если зелёные все части e2e.
+  e2e:
+    if: always() && github.event_name != 'schedule'
+    needs: e2e-shard
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.e2e-shard.result }}" = "success"

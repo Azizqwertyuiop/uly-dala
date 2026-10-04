@@ -129,8 +129,14 @@ for (const locale of locales) {
       const m = getMessages(locale);
       await openStage(page, `/${locale}`);
 
-      // 1. Найти формат: Tab до табов «Дня», стрелками — кудалык.
-      await tabTo(page, page.getByRole("tab", { selected: true }));
+      // 1. Найти формат: навигация-горизонт (первая в <main>) — Tab до главы «День», Enter;
+      // браузер переносит точку фокуса к главе, следующий Tab — табы «Дня», стрелками — кудалык.
+      // Так ходит пользователь клавиатуры (раздел 8: горизонт работает с клавиатуры), а не 80 Tab
+      // через все главы: на CI без видеокарты каждый Tab перерисовывает 3D процессором (~1–2 с).
+      const horizon = page.getByRole("navigation", { name: m.horizon.label });
+      await tabTo(page, horizon.getByRole("link", { name: m.chapters.day }), 30);
+      await page.keyboard.press("Enter");
+      await tabTo(page, page.getByRole("tab", { selected: true }), 15);
       const kudalyk = page.getByRole("tab", { name: m.formats.kudalyk.title });
       for (
         let i = 0;
