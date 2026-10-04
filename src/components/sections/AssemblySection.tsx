@@ -10,6 +10,7 @@ import { Chapter, ChapterTime } from "./Chapter";
 import { ForkLinks } from "./ForkLinks";
 import { FallbackClip } from "./FallbackClip";
 import styles from "./sections.module.css";
+import { assetUrl } from "@/lib/assets/url";
 
 const parts = ["kerege", "uyki", "shanyrak", "kiiz"] as const;
 
@@ -42,7 +43,7 @@ export async function AssemblySection() {
           <FallbackClip chapter="assembly" className={styles.assemblyFrame}>
             <SceneImage
               sceneSlot
-              src="/assets/placeholders/assembly.svg"
+              src={assetUrl("/assets/placeholders/assembly.svg")}
               alt={t("sceneAlt")}
               width={1600}
               height={900}
@@ -66,7 +67,7 @@ export async function AssemblySection() {
               <li key={part} className={styles.part} data-part={part}>
                 <SceneImage
                   className={styles.partFrame}
-                  src={`/assets/placeholders/assembly-${part}.svg`}
+                  src={assetUrl(`/assets/placeholders/assembly-${part}.svg`)}
                   alt={t(`parts.${part}.frameAlt`)}
                   width={1600}
                   height={900}
@@ -86,7 +87,7 @@ export async function AssemblySection() {
             <SceneImage
               sceneSlot
               className={styles.pillarFrame}
-              src="/assets/placeholders/pillar.svg"
+              src={assetUrl("/assets/placeholders/pillar.svg")}
               alt={t("pillarAlt")}
               width={1600}
               height={900}

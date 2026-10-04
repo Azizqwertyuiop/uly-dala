@@ -2,9 +2,10 @@ import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BUDGETS } from "@/canvas/budgets";
+import { unhashedPath } from "@/lib/assets/url";
 import { clipTime, CLIP_FPS, fallbackClips } from "./fallbackClips";
 
-const file = (url: string) => join(process.cwd(), "public", url);
+const file = (url: string) => join(process.cwd(), "public", unhashedPath(url));
 
 describe("видео-секвенции fallback", () => {
   it("файлы на месте (широкий кадр и портрет), каждый — в бюджете главы", () => {

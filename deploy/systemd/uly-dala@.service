@@ -1,0 +1,26 @@
+# Сервер сайта в слоте %i (3001 или 3002) — docs/deploy.md.
+[Unit]
+Description=ULY DALA (слот %i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=uly-dala
+Group=uly-dala
+WorkingDirectory=/srv/uly-dala/slots/%i
+EnvironmentFile=/etc/uly-dala/production.env
+Environment=PORT=%i HOSTNAME=127.0.0.1 NODE_ENV=production
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=2
+# Защита: только чтение системы, запись — в базу заявок.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/uly-dala
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

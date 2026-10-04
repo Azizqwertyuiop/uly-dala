@@ -9,6 +9,7 @@ import { Chapter, ChapterTime } from "./Chapter";
 import { FirePlan, type FireSetItem } from "./FirePlan";
 import { FallbackClip } from "./FallbackClip";
 import styles from "./sections.module.css";
+import { assetUrl } from "@/lib/assets/url";
 
 /*
  * Глава 4. Огонь (CLAUDE.md, раздел 2). Шеф, кухня, дастархан.
@@ -39,7 +40,7 @@ export async function FireSection() {
           <FallbackClip chapter="fire" className={styles.fireFrame}>
             <SceneImage
               sceneSlot
-              src="/assets/placeholders/fire.svg"
+              src={assetUrl("/assets/placeholders/fire.svg")}
               alt={t("sceneAlt")}
               width={1600}
               height={900}

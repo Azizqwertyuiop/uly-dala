@@ -1,12 +1,15 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import { defaultLocale } from "./src/lib/i18n";
+import { deliveryHeaders, deliveryRewrites } from "./src/lib/security/delivery";
 import { KTX2_WORKER_CSP, KTX2_WORKER_PATH, securityHeaders } from "./src/lib/security/headers";
 
 const withNextIntl = createNextIntlPlugin("./src/lib/intl/request.ts");
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Сборка для своего сервера в РК (docs/deploy.md): .next/standalone — сервер без node_modules.
+  output: "standalone",
   poweredByHeader: false,
   experimental: {
     // Своя 404 для адресов вне /kk, /ru, /en (src/app/global-not-found.tsx).
@@ -24,12 +27,18 @@ const nextConfig: NextConfig = {
       // Все адреса, кроме воркера KTX2: два заголовка CSP складываются, eval был бы запрещён.
       { source: `/:path((?!${KTX2_WORKER_PATH.slice(1).replace(/[.]/g, "\\.")}$).*)`, headers },
       { source: KTX2_WORKER_PATH, headers: csp(headers, KTX2_WORKER_CSP) },
+      // Кэш и MIME статики (src/lib/security/delivery.ts).
+      ...deliveryHeaders(),
     ];
   },
   async rewrites() {
     // Корень без перенаправления (CLAUDE.md, раздел 11): / показывает страницу языка по умолчанию,
     // canonical — /ru (без дубля). Язык браузера предлагает плашка (LanguageSuggest), а не редирект.
-    return { beforeFiles: [{ source: "/", destination: `/${defaultLocale}` }] };
+    return {
+      beforeFiles: [{ source: "/", destination: `/${defaultLocale}` }],
+      // Ассет с хешем в имени → файл в public/ (src/lib/assets/url.ts).
+      afterFiles: deliveryRewrites(),
+    };
   },
 };
 

@@ -11,6 +11,8 @@ import { devices, expect, test, type Page, type TestInfo } from "@playwright/tes
  */
 
 const PHONE = { width: 390, height: 844 };
+/** Адрес без хеша содержимого в имени (src/lib/assets/url.ts). */
+const unhash = (u: string) => u.replace(/\.[0-9a-f]{10}(\.\w+)$/, "$1");
 const SIZES = [
   { name: "360", width: 360, height: 780, mobile: true },
   { name: "390", ...PHONE, mobile: true },
@@ -196,7 +198,7 @@ test.describe("fallback: видео-секвенции по скроллу", () 
       const page = await context.newPage();
       const requests: string[] = [];
       page.on("request", (r) => {
-        if (r.url().includes("/assets/video/fallback/")) requests.push(r.url());
+        if (r.url().includes("/assets/video/fallback/")) requests.push(unhash(r.url()));
       });
       await page.goto("/ru?quality=fallback");
       const dawn = page.locator("video[data-fallback-clip='dawn']");
@@ -234,7 +236,7 @@ test.describe("fallback: видео-секвенции по скроллу", () 
     const page = await context.newPage();
     const requests: string[] = [];
     page.on("request", (r) => {
-      if (r.url().includes("/assets/video/fallback/")) requests.push(r.url());
+      if (r.url().includes("/assets/video/fallback/")) requests.push(unhash(r.url()));
     });
     await page.goto("/ru?quality=fallback");
     await page.waitForTimeout(2500);

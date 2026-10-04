@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 3100;
@@ -9,7 +10,8 @@ export const E2E_FAILING_DB = ".data/e2e-failing.sqlite";
 
 const serverEnv = {
   NOTIFY_TRANSPORT: "mock",
-  LEADS_SQLITE_PATH: E2E_DB,
+  // Абсолютный путь: сервер релиза (.next/standalone/server.js) работает из своей папки.
+  LEADS_SQLITE_PATH: resolve(E2E_DB),
   // Тесты шлют много заявок с одного IP.
   RATE_LIMIT_MAX: "10000",
 };
@@ -28,24 +30,26 @@ export default defineConfig({
     locale: "ru-RU",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], locale: "ru-RU" } }],
-  // e2e проверяет production-сборку: перед запуском нужен `npm run build`.
+  // e2e проверяет сам релиз (.next/standalone, как на сервере): перед запуском — `npm run build`.
   webServer: [
     {
-      command: `npm run start -- --port ${PORT}`,
+      command: "npm run start",
       url: `http://localhost:${PORT}/ru`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
-      env: serverEnv,
+      env: { ...serverEnv, PORT: String(PORT), HOSTNAME: "localhost" },
     },
     {
-      command: `npm run start -- --port ${FAILING_PORT}`,
+      command: "npm run start",
       url: `http://localhost:${FAILING_PORT}/ru`,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
         ...serverEnv,
+        PORT: String(FAILING_PORT),
+        HOSTNAME: "localhost",
         NOTIFY_TRANSPORT: "live",
-        LEADS_SQLITE_PATH: E2E_FAILING_DB,
+        LEADS_SQLITE_PATH: resolve(E2E_FAILING_DB),
         TELEGRAM_BOT_TOKEN: "test",
         TELEGRAM_CHAT_ID: "test",
         TELEGRAM_API_BASE: "http://127.0.0.1:9",

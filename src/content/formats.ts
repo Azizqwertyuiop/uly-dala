@@ -1,3 +1,5 @@
+import { assetUrl } from "@/lib/assets/url";
+
 /*
  * Шесть форматов главы «День» (CLAUDE.md, раздел 2). Порядок — «Посмотреть всё».
  * Тексты — в messages (formats.<key>), здесь только структура.
@@ -20,4 +22,5 @@ export function findFormat(slug: string): Format | undefined {
   return formats.find((format) => format.slug === slug);
 }
 
-export const formatImage = (slug: FormatSlug) => `/assets/placeholders/format-${slug}.svg`;
+export const formatImage = (slug: FormatSlug) =>
+  assetUrl(`/assets/placeholders/format-${slug}.svg`);

@@ -15,6 +15,7 @@ import { Chapter } from "./Chapter";
 import { FazendaMap } from "./FazendaMap";
 import { FallbackClip } from "./FallbackClip";
 import styles from "./sections.module.css";
+import { assetUrl } from "@/lib/assets/url";
 
 export const zones = WORLD_ZONES;
 
@@ -151,7 +152,7 @@ export async function WorldSection() {
           <FallbackClip chapter="world" className={styles.worldFrame}>
             <SceneImage
               sceneSlot
-              src="/assets/placeholders/fazenda.svg"
+              src={assetUrl("/assets/placeholders/fazenda.svg")}
               alt={t("sceneAlt")}
               width={1600}
               height={900}

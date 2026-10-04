@@ -1,4 +1,5 @@
 import type { ChapterId } from "@/components/sections/chapters";
+import { assetUrl } from "@/lib/assets/url";
 
 /*
  * Видео-секвенции уровня fallback (CLAUDE.md, раздел 6): вместо 3D — короткие клипы,
@@ -26,7 +27,7 @@ export type FallbackClip = {
 };
 
 const mp4 = (chapter: ChapterId, variant = ""): ClipSource => ({
-  src: `/assets/video/fallback/${chapter}${variant}.mp4`,
+  src: assetUrl(`/assets/video/fallback/${chapter}${variant}.mp4`),
   type: 'video/mp4; codecs="avc1.640028"',
 });
 const both = (chapter: ChapterId) => ({

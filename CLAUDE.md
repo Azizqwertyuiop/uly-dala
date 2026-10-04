@@ -312,7 +312,9 @@ CTA кликабельны с первой секунды, не ждут ани�
 
 **Стек:** Next.js (App Router) + TypeScript strict, React Three Fiber + drei, GSAP + ScrollTrigger,
 Lenis (только десктоп; на тач — нативный скролл), Zustand, next-intl (kk, ru, en; ru по умолчанию),
-CSS Modules + CSS-переменные, zod, Vitest, Playwright, Lighthouse CI. Деплой — Vercel (или по решению).
+CSS Modules + CSS-переменные, zod, Vitest, Playwright, Lighthouse CI. Деплой — свой сервер в РК
+(решение заказчика на шаге 20 вместо Vercel: заявки хранятся в РК, домен .kz; Caddy + systemd,
+релизы blue/green, откат < 1 мин — docs/deploy.md).
 
 **Принципы:**
 1. Прогрессивное улучшение: весь смысл — семантический HTML с SSR, работает без JS и WebGL.

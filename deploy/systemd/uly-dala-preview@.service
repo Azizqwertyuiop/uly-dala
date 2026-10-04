@@ -1,0 +1,24 @@
+# Превью для PR №%i — docs/deploy.md. Порт и база — в /srv/uly-dala/previews/pr-%i.env.
+[Unit]
+Description=ULY DALA превью PR %i
+After=network-online.target
+
+[Service]
+Type=simple
+User=uly-dala
+Group=uly-dala
+WorkingDirectory=/srv/uly-dala/previews/pr-%i
+EnvironmentFile=/etc/uly-dala/preview.env
+EnvironmentFile=/srv/uly-dala/previews/pr-%i.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/uly-dala/previews
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

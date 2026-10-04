@@ -1,0 +1,83 @@
+# Caddy — HTTPS (Let's Encrypt, автоматически), статика, переключение релизов (docs/deploy.md).
+# Домен и превью-домен — из /etc/uly-dala/deploy.env (EnvironmentFile в caddy.service.d).
+{
+	email {$ACME_EMAIL}
+}
+
+(static_assets)
+	# Сборка Next.js и ассеты с хешем в имени — из общего хранилища, «навсегда».
+	# Файла нет (неверный хеш) — 404, а не чужое содержимое под вечным кэшем.
+	@immutable {
+		path /_next/static/*
+		path_regexp ^/assets/.+\.[0-9a-f]{10}\.[a-z0-9]+$
+	}
+	handle @immutable {
+		root * /srv/uly-dala/cdn
+		header Cache-Control "public, max-age=31536000, immutable"
+		import mime
+		file_server
+	}
+)
+
+(mime)
+	# В стандартной таблице нет .glb, .ktx2, сплатов (то же — src/lib/security/delivery.ts).
+	@glb path *.glb
+	header @glb Content-Type model/gltf-binary
+	@ktx2 path *.ktx2
+	header @ktx2 Content-Type image/ktx2
+	@splat path *.splat *.spz *.ply
+	header @splat Content-Type application/octet-stream
+	@wasm path *.wasm
+	header @wasm Content-Type application/wasm
+	@m4a path *.m4a
+	header @m4a Content-Type audio/mp4
+	@mov path *.mov
+	header @mov Content-Type video/quicktime
+)
+
+(common)
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+	log {
+		# Журнал доступа без IP и query (раздел 14: персональных данных нет в логах).
+		output file /var/log/caddy/uly-dala.log {
+			roll_size 50MiB
+			roll_keep 10
+		}
+		format filter {
+			request>remote_ip delete
+			request>client_ip delete
+			request>remote_port delete
+			request>headers delete
+			request>uri regexp "\?.*$" ""
+		}
+	}
+)
+
+(preview_common)
+	import common
+	basic_auth {
+		{$PREVIEW_USER} {$PREVIEW_PASSWORD_HASH}
+	}
+	header X-Robots-Tag "noindex, nofollow"
+)
+
+{$SITE_DOMAIN} {
+	import common
+	import static_assets
+	handle {
+		# Слот, который сейчас обслуживает сайт (3001 или 3002) — пишет deploy/bin/lib.sh.
+		import /etc/caddy/uly-dala/upstream.caddy
+	}
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+# Превью для PR: pr-<N>.{$PREVIEW_DOMAIN} — по файлу на PR (пишет deploy/bin/preview.sh).
+import /etc/caddy/uly-dala/previews/*.caddy

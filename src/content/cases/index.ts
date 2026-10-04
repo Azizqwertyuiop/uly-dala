@@ -1,3 +1,4 @@
+import { assetUrl } from "@/lib/assets/url";
 import type { Locale } from "@/lib/i18n";
 import { typograph } from "@/lib/typography";
 import type { Case, CaseText } from "./types";
@@ -10,7 +11,7 @@ export type { Case, CaseText };
  */
 
 const cover = (slug: string) => ({
-  src: `/assets/placeholders/case-${slug}.svg`,
+  src: assetUrl(`/assets/placeholders/case-${slug}.svg`),
   width: 1600,
   height: 1000,
 });

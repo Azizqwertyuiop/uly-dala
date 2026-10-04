@@ -1,4 +1,5 @@
 import type { ChapterId } from "@/components/sections/chapters";
+import { assetUrl } from "@/lib/assets/url";
 
 /*
  * Звук (CLAUDE.md, раздел 8) — чистая часть: слоты записей, микс по главам, порывы.
@@ -17,11 +18,11 @@ export type SoundSlot = (typeof SOUND_SLOTS)[number];
  * синтетических заглушек (scripts/make-audio-placeholders.mjs) — с теми же именами.
  */
 export const SOUND_FILES: Record<SoundSlot, string> = {
-  wind: "/assets/audio/wind.m4a",
-  grass: "/assets/audio/grass.m4a",
-  embers: "/assets/audio/embers.m4a",
-  night: "/assets/audio/night.m4a",
-  gust: "/assets/audio/gust.m4a",
+  wind: assetUrl("/assets/audio/wind.m4a"),
+  grass: assetUrl("/assets/audio/grass.m4a"),
+  embers: assetUrl("/assets/audio/embers.m4a"),
+  night: assetUrl("/assets/audio/night.m4a"),
+  gust: assetUrl("/assets/audio/gust.m4a"),
 };
 
 /** Петли в файлах: ровно целое число периодов модуляции — без щелчка на стыке. */

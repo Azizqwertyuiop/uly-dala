@@ -1,0 +1,36 @@
+# Откат кнопкой (docs/deploy.md): Actions → Rollback → Run workflow.
+# Пусто — на предыдущий релиз (он ещё запущен во втором слоте: доли секунды).
+# Id релиза (первые 12 символов коммита) — на любой из последних пяти.
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Id релиза (пусто — предыдущий)"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    env:
+      SSH_TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+      TARGET: ${{ inputs.release }}
+    steps:
+      - name: Откат
+        run: |
+          [[ -z "$TARGET" || "$TARGET" =~ ^[A-Za-z0-9-]+$ ]] || { echo "неверный id"; exit 1; }
+          install -d -m 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          ssh "$SSH_TARGET" "/srv/uly-dala/bin/rollback.sh $TARGET"
+          ssh "$SSH_TARGET" "/srv/uly-dala/bin/rollback.sh --list"
+      - name: Проверка снаружи
+        run: curl -fsS "${{ vars.NEXT_PUBLIC_SITE_URL }}/api/health"

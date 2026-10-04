@@ -7,6 +7,7 @@ import type { Locale } from "@/lib/i18n";
 import { Chapter, ChapterTime } from "./Chapter";
 import { FallbackClip } from "./FallbackClip";
 import styles from "./sections.module.css";
+import { assetUrl } from "@/lib/assets/url";
 
 /*
  * Глава 6. Снова рассвет + бриф-предложение (CLAUDE.md, разделы 2 и 9).
@@ -33,7 +34,7 @@ export async function ReturnSection() {
           <FallbackClip chapter="return" className={styles.finaleFrame}>
             <SceneImage
               sceneSlot
-              src="/assets/placeholders/return.svg"
+              src={assetUrl("/assets/placeholders/return.svg")}
               alt={t("sceneAlt")}
               width={1600}
               height={900}

@@ -14,7 +14,7 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: "npm run start -- --port 3300",
+      startServerCommand: "PORT=3300 HOSTNAME=localhost npm run start",
       startServerReadyPattern: "Ready",
       url: [
         "http://localhost:3300/ru",

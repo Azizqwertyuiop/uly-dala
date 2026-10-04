@@ -1,0 +1,8 @@
+[Unit]
+Description=ULY DALA — резервная копия базы заявок
+
+[Service]
+Type=oneshot
+User=uly-dala
+EnvironmentFile=/etc/uly-dala/production.env
+ExecStart=/srv/uly-dala/bin/backup.sh

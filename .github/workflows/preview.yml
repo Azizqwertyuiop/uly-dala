@@ -1,0 +1,80 @@
+# Превью на каждый pull request: https://pr-<N>.<PREVIEW_DOMAIN> (docs/deploy.md).
+# Закрыто паролем и от поисковиков, заявки не уходят менеджерам, своя база.
+# PR из форков не выкладываются (у них нет доступа к секретам — так и задумано).
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  group: preview-${{ github.event.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  SSH_TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+  PREVIEW_URL: https://pr-${{ github.event.number }}.${{ vars.PREVIEW_DOMAIN }}
+
+jobs:
+  deploy:
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: preview
+      url: ${{ env.PREVIEW_URL }}
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_SITE_ENV: preview
+      NEXT_PUBLIC_SITE_URL: https://pr-${{ github.event.number }}.${{ vars.PREVIEW_DOMAIN }}
+      NEXT_PUBLIC_WHATSAPP_PHONE: ${{ vars.NEXT_PUBLIC_WHATSAPP_PHONE }}
+      NEXT_PUBLIC_PHONE: ${{ vars.NEXT_PUBLIC_PHONE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Сборка
+        run: |
+          echo "RELEASE=pr${{ github.event.number }}-$(git rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
+          npm run build
+          tar -czf release.tgz -C .next/standalone .
+      - name: SSH-доступ
+        run: |
+          install -d -m 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: Выкладка превью
+        run: |
+          rsync -a deploy/bin/ "$SSH_TARGET:/srv/uly-dala/bin/"
+          scp -q release.tgz "$SSH_TARGET:/tmp/uly-dala-pr${{ github.event.number }}.tgz"
+          ssh "$SSH_TARGET" "/srv/uly-dala/bin/preview.sh deploy ${{ github.event.number }} /tmp/uly-dala-pr${{ github.event.number }}.tgz"
+      - name: Ссылка в PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = "<!-- uly-dala-preview -->";
+            const body = `${marker}\nПревью: ${process.env.PREVIEW_URL}/ru\nРелиз: \`${process.env.RELEASE}\` · пароль — у команды.`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const mine = comments.find((c) => c.body?.includes(marker));
+            if (mine) await github.rest.issues.updateComment({ owner, repo, comment_id: mine.id, body });
+            else await github.rest.issues.createComment({ owner, repo, issue_number, body });
+
+  remove:
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Убрать превью
+        run: |
+          install -d -m 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          ssh "$SSH_TARGET" "/srv/uly-dala/bin/preview.sh remove ${{ github.event.number }}"

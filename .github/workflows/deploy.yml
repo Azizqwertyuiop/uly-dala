@@ -1,0 +1,69 @@
+# Выкладка в production — только после зелёного CI на main (docs/deploy.md).
+# Сборка здесь (публичные NEXT_PUBLIC_* — из переменных окружения GitHub «production»),
+# на сервер в РК уходит готовый релиз; там deploy/bin/release.sh: проверка /api/health до
+# переключения трафика. После выкладки — проверка снаружи; не прошла — автоматический откат.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  # Повторная выкладка вручную (Actions → Deploy → Run workflow).
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+      NEXT_PUBLIC_WHATSAPP_PHONE: ${{ vars.NEXT_PUBLIC_WHATSAPP_PHONE }}
+      NEXT_PUBLIC_PHONE: ${{ vars.NEXT_PUBLIC_PHONE }}
+      SSH_TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Сборка релиза
+        run: |
+          echo "RELEASE=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
+          npm run build
+          tar -czf release.tgz -C .next/standalone .
+      - name: SSH-доступ к серверу
+        run: |
+          install -d -m 700 ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+      - name: Выкладка
+        run: |
+          rsync -a deploy/bin/ "$SSH_TARGET:/srv/uly-dala/bin/"
+          scp -q release.tgz "$SSH_TARGET:/tmp/uly-dala-$RELEASE.tgz"
+          ssh "$SSH_TARGET" "/srv/uly-dala/bin/release.sh /tmp/uly-dala-$RELEASE.tgz"
+      - name: Проверка снаружи (HTTPS, релиз, текст главной)
+        run: |
+          for i in $(seq 1 10); do
+            curl -fsS "$NEXT_PUBLIC_SITE_URL/api/health" | grep -q "\"release\":\"$RELEASE\"" && break
+            sleep 3
+          done
+          curl -fsS "$NEXT_PUBLIC_SITE_URL/api/health" | grep -q "\"release\":\"$RELEASE\""
+          curl -fsS "$NEXT_PUBLIC_SITE_URL/ru" | grep -q "Мы ставим мир"
+      - name: Автооткат, если проверка не прошла
+        if: failure()
+        run: ssh "$SSH_TARGET" "/srv/uly-dala/bin/rollback.sh" || true

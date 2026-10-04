@@ -11,6 +11,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { placeLd } from "@/lib/seo/jsonld";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { resolveLocale } from "@/lib/intl/locale";
+import { assetUrl } from "@/lib/assets/url";
 
 export async function generateMetadata({
   params,
@@ -53,7 +54,7 @@ export default async function FazendaPage({ params }: PageProps<"/[locale]/fazen
       </div>
 
       <SceneImage
-        src="/assets/placeholders/fazenda.svg"
+        src={assetUrl("/assets/placeholders/fazenda.svg")}
         alt={world("sceneAlt")}
         width={1600}
         height={900}

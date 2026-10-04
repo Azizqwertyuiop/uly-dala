@@ -1,6 +1,8 @@
 # Проверки на каждый push и pull request (CLAUDE.md, разделы 12 и 16).
 # Бюджеты размера: статически — src/canvas/assets.test.ts (vitest), по трафику — e2e/budgets.spec.ts.
 # Любое превышение бюджета, ошибка типов, lint, тестов или сборки — CI красный.
+# Мёрж в main — только при зелёных задачах check и audit (защита ветки, docs/deploy.md);
+# после мёржа — выкладка в production (deploy.yml).
 name: CI
 
 on:
@@ -44,7 +46,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # typecheck, lint, формат, unit (в т.ч. бюджеты ассетов), сборка релиза, e2e (в т.ч. бюджеты
+      # по трафику и curl-тест SEO: e2e/seo.spec.ts).
       - run: npm run check
+      # Выкладка и откат теми же скриптами, что на сервере: откат < 1 мин, без сбоев запросов.
+      - run: npm run verify:rollback
       # Lighthouse CI на каждый PR (раздел 12): LCP, CLS, вес, доступность, SEO, лучшие практики.
       - run: npm run lhci
         if: github.event_name == 'pull_request'

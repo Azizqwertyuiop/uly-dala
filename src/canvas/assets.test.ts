@@ -1,11 +1,12 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { assetUrl, HASHED_ASSET, unhashedPath } from "@/lib/assets/url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { chapterIds } from "@/components/sections/chapters";
 import { assets, assetsOfChapter, type Tier } from "./assets";
 import { BUDGETS } from "./budgets";
 
-const file = (url: string) => join(process.cwd(), "public", url);
+const file = (url: string) => join(process.cwd(), "public", unhashedPath(url));
 const size = (url: string) => statSync(file(url)).size;
 
 function urlsOf(asset: (typeof assets)[keyof typeof assets], tier: Tier): string[] {
@@ -32,8 +33,8 @@ describe("манифест ассетов", () => {
   it("у каждой модели есть варианты high и medium", () => {
     for (const asset of Object.values(assets)) {
       if (asset.kind !== "model") continue;
-      expect(asset.variants.high).toMatch(/\.high\.glb$/);
-      expect(asset.variants.medium).toMatch(/\.medium\.glb$/);
+      expect(unhashedPath(asset.variants.high)).toMatch(/\.high\.glb$/);
+      expect(unhashedPath(asset.variants.medium)).toMatch(/\.medium\.glb$/);
     }
   });
 
@@ -49,4 +50,25 @@ describe("манифест ассетов", () => {
       }
     });
   }
+});
+
+describe("хеш содержимого в имени (кэш immutable)", () => {
+  it("hashes.json актуален — иначе: npm run assets:hash", async () => {
+    // @ts-expect-error — скрипт сборки на JS без типов.
+    const { computeHashes, serialize, HASHES_FILE } = await import("../../scripts/hash-assets.mjs");
+    expect(readFileSync(HASHES_FILE, "utf8")).toBe(serialize(computeHashes()));
+  });
+
+  it("адреса ассетов глав — с хешем, decoders и docs — без", () => {
+    expect(assets.fazendaSplat.url).toMatch(HASHED_ASSET);
+    expect(assetUrl("/assets/models/yurt.high.glb")).toMatch(
+      /^\/assets\/models\/yurt\.high\.[0-9a-f]{10}\.glb$/,
+    );
+    expect(unhashedPath(assetUrl("/assets/models/yurt.high.glb"))).toBe(
+      "/assets/models/yurt.high.glb",
+    );
+    expect(assetUrl("/assets/docs/uly-dala-presentation.pdf")).toBe(
+      "/assets/docs/uly-dala-presentation.pdf",
+    );
+  });
 });

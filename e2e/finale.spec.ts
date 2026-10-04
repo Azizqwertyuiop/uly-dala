@@ -203,9 +203,9 @@ test.describe("звук", () => {
       await page.evaluate(() => (window as unknown as { __audioContexts: number }).__audioContexts),
     ).toBe(1);
     expect((await sound(page))!.context).toBe("running");
-    expect(new Set(audio.map((u) => u.replace(/^.*\//, "")))).toEqual(
-      new Set(["wind.m4a", "grass.m4a", "embers.m4a", "night.m4a", "gust.m4a"]),
-    );
+    expect(
+      new Set(audio.map((u) => u.replace(/^.*\//, "").replace(/\.[0-9a-f]{10}(\.\w+)$/, "$1"))),
+    ).toEqual(new Set(["wind.m4a", "grass.m4a", "embers.m4a", "night.m4a", "gust.m4a"]));
 
     // Выключение — затухание и остановка вывода.
     await toggle.click();
