@@ -64,6 +64,8 @@ test.describe("хедер", () => {
 
   test("фокус с клавиатуры возвращает спрятанный хедер", async ({ page }) => {
     await page.goto("/ru");
+    // Прокрутка — после запуска отслеживания скролла (на медленном CI гидрация позже load).
+    await page.waitForFunction(() => "__progress" in window);
     await page.mouse.wheel(0, 1500);
     await expect(page.locator("header")).toHaveAttribute("data-hidden", "true");
     await menuButton(page).focus();

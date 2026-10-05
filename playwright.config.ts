@@ -16,8 +16,33 @@ const serverEnv = {
   RATE_LIMIT_MAX: "10000",
 };
 
+/*
+ * Группы e2e для CI (.github/workflows/ci.yml). Локально (без E2E_GROUP) — все тесты.
+ * gpu — файлы с живым 3D (?quality=high/medium): по правилу «шаг анимации ≤ 0,1 с» при 1–3 кадрах
+ * в секунду сцена живёт в разы медленнее часов, а у Linux-серверов GitHub нет видеокарты
+ * (3D на процессоре) — эти файлы идут на macOS-сервере. dom — остальное, на Linux.
+ */
+export const GPU_SPECS = [
+  "a11y-flows",
+  "assembly",
+  "budgets",
+  "dawn",
+  "day",
+  "finale",
+  "fire",
+  "mobile",
+  "motion",
+  "perf",
+  "stage",
+  "telemetry",
+  "world",
+];
+const gpuFiles = GPU_SPECS.map((name) => `**/${name}.spec.ts`);
+const group = process.env.E2E_GROUP;
+
 export default defineConfig({
   testDir: "./e2e",
+  ...(group === "gpu" ? { testMatch: gpuFiles } : group === "dom" ? { testIgnore: gpuFiles } : {}),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -29,7 +54,17 @@ export default defineConfig({
     // (англоязычный сценарий — отдельный тест в e2e/seo.spec.ts).
     locale: "ru-RU",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], locale: "ru-RU" } }],
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        locale: "ru-RU",
+        // E2E_GPU=1 (macOS): headless Chromium рисует через видеокарту (Metal), а не процессором.
+        ...(process.env.E2E_GPU ? { launchOptions: { args: ["--use-angle=metal"] } } : {}),
+      },
+    },
+  ],
   // e2e проверяет сам релиз (.next/standalone, как на сервере): перед запуском — `npm run build`.
   webServer: [
     {

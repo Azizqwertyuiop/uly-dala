@@ -60,19 +60,19 @@ jobs:
           path: .lighthouseci/
           retention-days: 7
 
-  # e2e (в т.ч. бюджеты по трафику и curl-тест SEO) — на 4 параллельных машинах: на 4 ядрах
-  # GitHub без видеокарты 3D рисуется процессором, одной машине не хватает 30 минут.
-  e2e-shard:
+  # e2e без живого 3D (страницы, бриф, доступность, SEO и curl-тест, заголовки) — Linux, 2 части.
+  e2e-dom:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2]
     env:
       CI: "true"
       NEXT_TELEMETRY_DISABLED: "1"
+      E2E_GROUP: dom
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -82,11 +82,47 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run build
-      - run: npx playwright test --shard=${{ matrix.shard }}/4
+      - run: npx playwright test --shard=${{ matrix.shard }}/2
       - uses: actions/upload-artifact@v5
         if: failure()
         with:
-          name: playwright-report-${{ matrix.shard }}
+          name: playwright-dom-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # e2e с живым 3D (сцены глав, бюджеты загрузки high/medium) — macOS: у Linux-серверов GitHub
+  # нет видеокарты, 3D там рисуется процессором в разы медленнее (playwright.config.ts, GPU_SPECS).
+  e2e-gpu:
+    if: github.event_name != 'schedule'
+    runs-on: macos-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      E2E_GROUP: gpu
+      E2E_GPU: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium
+      - name: Видеоадаптер WebGL (SwiftShader = без видеокарты)
+        run: node scripts/gpu-info.mjs --use-angle=metal
+      - run: npm run build
+      - run: npx playwright test --shard=${{ matrix.shard }}/2
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: playwright-gpu-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
@@ -95,7 +131,7 @@ jobs:
   # Одна отметка для защиты ветки: зелёная, только если зелёные все части e2e.
   e2e:
     if: always() && github.event_name != 'schedule'
-    needs: e2e-shard
+    needs: [e2e-dom, e2e-gpu]
     runs-on: ubuntu-latest
     steps:
-      - run: test "${{ needs.e2e-shard.result }}" = "success"
+      - run: test "${{ needs.e2e-dom.result }}" = "success" && test "${{ needs.e2e-gpu.result }}" = "success"
