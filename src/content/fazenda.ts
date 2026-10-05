@@ -20,6 +20,25 @@ export const fazenda: {
   capacity: { field: null, tent: null, yurt: null, kitchen: null },
 };
 
+/*
+ * Ещё на фазенде — места и активности помимо зон облёта (список от заказчика, 5 октября 2026).
+ * Порядок — как показывается. Вместимость — только подтверждённая заказчиком.
+ */
+export const FAZENDA_EXTRAS = [
+  "gazebo",
+  "fireplaceGazebo",
+  "banya",
+  "cabins",
+  "cinema",
+  "horses",
+  "archery",
+  "atv",
+] as const;
+export type FazendaExtra = (typeof FAZENDA_EXTRAS)[number];
+
+/** Вместимость, гостей (подтверждено заказчиком). */
+export const extrasCapacity: Partial<Record<FazendaExtra, number>> = { gazebo: 60 };
+
 /** Ссылки на карты — только при известной точке; без неё ссылки не показываются. */
 export function mapLinks(point: GeoPoint | null) {
   if (!point) return null;

@@ -81,8 +81,8 @@
     gap: var(--space-3);
   }
 
-  .panelImage {
-    grid-column: 7 / -1;
+  .photo {
+    grid-column: 6 / -1;
   }
 }
 
@@ -91,6 +91,65 @@
     display: grid;
     gap: var(--space-3);
   }
+
+  /* Телефон: фото — первым, на всю ширину экрана; табы — одной строкой с прокруткой
+     внутри полосы (страница вбок не прокручивается), активный таб доезжает в видимую часть. */
+  .photo {
+    order: -1;
+    margin-inline: calc(-1 * var(--grid-margin));
+  }
+
+  .tablist {
+    flex-wrap: nowrap;
+    gap: var(--space-3);
+    margin-inline: calc(-1 * var(--grid-margin));
+    padding-inline: var(--grid-margin);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tab {
+    flex: none;
+    white-space: nowrap;
+  }
+}
+
+/*
+ * Фото формата (3:2). Свайп по нему меняет формат: вертикальный скролл страницы остаётся
+ * за браузером (touch-action: pan-y), горизонтальный жест — наш.
+ */
+.photo {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.panelImage,
+.panelImage img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.panelImage img {
+  height: auto;
+  -webkit-user-drag: none;
+}
+
+/* Пока нет снимка: подпись поверх пустого кадра (то же сказано в alt — для диктора дубль скрыт). */
+.pending {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-2);
+  z-index: 1;
+  padding: 2px var(--space-1);
+  background: color-mix(in srgb, var(--felt) 88%, transparent);
+  color: var(--indigo);
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
 }
 
 .meta {
@@ -137,135 +196,55 @@
   }
 }
 
+/*
+ * Смена фото — «проявление светом» (раздел 5, переход «свет»): кадр выходит из засвета.
+ * Только opacity: фото проявляется, поверх него гаснет световая вуаль (войлок → прозрачно).
+ */
+.photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 90% at 70% 100%, var(--kumys), var(--felt));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tabs[data-switched] .panel:not([hidden]) .photo::after {
+  animation: light-out var(--duration-slow) var(--ease-steppe) both;
+}
+
+.tabs[data-switched] .panel:not([hidden]) .panelImage {
+  animation: photo-in var(--duration-slow) var(--ease-steppe) both;
+}
+
+.tabs[data-switched] .panel[data-format="kudalyk"]:not([hidden]) .photo::after,
+.tabs[data-switched] .panel[data-format="kudalyk"]:not([hidden]) .panelImage {
+  animation-duration: calc(var(--duration-slow) * 1.6);
+}
+
+@keyframes light-out {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes photo-in {
+  from {
+    opacity: 0.4;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .tabs[data-switched] .panel:not([hidden]) .photo::after,
+  .tabs[data-switched] .panel:not([hidden]) .panelImage {
+    animation: none;
+  }
+
   .tabs[data-switched] .panel:not([hidden]),
   .tabs[data-switched] .panel[data-format="kudalyk"]:not([hidden]) {
     animation: panel-in-calm 200ms linear both;
-  }
-}
-
-/* Кинорежим «Дня»: панель — одна колонка над сценой; кадр-заглушку заменяет сцена. */
-:global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panel {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-:global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panelText {
-  grid-column: auto;
-}
-
-:global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panelImage {
-  display: none;
-}
-
-:global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tabs {
-  gap: var(--space-3);
-}
-
-/* Телефон, кинорежим: табы — одной строкой с прокруткой внутри полосы (страница не скроллится
-   вбок), панель компактнее — площадка на сцене остаётся видна над текстом. */
-@media (max-width: 767px) {
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tablist {
-    flex-wrap: nowrap;
-    gap: var(--space-3);
-    margin-inline: calc(-1 * var(--grid-margin));
-    padding-inline: var(--grid-margin);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tab {
-    flex: none;
-    white-space: nowrap;
-  }
-
-  /* Название формата уже на активном табе — в панели оно для экранного диктора. */
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
-    .panelText
-    h3 {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panelText {
-    gap: var(--space-2);
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .facts {
-    font-size: 15px;
-    line-height: 1.45;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
-    .panel[data-format="kudalyk"]
-    .facts {
-    font-size: 16px;
-  }
-}
-
-/*
- * Телефон в альбомной ориентации (высота ≤ 500 px): табы — одной строкой с прокруткой внутри
- * полосы, панель — в две колонки (фраза и факты | действия): CTA формата видна без прокрутки.
- */
-@media (orientation: landscape) and (max-height: 500px) {
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tabs {
-    gap: var(--space-2);
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tablist {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .tab {
-    flex: none;
-    min-height: 40px;
-    white-space: nowrap;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .panelText {
-    grid-column: 1 / -1;
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    column-gap: var(--grid-gutter);
-    row-gap: var(--space-1);
-    align-items: start;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
-    .panelText
-    h3 {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
-    .panelText
-    > :last-child {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .phrase {
-    font-size: 17px;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"])) .facts {
-    font-size: 14px;
-    line-height: 1.4;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"]):not([data-mode="brief"]))
-    .panelImage {
-    display: none;
   }
 }

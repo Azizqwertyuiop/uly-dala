@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageShell, pageStyles } from "@/components/layout/PageShell";
 import { zones } from "@/components/sections/WorldSection";
+import { extrasCapacity, FAZENDA_EXTRAS } from "@/content/fazenda";
 import { BriefLink } from "@/components/brief/BriefLink";
 import { briefFallbackHref } from "@/components/brief/briefProps";
 import { SceneImage } from "@/components/ui/SceneImage";
@@ -74,6 +75,26 @@ export default async function FazendaPage({ params }: PageProps<"/[locale]/fazen
               <p className={type.caption}>{world("capacityPending")}</p>
             </li>
           ))}
+        </ul>
+      </section>
+
+      <section className={pageStyles.section} aria-labelledby="extras-title">
+        <h2 id="extras-title" className={type.subTitle}>
+          {world("extrasLabel")}
+        </h2>
+        <ul className={layout.cards} style={{ "--cards": 4 } as React.CSSProperties}>
+          {FAZENDA_EXTRAS.map((extra) => {
+            const capacity = extrasCapacity[extra];
+            return (
+              <li key={extra} className={layout.card}>
+                <h3 className={type.subTitle}>{world(`extras.${extra}.name`)}</h3>
+                <p className={type.body}>{world(`extras.${extra}.text`)}</p>
+                {capacity !== undefined && (
+                  <p className={type.caption}>{world("capacity", { count: capacity })}</p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 

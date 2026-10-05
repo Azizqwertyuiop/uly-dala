@@ -31,7 +31,8 @@
     "assets:fallback": "node scripts/render-fallback-clips.mjs",
     "assets:og": "node scripts/render-og-images.mjs",
     "assets:ktx2-worker": "node scripts/ktx2-worker.mjs",
-    "assets:hash": "node scripts/hash-assets.mjs"
+    "assets:hash": "node scripts/hash-assets.mjs",
+    "assets:photos": "node scripts/optimize-photos.mjs && node scripts/hash-assets.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",

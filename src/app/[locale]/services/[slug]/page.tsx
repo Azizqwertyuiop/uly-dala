@@ -7,7 +7,7 @@ import { briefFallbackHref } from "@/components/brief/briefProps";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
-import { findFormat, formatImage, formats } from "@/content/formats";
+import { findFormat, formatImage, formatSrcSet, formats, hasFormatPhoto } from "@/content/formats";
 import { Link } from "@/lib/intl/navigation";
 import { faqLd } from "@/lib/seo/jsonld";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -49,6 +49,7 @@ export default async function ServicePage({ params }: PageProps<"/[locale]/servi
   setRequestLocale(locale);
   const t = await getTranslations("formats");
   const page = await getTranslations("servicePage");
+  const day = await getTranslations("day");
   const { key, slug } = format;
   // Частые вопросы — видимым текстом на странице и в FAQPage (раздел 11; скрытого текста нет).
   const faq = ([1, 2, 3] as const).map((n) => ({
@@ -72,9 +73,14 @@ export default async function ServicePage({ params }: PageProps<"/[locale]/servi
 
       <SceneImage
         src={formatImage(slug)}
-        alt={t(`${key}.sceneAlt`)}
-        width={1600}
-        height={900}
+        srcSet={formatSrcSet(slug)}
+        alt={
+          hasFormatPhoto(slug)
+            ? t(`${key}.sceneAlt`)
+            : day("photoPendingAlt", { format: t(`${key}.title`) })
+        }
+        width={1500}
+        height={1000}
         priority
         sizes="100vw"
       />

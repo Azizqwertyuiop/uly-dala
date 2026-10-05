@@ -7,7 +7,7 @@ const en: Messages = {
   meta: {
     title: "ULY DALA — full-cycle event agency in Almaty",
     description:
-      "Full-cycle event agency in Almaty. Conferences, team building, weddings, kudalyk — at our own venue in the steppe.",
+      "Full-cycle event agency in Almaty. Conferences, team building, weddings, kudalyk — at our own venue at the foot of the mountains.",
   },
   brand: {
     name: "ULY DALA",
@@ -75,7 +75,7 @@ const en: Messages = {
     time: "05:30",
     title: "We build the world.",
     subtitle:
-      "Full-cycle event agency in Almaty. Conferences, team building, weddings, kudalyk — at our own venue in the steppe.",
+      "Full-cycle event agency in Almaty. Conferences, team building, weddings, kudalyk — at our own venue at the foot of the mountains.",
     proof: "6+ years · our own venue · our own equipment · in-house chef",
     ctaPrimary: "Discuss your event",
     scrollHint: "Scroll",
@@ -138,11 +138,13 @@ const en: Messages = {
     formatPage: "More about this format",
     presentation: "Download the presentation",
     presentationMeta: "PDF, 1 KB",
+    photoPending: "Event photo coming soon.",
+    photoPendingAlt: "{format}: the event photo will appear after the shoot.",
   },
   formats: {
     conference: {
       title: "Conference",
-      phrase: "An LED wall in a tent in the middle of the steppe.",
+      phrase: "An LED wall in a tent at the foot of the mountains.",
       lead: "Conference organization and business events at our own venue near Almaty — with our own equipment, our own kitchen and one team from the idea to the last guest.",
       facts: {
         one: "Our own sound, light and LED screens — no contractors.",
@@ -152,18 +154,18 @@ const en: Messages = {
       cta: "Discuss a conference",
       metaTitle: "Conference organization in Almaty — ULY DALA",
       metaDescription:
-        "Conference organization and business events near Almaty: our own venue in the steppe, our own sound, light and LED screens, an in-house chef.",
+        "Conference organization and business events near Almaty: our own venue at the foot of the mountains, our own sound, light and LED screens, an in-house chef.",
       // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
       faq: {
         q1: "Can the conference run on your equipment?",
         a1: "Yes. Sound, light and LED screens are our own equipment — no subcontractors.",
         q2: "Where does the conference take place?",
-        a2: "At our venue in the steppe near Almaty — in a tent or a yurt — or at a venue of your choice.",
+        a2: "At our venue at the foot of the mountains near Almaty — in a tent or a yurt — or at a venue of your choice.",
         q3: "Who handles coffee breaks and lunch?",
         a3: "Our in-house chef and our own kitchen: we cook on site.",
       },
       sceneAlt:
-        "A tent in the steppe with an LED wall and rows of chairs inside; grass and the horizon visible through the opening.",
+        "A conference working session: participants at a long table with laptops, a presentation on the wall screen.",
     },
     coffeeBreak: {
       title: "Coffee break",
@@ -187,11 +189,12 @@ const en: Messages = {
         q3: "How do we agree on the menu?",
         a3: "Send us a brief — we will send a menu for your event.",
       },
-      sceneAlt: "A table with porcelain cups and copper coffee pots, steam rising above the cups.",
+      sceneAlt:
+        "A coffee break in a tent: a long table with a dark blue cloth — pastries, a samovar, a buffet sign, stacks of plates, cups and thermos jugs.",
     },
     teamBuilding: {
       title: "Team building",
-      phrase: "The open steppe — a playing field for your team.",
+      phrase: "Open space at the foot of the mountains — a playing field for your team.",
       lead: "Team building tailored to your team in the open spaces of the venue near Almaty — with a scenario, equipment and lunch cooked over fire.",
       facts: {
         one: "A scenario built around your team’s goals.",
@@ -201,17 +204,18 @@ const en: Messages = {
       cta: "Discuss team building",
       metaTitle: "Team building near Almaty — ULY DALA",
       metaDescription:
-        "Team building in the open steppe near Almaty: a scenario built around your team, our own equipment and lunch cooked over fire.",
+        "Team building at the foot of the mountains near Almaty: a scenario built around your team, our own equipment and lunch cooked over fire.",
       // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
       faq: {
         q1: "Where does team building take place?",
-        a1: "In the open spaces of our venue in the steppe near Almaty.",
+        a1: "In the open spaces of our venue at the foot of the mountains near Almaty.",
         q2: "Who writes the scenario?",
         a2: "We do: the scenario, equipment and lunch over fire — all in one team.",
         q3: "What if the weather turns?",
         a3: "The venue has covered areas — a tent and a yurt — so the programme continues indoors.",
       },
-      sceneAlt: "The open steppe by day, a field for a team game marked out on the grass.",
+      sceneAlt:
+        "A team-building evening outdoors: guests sit around fire pits in chairs and on benches, a house and string lights behind.",
     },
     kudalyk: {
       title: "Kudalyk",
@@ -225,7 +229,7 @@ const en: Messages = {
       cta: "Discuss a kudalyk",
       metaTitle: "Kudalyk in Almaty — ceremony planning | ULY DALA",
       metaDescription:
-        "Kudalyk planning in Almaty: the order of the day, a dastarkhan by our in-house chef and our own venue in the steppe.",
+        "Kudalyk planning in Almaty: the order of the day, a dastarkhan by our in-house chef and our own venue at the foot of the mountains.",
       // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
       faq: {
         q1: "What is kudalyk?",
@@ -240,8 +244,8 @@ const en: Messages = {
     },
     wedding: {
       title: "Wedding",
-      phrase: "Evening light over the steppe.",
-      lead: "Weddings at our own venue in the steppe near Almaty: decor, light, sound and banquet — all in-house, with one coordinator.",
+      phrase: "Evening light over the foothills.",
+      lead: "Weddings at our own venue at the foot of the mountains near Almaty: decor, light, sound and banquet — all in-house, with one coordinator.",
       facts: {
         one: "Venue, decor, light and sound — all our own.",
         two: "A banquet by our in-house chef.",
@@ -250,17 +254,18 @@ const en: Messages = {
       cta: "Discuss a wedding",
       metaTitle: "Wedding venue near Almaty — ULY DALA",
       metaDescription:
-        "A wedding at our own venue in the steppe near Almaty: decor, light, sound and banquet all in-house, with one coordinator.",
+        "A wedding at our own venue at the foot of the mountains near Almaty: decor, light, sound and banquet all in-house, with one coordinator.",
       // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
       faq: {
         q1: "Where can we hold a wedding near Almaty?",
-        a1: "At our own venue in the steppe near Almaty — or at a venue of your choice.",
+        a1: "At our own venue at the foot of the mountains near Almaty — or at a venue of your choice.",
         q2: "What do you take care of?",
         a2: "Decor, light, sound and banquet — all in-house, with one coordinator from the first meeting to the last guest.",
         q3: "Can we visit the venue first?",
         a3: "Yes, come and see the venue — we will agree on a time.",
       },
-      sceneAlt: "The evening steppe, a long set table under strings of warm lights.",
+      sceneAlt:
+        "An evening at the foot of the mountains, a long set table under strings of warm lights.",
     },
     privateParty: {
       title: "Private celebration",
@@ -274,17 +279,17 @@ const en: Messages = {
       cta: "Discuss a celebration",
       metaTitle: "Private party venue near Almaty — ULY DALA",
       metaDescription:
-        "Anniversaries, birthdays and family celebrations at our venue in the steppe near Almaty: kitchen, equipment and full-cycle service.",
+        "Anniversaries, birthdays and family celebrations at our venue at the foot of the mountains near Almaty: kitchen, equipment and full-cycle service.",
       // TODO(client-copy) TODO(en-review): частые вопросы — черновик без цифр.
       faq: {
         q1: "What celebrations do you host?",
         a1: "Anniversaries, birthdays and family celebrations.",
         q2: "Where does the party take place?",
-        a2: "At our venue in the steppe near Almaty or at a venue of your choice.",
+        a2: "At our venue at the foot of the mountains near Almaty or at a venue of your choice.",
         q3: "Who cooks?",
         a3: "Our in-house chef and our own kitchen.",
       },
-      sceneAlt: "A small table by a yurt in warm light, the empty steppe all around.",
+      sceneAlt: "A small table by a yurt in warm light, open foothills all around.",
     },
   },
   fire: {
@@ -350,7 +355,7 @@ const en: Messages = {
   world: {
     time: "Night",
     title: "This world exists.",
-    lead: "The venue in the steppe near Almaty is our own. Come and see it in person.",
+    lead: "The venue at the foot of the mountains near Almaty is our own. Come and see it in person.",
     sceneAlt:
       "A night photograph of the venue: a yurt and a tent under a starry sky, the lights of Almaty in the distance.",
     zonesLabel: "Venue areas",
@@ -360,13 +365,30 @@ const en: Messages = {
       yurt: { name: "Yurt", text: "An intimate space for ceremonies." },
       kitchen: { name: "Kitchen and fire", text: "Where our in-house chef cooks." },
     },
+    extrasLabel: "Also at the venue",
+    extras: {
+      gazebo: {
+        name: "Covered gazebo",
+        text: "A banquet or coffee break under a roof in the open air.",
+      },
+      fireplaceGazebo: {
+        name: "Gazebo with a fireplace",
+        text: "A covered gazebo with its own fireplace — for evenings and cool weather.",
+      },
+      banya: { name: "Banya", text: "Unwind after the programme." },
+      cabins: { name: "Guest cabins", text: "Stay until morning." },
+      cinema: { name: "Open-air cinema", text: "An evening screening on a big screen." },
+      horses: { name: "Horse riding", text: "Rides at the foot of the mountains." },
+      archery: { name: "Archery", text: "For team programmes and for guests." },
+      atv: { name: "Quad bikes", text: "The active part of the programme." },
+    },
     capacityPending: "Capacity to be confirmed.",
     capacity: "{count, plural, one {Up to # guest} other {Up to # guests}}",
-    location: "In the steppe near Almaty.",
+    location: "At the foot of the mountains near Almaty.",
     fazendaLabel: "The venue",
     zonesHint: "Keep scrolling — the camera will walk through the areas.",
     mapLabel: "Getting there",
-    mapTitle: "Map: the venue in the steppe and Almaty",
+    mapTitle: "Map: the venue at the foot of the mountains and Almaty",
     mapCity: "Almaty",
     mapFazenda: "The venue",
     mapNote: "Not to scale.",
@@ -524,11 +546,11 @@ const en: Messages = {
     otherFormats: "Other formats",
   },
   fazendaPage: {
-    metaTitle: "ULY DALA venue — in the steppe near Almaty",
+    metaTitle: "ULY DALA venue — at the foot of the mountains near Almaty",
     metaDescription:
-      "ULY DALA’s own out-of-town venue in the steppe near Almaty: spaces for conferences, banquets, weddings and kudalyk.",
+      "ULY DALA’s own out-of-town venue at the foot of the mountains near Almaty: spaces for conferences, banquets, weddings and kudalyk.",
     title: "This world exists.",
-    lead: "ULY DALA’s own venue in the steppe near Almaty. Our events take place here — and you can visit before yours.",
+    lead: "ULY DALA’s own venue at the foot of the mountains near Almaty. Our events take place here — and you can visit before yours.",
   },
   casesPage: {
     label: "Case",

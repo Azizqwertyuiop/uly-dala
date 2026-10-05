@@ -37,13 +37,13 @@ export const cases: readonly Case[] = [
     placeholder: true,
     text: {
       ru: {
-        title: "Конференция в степи",
+        title: "Конференция у подножия гор",
         summary: "Деловое событие на фазенде со своей техникой и кухней.",
         coverAlt: "Шатёр на фазенде с LED-стеной, гости рассаживаются перед началом.",
         ...pending.ru,
       },
       en: {
-        title: "A conference in the steppe",
+        title: "A conference at the foot of the mountains",
         summary: "A business event at the venue with our own equipment and kitchen.",
         coverAlt: "A tent at the venue with an LED wall, guests taking their seats.",
         ...pending.en,
@@ -79,13 +79,14 @@ export const cases: readonly Case[] = [
       ru: {
         title: "Вечерняя свадьба",
         summary: "Свадьба на закате: декор, свет и банкет своими силами.",
-        coverAlt: "Длинный стол в вечерней степи под гирляндами тёплого света.",
+        coverAlt: "Длинный стол вечером у подножия гор под гирляндами тёплого света.",
         ...pending.ru,
       },
       en: {
         title: "An evening wedding",
         summary: "A sunset wedding: decor, light and banquet, all in-house.",
-        coverAlt: "A long table in the evening steppe under strings of warm lights.",
+        coverAlt:
+          "A long table on an evening at the foot of the mountains, under strings of warm lights.",
         ...pending.en,
       },
     },

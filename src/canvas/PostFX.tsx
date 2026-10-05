@@ -115,16 +115,14 @@ export function PostFX({ msaa }: { msaa: boolean }) {
     const autoClear = gl.autoClear;
     gl.autoClear = false;
 
-    // 1) Степь — только в своих прямоугольниках: рассвет + «Сборка», «День», «Огонь», финал.
+    // 1) Степь — только в своих прямоугольниках: рассвет + «Сборка», «Огонь», финал.
     const b = chapterBounds()[STEPPE_CHAPTER];
     if (b && progress.chapterId !== null) {
       const assembly = chapterTrack("assembly");
-      const day = chapterTrack("day");
       const firstEnd = assembly
         ? Math.max(b.top + b.height, assembly.top + assembly.height)
         : b.top + b.height;
       renderSteppe(r, b.top, firstEnd);
-      if (day) renderSteppe(r, day.top, day.top + day.height);
       const fire = chapterTrack("fire");
       if (fire) renderSteppe(r, fire.top, fire.top + fire.height);
       // «Снова рассвет» — та же степь. Пока фазенда уходит, степь уже под ней: одна полоса

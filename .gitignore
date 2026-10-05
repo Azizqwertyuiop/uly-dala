@@ -52,3 +52,7 @@ next-env.d.ts
 # локальная база заявок (SQLite) — персональные данные, не коммитить
 /.data/
 .lighthouseci/
+
+# Оригиналы фото событий (полное разрешение, EXIF) — не в публичный репозиторий;
+# на сайт идут сжатые версии из public/assets/photos (scripts/optimize-photos.mjs).
+/assets-src/photos/

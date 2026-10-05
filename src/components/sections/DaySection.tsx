@@ -1,5 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { formatImage, formats } from "@/content/formats";
+import { formatImage, formatSrcSet, formats, hasFormatPhoto } from "@/content/formats";
 import type from "@/components/ui/type.module.css";
 import { Chapter, ChapterTime } from "./Chapter";
 import { FormatTabs, type FormatTabItem } from "./FormatTabs";
@@ -9,10 +9,9 @@ import styles from "./sections.module.css";
 const PRESENTATION_HREF = "/assets/docs/uly-dala-presentation.pdf";
 
 /*
- * Глава 3. День (CLAUDE.md, раздел 2). Шесть форматов в одной сцене.
- * Кинорежим (есть 3D): дорожка 300vh (data-track), экран закреплён; табы синхронизированы
- * со скроллом, сцена показывает площадку текущего формата.
- * Обычная раскладка («Коротко», без WebGL): табы переключают панели с кадрами; без JS — список.
+ * Глава 3. День (CLAUDE.md, раздел 2). Шесть форматов — фото настоящих событий, без 3D.
+ * Обычная глава (не закреплённая): табы переключают формат кликом, стрелками или свайпом
+ * по фото; без JS — список всех форматов. Холст здесь не рисует (src/canvas/onScreen.ts).
  */
 export async function DaySection() {
   const locale = await getLocale();
@@ -30,35 +29,36 @@ export async function DaySection() {
     ctaHref: `/${locale}#brief`,
     pageHref: `/${locale}/services/${slug}`,
     image: formatImage(slug),
-    alt: f(`${key}.sceneAlt`),
+    srcSet: formatSrcSet(slug),
+    // Пока снимка нет — честное описание пустого кадра и подпись под ним.
+    alt: hasFormatPhoto(slug)
+      ? f(`${key}.sceneAlt`)
+      : t("photoPendingAlt", { format: f(`${key}.title`) }),
+    pending: hasFormatPhoto(slug) ? undefined : t("photoPending"),
   }));
 
   return (
     <Chapter id="day" time={t("time")} name={chapters("day")} className={styles.day} hideTime>
-      <div className={styles.dayTrack} data-track="day">
-        <div className={styles.dayStage}>
-          <div className={`${styles.textBlock} ${styles.dayHead}`}>
-            <ChapterTime time={t("time")} name={chapters("day")} />
-            <h2 id="day-title" className={type.chapterTitle} data-reveal="">
-              {t("title")}
-            </h2>
-            <p className={type.lead} data-reveal="">
-              {t("lead")}
-            </p>
-          </div>
-          <div className={styles.dayTabs}>
-            <FormatTabs
-              label={t("tabsLabel")}
-              formatPageLabel={t("formatPage")}
-              items={items}
-              presentation={{
-                label: t("presentation"),
-                meta: t("presentationMeta"),
-                href: PRESENTATION_HREF,
-              }}
-            />
-          </div>
+      <div className={styles.dayStage}>
+        <div className={styles.textBlock}>
+          <ChapterTime time={t("time")} name={chapters("day")} />
+          <h2 id="day-title" className={type.chapterTitle} data-reveal="">
+            {t("title")}
+          </h2>
+          <p className={type.lead} data-reveal="">
+            {t("lead")}
+          </p>
         </div>
+        <FormatTabs
+          label={t("tabsLabel")}
+          formatPageLabel={t("formatPage")}
+          items={items}
+          presentation={{
+            label: t("presentation"),
+            meta: t("presentationMeta"),
+            href: PRESENTATION_HREF,
+          }}
+        />
       </div>
     </Chapter>
   );

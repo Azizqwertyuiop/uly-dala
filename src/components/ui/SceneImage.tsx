@@ -10,6 +10,8 @@ type Props = {
   /** Кадр первого экрана: грузится сразу. */
   priority?: boolean;
   sizes?: string;
+  /** Размеры снимка для разных экранов («url 750w, …»). */
+  srcSet?: string;
   className?: string;
   /** Место 3D-сцены главы: кадр скрывается, когда сцена на холсте готова. */
   sceneSlot?: boolean;
@@ -30,6 +32,7 @@ export function SceneImage({
   height,
   priority,
   sizes,
+  srcSet,
   className,
   sceneSlot,
   gl,
@@ -44,6 +47,7 @@ export function SceneImage({
       <img
         className={styles.image}
         src={src}
+        srcSet={srcSet}
         alt={alt}
         width={width}
         height={height}

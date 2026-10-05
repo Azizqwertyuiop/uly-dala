@@ -253,7 +253,8 @@ function Runtime({
     if (ready.current || progress.chapterId === null) return;
     // Готово, когда на месте и глава, и мир, в котором она стоит (степь).
     const entry = sceneRegistry.find((e) => e.id === progress.chapterId);
-    const need = [progress.chapterId, ...(entry?.requires ?? [])];
+    // У главы без сцены («День» — фото) ждать нечего.
+    const need = entry ? [entry.id, ...(entry.requires ?? [])] : [];
     if (need.every((id) => scenes.has(id) && shown.has(id))) markReady();
   }); // проверка после каждого обновления набора сцен
 
