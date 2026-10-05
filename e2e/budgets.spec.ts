@@ -61,15 +61,17 @@ for (const [tier, viewport] of [
         const top = document.getElementById(id)!.getBoundingClientRect().top + window.scrollY;
         window.scrollTo(0, top - window.innerHeight / 2 + 80);
       }, id);
-      await expect
-        .poll(
-          () =>
-            page.evaluate(
-              () => (window as unknown as { __stage: { loaded: string[] } }).__stage.loaded,
-            ),
-          { timeout: 15_000 }, // программный WebGL под параллельной нагрузкой — медленный
-        )
-        .toContain(id);
+      // У «Дня» сцены нет (фото событий) — меряем то, что глава догружает (фото).
+      if (id !== "day")
+        await expect
+          .poll(
+            () =>
+              page.evaluate(
+                () => (window as unknown as { __stage: { loaded: string[] } }).__stage.loaded,
+              ),
+            { timeout: 15_000 }, // программный WebGL под параллельной нагрузкой — медленный
+          )
+          .toContain(id);
       await net.idle();
       const bytes = net.since(mark);
       console.log(`[${tier}] ${id}: ${kb(bytes)}`);

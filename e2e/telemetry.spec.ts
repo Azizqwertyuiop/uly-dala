@@ -305,7 +305,8 @@ test.describe("заголовки безопасности", () => {
   test("CSP не ломает 3D: шейдеры, воркеры KTX2/meshopt, сплаты, видео — без нарушений", async ({
     page,
   }) => {
-    test.setTimeout(90_000);
+    // Проход всего сайта с 3D на процессоре (CI без видеокарты) — с запасом.
+    test.setTimeout(240_000);
     const problems: string[] = [];
     page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
     page.on("console", (m) => {
@@ -333,8 +334,8 @@ test.describe("заголовки безопасности", () => {
     }
     await page.waitForTimeout(1500);
     (await stage()).compiled.forEach((id) => compiled.add(id));
-    // Все сцены собрались (KTX2-текстуры декодированы воркером), фазенда — сплатами (воркер Spark).
-    expect([...compiled].sort()).toEqual(["assembly", "dawn", "day", "fire", "return", "world"]);
+    // Все сцены собрались — у «Дня» сцены нет, там фото (KTX2-текстуры декодированы воркером), фазенда — сплатами (воркер Spark).
+    expect([...compiled].sort()).toEqual(["assembly", "dawn", "fire", "return", "world"]);
     expect([...modes]).toContain("splats");
     expect(await page.locator("html").getAttribute("data-quality")).toBe("high");
     expect(problems).toEqual([]);

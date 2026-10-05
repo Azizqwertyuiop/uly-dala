@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { WORLD_ZONES } from "@/canvas/world/timeline";
 import { caseText, cases } from "@/content/cases";
 import { clientLogos, pickReviews, reviews } from "@/content/clients";
-import { fazenda, mapLinks } from "@/content/fazenda";
+import { extrasCapacity, fazenda, FAZENDA_EXTRAS, mapLinks } from "@/content/fazenda";
 import type { Locale } from "@/lib/i18n";
 import { BriefLink } from "@/components/brief/BriefLink";
 import { briefFallbackHref } from "@/components/brief/briefProps";
@@ -145,6 +145,29 @@ export async function WorldSection() {
             <p className={type.pending}>{t("reviewsPending")}</p>
           )}
         </div>
+      </div>
+
+      {/* Ещё на фазенде: места и активности помимо зон облёта (без остановок камеры). */}
+      <div className={styles.worldExtras}>
+        <h3 className={type.eyebrow} id="world-extras">
+          {t("extrasLabel")}
+        </h3>
+        <ul className={styles.worldExtrasList} aria-labelledby="world-extras">
+          {FAZENDA_EXTRAS.map((extra) => {
+            const capacity = extrasCapacity[extra];
+            return (
+              <li key={extra} className={styles.worldExtra} data-extra={extra}>
+                <p className={type.subTitle}>{t(`extras.${extra}.name`)}</p>
+                <p className={type.body}>{t(`extras.${extra}.text`)}</p>
+                {capacity !== undefined && (
+                  <p className={`${type.caption} ${styles.tabular}`}>
+                    {t("capacity", { count: capacity })}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       <div className={styles.worldTrack} data-track="world">

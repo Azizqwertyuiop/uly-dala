@@ -75,7 +75,6 @@ export const assets = {
   },
   horsePlane: model("horse", "dawn", ["horse_plane"]),
   yurt: model("yurt", "assembly", ["kerege", "uyki", "shanyrak", "kiiz", "esik"]),
-  ledWall: model("led_wall", "day", ["led_frame", "led_screen"]),
   dastarkhan: model("dastarkhan", "fire", [
     "dastarkhan_left",
     "dastarkhan_right",

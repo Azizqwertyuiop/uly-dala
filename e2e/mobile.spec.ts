@@ -25,10 +25,12 @@ const SIZES = [
 
 const TRACKS = ["assembly", "day", "fire", "world", "return"] as const;
 
+/** Прокрутка к доле p дорожки главы; у «Дня» дорожки нет (фото-глава) — к доле самой главы. */
 async function scrollTrack(page: Page, id: string, p: number) {
   await page.evaluate(
     ([id, p]) => {
-      const t = document.querySelector<HTMLElement>(`[data-track='${id}']`)!;
+      const t =
+        document.querySelector<HTMLElement>(`[data-track='${id}']`) ?? document.getElementById(id)!;
       const top = t.getBoundingClientRect().top + window.scrollY;
       window.scrollTo(0, top + (t.offsetHeight - window.innerHeight) * Number(p));
     },
@@ -99,9 +101,7 @@ test.describe("телефон: одной рукой", () => {
       timeout: 20_000,
     });
     await expectThumb(page, /^Обсудить событие$/, page.locator("[data-hero-text]"));
-    await scrollTrack(page, "day", 0.05);
-    await page.waitForTimeout(800);
-    await expectThumb(page, /^Обсудить конференцию/);
+    // «День» — обычная глава (фото), не закреплённый экран: CTA в потоке текста.
     await scrollTrack(page, "fire", 0.9);
     await page.waitForTimeout(800);
     await expectThumb(page, /^Запросить меню$/);
@@ -117,7 +117,7 @@ test.describe("телефон: одной рукой", () => {
     // меняет и svh — поэтому проверяем механизм: высота экрана для прогресса — пробник 100svh,
     // а событие resize с той же шириной границы глав не пересчитывает.
     await page.goto("/ru?quality=medium");
-    await scrollTrack(page, "day", 0.5);
+    await scrollTrack(page, "fire", 0.5);
     const read = () =>
       page.evaluate(() => {
         const p = (
@@ -133,14 +133,14 @@ test.describe("телефон: одной рукой", () => {
           probe,
         };
       });
-    await expect.poll(async () => (await read()).chapter, { timeout: 10_000 }).toBe("day");
+    await expect.poll(async () => (await read()).chapter, { timeout: 10_000 }).toBe("fire");
     const before = await read();
     expect(before.vh).toBe(before.probe);
     // Адресная строка спряталась: браузер шлёт resize, ширина та же.
     await page.evaluate(() => window.dispatchEvent(new Event("resize")));
     await page.waitForTimeout(300);
     const after = await read();
-    expect(after.chapter).toBe("day");
+    expect(after.chapter).toBe("fire");
     expect(Math.abs(after.track - before.track)).toBeLessThan(0.005);
   });
 

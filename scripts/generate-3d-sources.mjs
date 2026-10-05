@@ -172,19 +172,6 @@ function feltTextures(size = 512) {
   return { color: encodePng(size, size, color), normal: encodePng(size, size, normal) };
 }
 
-function ledTexture(w = 512, h = 256) {
-  const px = new Uint8Array(w * h * 4);
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      const t = x / w;
-      // Спокойная «картинка» на экране: тёплый рассвет по горизонтали, сетка пикселей LED.
-      const led = x % 4 < 3 && y % 4 < 3 ? 1 : 0.35;
-      px.set([(40 + 180 * t) * led, (40 + 90 * t) * led, (70 - 30 * t) * led, 255], i);
-    }
-  return encodePng(w, h, px);
-}
-
 // ---------- Модели ----------
 
 async function write(name, doc) {
@@ -354,45 +341,6 @@ async function dastarkhan() {
   await write("dastarkhan", doc);
 }
 
-async function ledWall() {
-  const doc = new Document();
-  const buffer = doc.createBuffer();
-  const scene = doc.createScene("led_wall");
-  const root = doc.createNode("led_wall");
-  scene.addChild(root);
-  const image = ledTexture();
-  writeFileSync(new URL("led_screen_emissive.png", TEXTURES), image);
-  const frame = doc
-    .createMaterial("led_frame")
-    .setMetallicFactor(0)
-    .setBaseColorFactor([0.05, 0.05, 0.06, 1]);
-  const screen = doc
-    .createMaterial("led_screen")
-    .setMetallicFactor(0)
-    .setBaseColorFactor([0, 0, 0, 1])
-    .setEmissiveFactor([1, 1, 1])
-    .setEmissiveTexture(
-      doc
-        .createTexture("led_screen_emissive")
-        .setImage(image)
-        .setMimeType("image/png")
-        .setURI("led_screen_emissive.png"),
-    );
-  root.addChild(
-    addMesh(
-      doc,
-      buffer,
-      "led_frame",
-      new MeshBuilder().box([0, 1.8, -0.06], [5.2, 3.0, 0.1]),
-      frame,
-    ),
-  );
-  const s = new MeshBuilder();
-  s.quad([-2.5, 0.4, 0], [2.5, 0.4, 0], [2.5, 3.2, 0], [-2.5, 3.2, 0], [0, 0, 1]);
-  root.addChild(addMesh(doc, buffer, "led_screen", s, screen));
-  await write("led_wall", doc);
-}
-
 async function horse() {
   // Плоскость видеотекстуры коня: UV 0…1, пропорции кадра 16:9, низ плоскости — земля.
   const doc = new Document();
@@ -412,7 +360,6 @@ async function horse() {
 console.log("Исходники 3D:");
 await yurt();
 await dastarkhan();
-await ledWall();
 await horse();
 
 const noise = blueNoise(64);

@@ -622,103 +622,29 @@
 
 /* ---------- День ---------- */
 /*
- * Обычная раскладка: заголовок и табы форматов с кадрами. Кинорежим (есть 3D): дорожка 300vh,
- * экран закреплён; табы синхронизированы со скроллом, панель текущего формата — внизу слева,
- * площадка — справа на сцене. Заголовок главы уходит после первого состояния.
+ * Обычная (не закреплённая) глава: заголовок, табы форматов, фото события (FormatTabs).
+ * Сверху — свет из шаңырақа «Сборки» переходит в светлый фон главы (раздел 5, переходы).
  */
-.dayTrack,
 .dayStage {
   display: grid;
   gap: var(--space-block);
 }
 
-:global(html[data-cinematic]:not([data-quality="fallback"])) .day {
-  padding-top: 0;
-}
-
-:global(html[data-cinematic]:not([data-quality="fallback"])) .dayTrack {
-  display: block;
-  height: 300svh;
-}
-
-:global(html[data-cinematic]:not([data-quality="fallback"])) .dayStage {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  min-height: 560px;
-  grid-template-rows: auto 1fr;
-  gap: var(--space-4);
-  padding-block: calc(72px + var(--space-4)) calc(var(--horizon-height) + var(--space-6));
-}
-
-:global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead,
-:global(html[data-cinematic]:not([data-quality="fallback"])) .dayTabs {
+:global(html[data-cinematic]) .day {
   position: relative;
-  max-width: 540px;
-  padding-right: var(--space-6);
 }
 
-:global(html[data-cinematic]:not([data-quality="fallback"])) .dayTabs {
-  align-self: end;
-}
-
-/* Подложка под текстом над сценой (контраст ≥ 4.5:1): войлок от левого края. */
-:global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead::before,
-:global(html[data-cinematic]:not([data-quality="fallback"])) .dayTabs::before {
+:global(html[data-cinematic]) .day::before {
   content: "";
   position: absolute;
-  z-index: -1;
-  inset: -14% -30% -14% calc(-1 * var(--grid-margin));
+  inset: calc(-1 * var(--space-block)) 0 auto;
+  height: var(--space-block);
   background: linear-gradient(
-    90deg,
-    var(--felt) 0%,
-    color-mix(in srgb, var(--felt) 92%, transparent) 55%,
-    color-mix(in srgb, var(--felt) 0%, transparent) 100%
+    to bottom,
+    color-mix(in srgb, var(--kumys) 0%, transparent),
+    var(--felt)
   );
-  mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 86%, transparent 100%);
   pointer-events: none;
-}
-
-:global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead {
-  transition:
-    transform calc(var(--duration-base) * 1.3) var(--ease-steppe),
-    opacity calc(var(--duration-base) * 1.3) var(--ease-steppe);
-}
-
-/* Заголовок прочитан — со второго состояния уходит вверх, остаются табы и панель формата. */
-:global(html[data-canvas="ready"])
-  .dayStage:has([data-day-state]:not([data-day-state="0"]))
-  .dayHead:not(:focus-within) {
-  transform: translateY(-24px);
-  opacity: 0;
-  transition:
-    transform var(--duration-quick) var(--ease-exit),
-    opacity var(--duration-quick) var(--ease-exit);
-}
-
-@media (max-width: 767px) {
-  /* Лид главы на телефоне — для экранного диктора: место — площадке и панели формата. */
-  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead > p:last-child {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  /* Подложка плотная с верхнего края: табы и время — у верха блока (≥ 4.5:1 над площадкой). */
-  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead::before,
-  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayTabs::before {
-    inset: -16% calc(-1 * var(--grid-margin)) -10%;
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--felt) 0%, transparent) 0%,
-      color-mix(in srgb, var(--felt) 94%, transparent) 9%,
-      var(--felt) 100%
-    );
-    mask-image: none;
-  }
 }
 
 /* ---------- Огонь ---------- */
@@ -1101,6 +1027,44 @@
   display: none;
 }
 
+/*
+ * «Ещё на фазенде» — обычный блок в потоке главы (не на закреплённой сцене облёта):
+ * свои классы, чтобы правила панели зон над сценой (position: absolute, подсветка зоны)
+ * его не задевали.
+ */
+.worldExtras {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.worldExtrasList {
+  display: grid;
+  gap: var(--grid-gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .worldExtrasList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .worldExtrasList {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.worldExtra {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--tone-line);
+}
+
 @media (min-width: 768px) {
   .worldInfo {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1423,33 +1387,10 @@
 /* ---------- Телефон в альбомной ориентации: все закреплённые экраны ---------- */
 @media (orientation: landscape) and (max-height: 500px) {
   :global(html[data-cinematic]:not([data-quality="fallback"])) .assemblyStage,
-  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayStage,
   :global(html[data-cinematic]:not([data-quality="fallback"])) .fireStage,
   :global(html[data-cinematic]:not([data-quality="fallback"])) .worldStage,
   :global(html[data-cinematic]:not([data-quality="fallback"])) .finaleStage {
     min-height: 0;
-  }
-
-  /* «День»: заголовок и табы — на всю ширину, ближе к хедеру; лид — для экранного диктора. */
-  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayStage {
-    gap: var(--space-2);
-    padding-block: calc(56px + var(--space-1))
-      calc(var(--horizon-height) + var(--space-2) + env(safe-area-inset-bottom));
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead,
-  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayTabs {
-    max-width: none;
-    padding-right: 0;
-  }
-
-  :global(html[data-cinematic]:not([data-quality="fallback"])) .dayHead > p:last-child {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 
   /* Фазенда: заголовок с CTA — слева сверху, плашка текущей зоны — справа снизу. */

@@ -115,7 +115,7 @@ ssh root@<IP> "set -a; . /etc/uly-dala/deploy.env; caddy validate --config /etc/
   переменная `PREVIEW_DOMAIN`.
 - Environments → `production` → переменные `NEXT_PUBLIC_*` (см. выше).
 - **Branches → Add branch ruleset для `main`:** Require a pull request before merging;
-  Require status checks to pass — `check` и `audit`; Block force pushes. **Так мёрж возможен
+  Require status checks to pass — `check`, `e2e` и `audit`; Block force pushes. **Так мёрж возможен
   только при зелёном CI**, в т.ч. при нарушении бюджета ассетов (CI красный — кнопка Merge неактивна).
 
 **5. Первая выкладка:** push в `main` → CI → Deploy (или Actions → Deploy → Run workflow).

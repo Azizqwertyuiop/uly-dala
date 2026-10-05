@@ -41,8 +41,6 @@ export const stageStats = {
   return: { p: 0, stars: 0, predawn: 0, pressed: 0, handoff: 0, active: false },
   /** Огонь: прогресс, фаза, насколько вид «орто», фокусное, сет, блюдо под курсором. */
   fire: { p: 0, phase: "", ortho: 0, focal: 50, set: "", hover: "", night: 0 },
-  /** День: прогресс сцены (сглаженный), текущий формат, слот, завеса, темп. */
-  day: { p: 0, state: "", index: 0, veil: 0, tempo: "day" },
   /** Сборка: прогресс сцены (после притяжения), этап и сводка деталей 0…1. */
   assembly: {
     p: 0,

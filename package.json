@@ -20,7 +20,8 @@
     "lhci": "node scripts/lhci.mjs",
     "verify:rollback": "node scripts/verify-rollback.mjs",
     "audit:deps": "npm audit --omit=dev --audit-level=high && npm audit --audit-level=critical",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run e2e",
+    "check": "npm run check:fast && npm run e2e",
+    "check:fast": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build",
     "assets": "node scripts/generate-3d-sources.mjs && node scripts/optimize-assets.mjs",
     "assets:video": "node scripts/make-test-video.mjs",
     "assets:2d": "node scripts/generate-placeholders-2d.mjs && node scripts/generate-pdf-stub.mjs",
@@ -30,7 +31,8 @@
     "assets:fallback": "node scripts/render-fallback-clips.mjs",
     "assets:og": "node scripts/render-og-images.mjs",
     "assets:ktx2-worker": "node scripts/ktx2-worker.mjs",
-    "assets:hash": "node scripts/hash-assets.mjs"
+    "assets:hash": "node scripts/hash-assets.mjs",
+    "assets:photos": "node scripts/optimize-photos.mjs && node scripts/hash-assets.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",

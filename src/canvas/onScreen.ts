@@ -5,11 +5,12 @@ import { chapterBounds, chapterTrack, progress } from "@/motion/progress";
  * Есть ли на экране участок со сценой (CLAUDE.md, раздел 12: «рендер стоит в статике»).
  * 3D видно только в своих полосах: первый экран «Рассвета», закреплённые дорожки глав
  * и глава «Этот мир существует» целиком (кадры архива — WebGL поверх <img>).
+ * «День» — фото событий без 3D: холст там стоит.
  * Бриф, футер, тексты между дорожками — без 3D: кадр не рисуется.
  * Только измеренные границы (обновляются при ресайзе) — без чтения DOM в кадре.
  */
 
-const TRACKS = ["assembly", "day", "fire", "return"] as const;
+const TRACKS = ["assembly", "fire", "return"] as const;
 const DAWN = chapterIds.indexOf("dawn");
 const WORLD = chapterIds.indexOf("world");
 

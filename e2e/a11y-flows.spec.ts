@@ -42,7 +42,9 @@ test.describe("доступность: состояния с 3D", () => {
     const all: string[] = [];
     for (const id of ["assembly", "day", "fire", "world", "return"]) {
       await page.evaluate((id) => {
-        const t = document.querySelector<HTMLElement>(`[data-track='${id}']`)!;
+        const t =
+          document.querySelector<HTMLElement>(`[data-track='${id}']`) ??
+          document.getElementById(id)!;
         window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY);
       }, id);
       await page.waitForTimeout(800);
@@ -129,8 +131,14 @@ for (const locale of locales) {
       const m = getMessages(locale);
       await openStage(page, `/${locale}`);
 
-      // 1. Найти формат: Tab до табов «Дня», стрелками — кудалык.
-      await tabTo(page, page.getByRole("tab", { selected: true }));
+      // 1. Найти формат: навигация-горизонт (первая в <main>) — Tab до главы «День», Enter;
+      // браузер переносит точку фокуса к главе, следующий Tab — табы «Дня», стрелками — кудалык.
+      // Так ходит пользователь клавиатуры (раздел 8: горизонт работает с клавиатуры), а не 80 Tab
+      // через все главы: на CI без видеокарты каждый Tab перерисовывает 3D процессором (~1–2 с).
+      const horizon = page.getByRole("navigation", { name: m.horizon.label });
+      await tabTo(page, horizon.getByRole("link", { name: m.chapters.day }), 30);
+      await page.keyboard.press("Enter");
+      await tabTo(page, page.getByRole("tab", { selected: true }), 15);
       const kudalyk = page.getByRole("tab", { name: m.formats.kudalyk.title });
       for (
         let i = 0;
@@ -227,6 +235,13 @@ async function contrastIssues(page: Page, scope: string) {
       // За краем экрана (в том числе табы, уехавшие за край полосы) — не видно.
       if (r.width < 4 || r.bottom < 0 || r.top > innerHeight || r.left < 0 || r.right > innerWidth)
         continue;
+      // Под закреплённым интерфейсом (хедер, навигация-горизонт) — текст проезжает под ним при
+      // прокрутке обычной главы и читается выше; контраст меряем там, где он не перекрыт.
+      const covered = ["header", "[data-horizon]"].some((sel) => {
+        const b = document.querySelector(sel)?.getBoundingClientRect();
+        return b && b.height > 0 && r.bottom > b.top && r.top < b.bottom;
+      });
+      if (covered) continue;
       const nums = st.color.match(/[\d.]+/g)!.map(Number);
       const color = st.color.startsWith("color(")
         ? nums.slice(0, 3).map((v) => v * 255)
@@ -303,7 +318,7 @@ test.describe("контраст над 3D", () => {
       await page.waitForTimeout(6000); // интро
       const issues = [...(await contrastIssues(page, "[data-hero-text]"))];
       for (const [track, p, scope] of [
-        ["day", 0.05, "[data-track='day']"],
+        ["day", 0.3, "#day"],
         ["fire", 0.15, "[data-fire-stage]"],
         ["fire", 0.9, "[data-fire-stage]"],
         ["world", 0.42, "[data-world-stage]"],
@@ -311,7 +326,9 @@ test.describe("контраст над 3D", () => {
       ] as const) {
         await page.evaluate(
           ([track, p]) => {
-            const t = document.querySelector<HTMLElement>(`[data-track='${track}']`)!;
+            const t =
+              document.querySelector<HTMLElement>(`[data-track='${track}']`) ??
+              document.getElementById(track)!;
             const top = t.getBoundingClientRect().top + window.scrollY;
             window.scrollTo(0, top + (t.offsetHeight - window.innerHeight) * Number(p));
           },

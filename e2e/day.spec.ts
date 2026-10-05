@@ -1,41 +1,16 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 /*
- * Глава 3 «День» (CLAUDE.md, раздел 2): шесть состояний одной сцены на дорожке 300vh.
- * Табы синхронизированы со скроллом, клик и стрелки прокручивают к состоянию; порядок —
- * из развилки; переходы — через завесу света и тумана; кудалык ощутимо спокойнее.
- * 3D в headless — программный WebGL; уровень задаётся явно (?quality=high), как в stage.spec.
+ * Глава 3 «День» (CLAUDE.md, раздел 2): шесть форматов — фото событий, без 3D.
+ * Обычная глава (не закреплённая): формат меняют клик, стрелки, свайп по фото — не скролл;
+ * порядок — из развилки; смена фото — проявление светом, у кудалыка ×1.6 медленнее.
+ * Пока снимка формата нет — пустой кадр и честная подпись «Фото события — скоро».
  */
 
-type Day = { p: number; state: string; index: number; veil: number; tempo: string };
-
-const day = (page: Page) =>
-  page.evaluate(() => (window as unknown as { __stage: { day: Day } }).__stage.day);
-const camera = (page: Page) =>
-  page.evaluate(
-    () =>
-      (window as unknown as { __stage: { camera: { x: number; y: number; z: number } } }).__stage
-        .camera,
-  );
-
-async function openStage(page: Page, path = "/ru?quality=high") {
-  await page.goto(path);
-  await expect(page.locator("html")).toHaveAttribute("data-canvas", "ready", { timeout: 15_000 });
-}
-
-/** Сцена «Дня» загружена и живёт (программный WebGL под нагрузкой — медленный, запас). */
-async function waitDayReady(page: Page) {
-  await expect.poll(async () => (await day(page)).state, { timeout: 40_000 }).not.toBe("");
-}
-
-/** Мгновенная прокрутка к прогрессу дорожки «Дня» p. */
-async function scrollDay(page: Page, p: number) {
-  await page.evaluate((p) => {
-    const track = document.querySelector<HTMLElement>("[data-track='day']")!;
-    const top = track.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo(0, top + (track.offsetHeight - window.innerHeight) * p);
-  }, p);
-}
+type Stage = { idle: boolean; loaded: string[]; current: string | null };
+const stage = (page: Page) =>
+  page.evaluate(() => (window as unknown as { __stage: Stage }).__stage);
 
 const DEFAULT = [
   "Конференция",
@@ -46,143 +21,193 @@ const DEFAULT = [
   "Частный праздник",
 ];
 
-test.describe("«День» — сцена и табы", () => {
-  test.setTimeout(120_000);
-
-  test("табы синхронизированы со скроллом: состояние сцены выбирает таб", async ({ page }) => {
-    await openStage(page);
-    const slugs = [
-      "conference",
-      "coffee-break",
-      "team-building",
-      "kudalyk",
-      "wedding",
-      "private-party",
-    ];
-    await scrollDay(page, 0.5 / 6);
-    await waitDayReady(page);
-    for (const k of [0, 3, 5, 1]) {
-      await scrollDay(page, (k + 0.5) / 6);
-      await expect(page.getByRole("tab", { selected: true })).toHaveText(DEFAULT[k]!, {
-        timeout: 10_000,
-      });
-      await expect.poll(async () => (await day(page)).state, { timeout: 10_000 }).toBe(slugs[k]);
-      await expect(page.locator(`#format-${slugs[k]}`)).toBeVisible();
-    }
+/** Прокрутить к главе и дождаться, пока страница встанет (плавная прокрутка на десктопе). */
+async function toDay(page: Page) {
+  await page.evaluate(() => {
+    const t = document.getElementById("day")!;
+    window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY);
   });
+  let last = -1;
+  await expect
+    .poll(async () => {
+      const y = await page.evaluate(() => window.scrollY);
+      const still = y === last;
+      last = y;
+      return still;
+    })
+    .toBe(true);
+}
 
-  test("клик по табу и стрелки прокручивают к своему состоянию", async ({ page }) => {
-    await openStage(page);
-    await scrollDay(page, 0.5 / 6);
-    await waitDayReady(page);
-    await expect(page.getByRole("tab", { selected: true })).toHaveText("Конференция", {
-      timeout: 10_000,
-    });
-    const before = await page.evaluate(() => window.scrollY);
-    await page.getByRole("tab", { name: "Свадьба" }).click();
-    await expect.poll(async () => (await day(page)).state, { timeout: 15_000 }).toBe("wedding");
-    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
-    await expect(page.getByRole("tab", { selected: true })).toHaveText("Свадьба");
+const selected = (page: Page) => page.locator("#day [role=tab][aria-selected=true]");
 
-    // Клавиатура: фокус на активном табе, стрелка влево — предыдущий формат и его состояние.
-    await page.getByRole("tab", { name: "Свадьба" }).focus();
-    await page.keyboard.press("ArrowLeft");
-    await expect(page.getByRole("tab", { name: "Кудалык" })).toBeFocused();
-    await expect(page.getByRole("tab", { name: "Кудалык" })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    await expect.poll(async () => (await day(page)).state, { timeout: 15_000 }).toBe("kudalyk");
-  });
-
-  test("порядок из развилки: «Семейное торжество» — кудалык первым и в табах, и в сцене", async ({
+test.describe("«День» — фото и табы", () => {
+  test("глава не закреплена и без 3D: холст в «Дне» не рисует, сцена «Дня» не грузится", async ({
     page,
   }) => {
-    await openStage(page);
-    await page
-      .getByRole("navigation", { name: "Какое у вас событие?" })
-      .getByRole("link", { name: "Семейное торжество" })
-      .click();
-    await expect(page.getByRole("tab").first()).toHaveText("Кудалык");
-    await scrollDay(page, 0.5 / 6);
-    await expect.poll(async () => (await day(page)).state, { timeout: 10_000 }).toBe("kudalyk");
-    await expect(page.getByRole("tab", { selected: true })).toHaveText("Кудалык");
+    test.setTimeout(90_000);
+    await page.goto("/ru?quality=high");
+    await expect(page.locator("html")).toHaveAttribute("data-canvas", "ready", { timeout: 20_000 });
+    await expect(page.locator("[data-track='day']")).toHaveCount(0);
+    const { h, vh } = await page.evaluate(() => ({
+      h: document.getElementById("day")!.offsetHeight,
+      vh: window.innerHeight,
+    }));
+    // Вместо дорожки 300vh — обычная глава: около экрана.
+    expect(h).toBeLessThan(vh * 1.6);
+    await toDay(page);
+    await expect.poll(async () => (await stage(page)).current, { timeout: 10_000 }).toBe("day");
+    await expect.poll(async () => (await stage(page)).idle, { timeout: 10_000 }).toBe(true);
+    expect((await stage(page)).loaded).not.toContain("day");
   });
 
-  test("переходы — через завесу света и тумана на границах, в покое её нет", async ({ page }) => {
-    await openStage(page);
-    await scrollDay(page, 2 / 6);
-    await waitDayReady(page);
-    await expect.poll(async () => (await day(page)).veil, { timeout: 10_000 }).toBeGreaterThan(0.8);
-    await scrollDay(page, 2.5 / 6);
-    await expect.poll(async () => (await day(page)).veil, { timeout: 10_000 }).toBeLessThan(0.05);
+  test("клик и стрелки меняют формат; скролл страницы не двигается и формат не меняет", async ({
+    page,
+  }) => {
+    await page.goto("/ru?quality=fallback");
+    await toDay(page);
+    await expect(page.getByRole("tab")).toHaveText(DEFAULT);
+    await expect(selected(page)).toHaveText("Конференция");
+    const y = await page.evaluate(() => window.scrollY);
+    await page.getByRole("tab", { name: "Свадьба" }).click();
+    await expect(selected(page)).toHaveText("Свадьба");
+    await expect(page.getByRole("tabpanel", { name: "Свадьба" })).toBeVisible();
+    expect(await page.evaluate(() => window.scrollY)).toBe(y);
+    await page.keyboard.press("ArrowRight");
+    await expect(selected(page)).toHaveText("Частный праздник");
+    await expect(selected(page)).toBeFocused();
+    await page.keyboard.press("ArrowRight");
+    await expect(selected(page)).toHaveText("Конференция");
+    await page.keyboard.press("End");
+    await expect(selected(page)).toHaveText("Частный праздник");
+    // Прокрутка внутри главы формат не меняет.
+    await page.mouse.wheel(0, 300);
+    await page.waitForTimeout(500);
+    await expect(selected(page)).toHaveText("Частный праздник");
   });
 
-  test("кудалык ощутимо спокойнее при том же скролле", async ({ page }) => {
-    test.setTimeout(180_000);
-    await openStage(page);
-    type P = { x: number; y: number; z: number };
-    const dist = (a: P, b: P) => Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
-    /** Ждём, пока камера остановится (не зависит от частоты кадров программного WebGL). */
-    const settle = async () => {
-      let prev = await camera(page);
-      await expect
-        .poll(
-          async () => {
-            const c = await camera(page);
-            const d = dist(prev, c);
-            prev = c;
-            return d;
-          },
-          { timeout: 60_000, intervals: [400] },
-        )
-        .toBeLessThan(0.002);
+  test("свайп по фото — соседний формат", async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+      locale: "ru-RU",
+    });
+    const page = await context.newPage();
+    await page.goto("/ru?quality=fallback");
+    await toDay(page);
+    const photo = page.locator("#format-conference [class*=photo]");
+    await photo.scrollIntoViewIfNeeded();
+    const box = (await photo.boundingBox())!;
+    const swipe = async (dx: number) => {
+      const y = box.y + box.height / 2;
+      const x = box.x + box.width / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + dx, y + 4, { steps: 6 });
+      await page.mouse.up();
     };
-    /**
-     * Путь камеры (м) за одинаковый скролл через «стояние» на площадке: от 0,3 до 0,7 состояния.
-     * Сравниваем путь, а не скорость: под нагрузкой кадров мало, а путь от этого не зависит.
-     */
-    const holdPath = async (k: number) => {
-      await scrollDay(page, (k + 0.3) / 6);
-      await settle();
-      let prev = await camera(page);
-      await page.evaluate(
-        ({ from, to }) =>
-          new Promise<void>((resolve) => {
-            const track = document.querySelector<HTMLElement>("[data-track='day']")!;
-            const top = track.getBoundingClientRect().top + window.scrollY;
-            const run = track.offsetHeight - window.innerHeight;
-            const t0 = performance.now();
-            const step = () => {
-              const u = Math.min(1, (performance.now() - t0) / 2000);
-              window.scrollTo(0, top + run * (from + (to - from) * u));
-              if (u < 1) requestAnimationFrame(step);
-              else resolve();
-            };
-            requestAnimationFrame(step);
-          }),
-        { from: (k + 0.3) / 6, to: (k + 0.7) / 6 },
+    await swipe(-140);
+    await expect(selected(page)).toHaveText("Кофе-брейк");
+    await page.locator("#format-coffee-break [class*=photo]").scrollIntoViewIfNeeded();
+    const box2 = (await page.locator("#format-coffee-break [class*=photo]").boundingBox())!;
+    await page.mouse.move(box2.x + box2.width / 2, box2.y + box2.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box2.x + box2.width / 2 + 140, box2.y + box2.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await expect(selected(page)).toHaveText("Конференция");
+    // Полоса табов — внутри себя, страница вбок не прокручивается.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await context.close();
+  });
+
+  test("порядок из развилки: «Семейное торжество» — семейные форматы первыми, выбран первый", async ({
+    page,
+  }) => {
+    await page.goto("/ru?quality=fallback");
+    await page.getByRole("tab", { name: "Свадьба" }).click();
+    await page.locator("#assembly").getByRole("link", { name: "Семейное торжество" }).click();
+    await expect(page.getByRole("tab")).toHaveText([
+      "Кудалык",
+      "Свадьба",
+      "Частный праздник",
+      "Конференция",
+      "Кофе-брейк",
+      "Тимбилдинг",
+    ]);
+    await expect(selected(page)).toHaveText("Кудалык");
+  });
+
+  // Какие форматы уже со снимком — тот же список, что у сайта (scripts/optimize-photos.mjs).
+  const photos = JSON.parse(readFileSync("src/content/day-photos.json", "utf8")) as Record<
+    string,
+    number[]
+  >;
+  const TITLES: Record<string, string> = {
+    conference: "Конференция",
+    "coffee-break": "Кофе-брейк",
+    "team-building": "Тимбилдинг",
+    kudalyk: "Кудалык",
+    wedding: "Свадьба",
+    "private-party": "Частный праздник",
+  };
+  const withPhoto = Object.keys(TITLES).filter((slug) => photos[slug]?.length);
+  const pending = Object.keys(TITLES).filter((slug) => !photos[slug]?.length);
+
+  test("пока снимка нет — пустой кадр с подписью, описание кадра честное", async ({ page }) => {
+    test.skip(pending.length === 0, "у всех форматов уже есть снимки");
+    const slug = pending[0]!;
+    await page.goto("/ru?quality=fallback");
+    await page.getByRole("tab", { name: TITLES[slug] }).click();
+    const panel = page.locator(`#format-${slug}`);
+    await expect(panel.getByText("Фото события — скоро.")).toBeVisible();
+    const img = panel.locator("img");
+    await expect(img).toHaveAttribute(
+      "alt",
+      `${TITLES[slug]}: фото события появится после съёмки.`,
+    );
+    await expect(img).toHaveAttribute(
+      "src",
+      new RegExp(`/assets/placeholders/format-${slug}\\.[0-9a-f]{10}\\.svg$`),
+    );
+  });
+
+  test("со снимком — фото нужного размера, без подписи-заглушки", async ({ page, request }) => {
+    test.skip(withPhoto.length === 0, "снимков ещё нет");
+    const slug = withPhoto[0]!;
+    await page.goto("/ru?quality=fallback");
+    await page.getByRole("tab", { name: TITLES[slug] }).click();
+    const panel = page.locator(`#format-${slug}`);
+    await expect(panel.getByText("Фото события — скоро.")).toHaveCount(0);
+    const img = panel.locator("img");
+    const srcset = (await img.getAttribute("srcset"))!;
+    for (const w of photos[slug]!)
+      expect(srcset).toMatch(
+        new RegExp(`/assets/photos/day/${slug}-${w}\\.[0-9a-f]{10}\\.jpg ${w}w`),
       );
-      let path = 0;
-      let still = 0;
-      const t0 = Date.now();
-      while (still < 4 && Date.now() - t0 < 60_000) {
-        await page.waitForTimeout(150);
-        const c = await camera(page);
-        const d = dist(prev, c);
-        path += d;
-        still = d < 0.002 ? still + 1 : 0;
-        prev = c;
-      }
-      return path;
-    };
-    await scrollDay(page, 0.3 / 6);
-    await waitDayReady(page);
-    const conference = await holdPath(0);
-    const kudalyk = await holdPath(3);
-    expect(await day(page).then((d) => d.tempo)).toBe("dayKudalyk");
-    expect(conference).toBeGreaterThan(0.3);
-    expect(kudalyk).toBeLessThan(conference / 1.4);
+    expect(await img.getAttribute("alt")).not.toContain("после съёмки");
+    // Снимок загрузился и показан (не битая ссылка).
+    await img.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
+      .toBeGreaterThan(0);
+    const file = await request.get((await img.getAttribute("src"))!);
+    expect(file.headers()["content-type"]).toBe("image/jpeg");
+  });
+
+  test("смена фото — проявление светом; у кудалыка в 1,6 раза медленнее", async ({ page }) => {
+    await page.goto("/ru?quality=fallback");
+    const duration = (slug: string) =>
+      page
+        .locator(`#format-${slug} [class*=photo] img`)
+        .evaluate((el) => parseFloat(getComputedStyle(el.closest("picture")!).animationDuration));
+    await page.getByRole("tab", { name: "Свадьба" }).click();
+    const wedding = await duration("wedding");
+    await page.getByRole("tab", { name: "Кудалык" }).click();
+    const kudalyk = await duration("kudalyk");
+    expect(wedding).toBeGreaterThan(0);
+    expect(kudalyk / wedding).toBeCloseTo(1.6, 1);
   });
 });
 

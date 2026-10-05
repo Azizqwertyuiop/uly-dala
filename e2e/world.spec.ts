@@ -105,6 +105,21 @@ test.describe("«Этот мир существует» — фазенда", () 
     });
   }
 
+  test("«Ещё на фазенде» — в потоке главы, не поверх сцены и не на панели зон", async ({
+    page,
+  }) => {
+    await openStage(page);
+    const extras = page.locator("#world-extras").locator("..");
+    expect(await extras.evaluate((el) => getComputedStyle(el).position)).toBe("static");
+    // Весь блок — до дорожки облёта (не на закреплённой сцене).
+    const [extrasBottom, trackTop] = await page.evaluate(() => {
+      const e = document.getElementById("world-extras")!.parentElement!.getBoundingClientRect();
+      const t = document.querySelector("[data-track='world']")!.getBoundingClientRect();
+      return [e.bottom, t.top];
+    });
+    expect(extrasBottom).toBeLessThanOrEqual(trackTop);
+  });
+
   test("medium на десктопе — видео облёта, без сплатов", async ({ page }) => {
     const splats = trackSplats(page);
     await openStage(page, "/ru?quality=medium");
@@ -185,6 +200,20 @@ test.describe("«Этот мир существует» — без JS", () => {
     for (const zone of ["Поле", "Шатёр", "Юрта", "Кухня и огонь"])
       await expect(chapter.getByText(zone, { exact: true })).toBeVisible();
     await expect(chapter.getByText("Вместимость уточняется.").first()).toBeVisible();
+    // Ещё на фазенде: все места от заказчика; цифра — только подтверждённая (беседка, 60).
+    for (const extra of [
+      "Крытая беседка",
+      "Беседка с камином",
+      "Баня",
+      "Домики для ночёвки",
+      "Кино под открытым небом",
+      "Конные прогулки",
+      "Стрельба из лука",
+      "Квадроциклы",
+    ])
+      await expect(chapter.getByText(extra, { exact: true })).toBeVisible();
+    await expect(chapter.locator("[data-extra='gazebo']")).toContainText(/До\s60\sгостей/);
+    await expect(chapter.locator("[data-extra='banya']")).not.toContainText(/\d/);
     await expect(chapter.getByText(/Время\sв\sпути\sуточняется/)).toBeVisible();
     await expect(chapter.getByRole("img", { name: /Схема/ })).toBeVisible();
     await expect(chapter.getByText("Логотипы клиентов появятся после согласования.")).toBeVisible();

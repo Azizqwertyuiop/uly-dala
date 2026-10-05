@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { BriefLink } from "@/components/brief/BriefLink";
 import { isEventType } from "@/lib/brief/model";
-import { setDayOrder } from "@/lib/dayControl";
-import { chapterTrack, progress } from "@/motion/progress";
-import { scrollToY } from "@/motion/scroll";
-import { ticker } from "@/motion/ticker";
 import { useBriefStore } from "@/store/brief";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import { SceneImage } from "@/components/ui/SceneImage";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
@@ -24,7 +27,10 @@ export type FormatTabItem = {
   ctaHref: string;
   pageHref: string;
   image: string;
+  srcSet?: string;
   alt: string;
+  /** Подпись «Фото события — скоро», пока снимка нет. */
+  pending?: string;
 };
 
 type Props = {
@@ -35,26 +41,15 @@ type Props = {
   presentation: { label: string; meta: string; href: string };
 };
 
-/** Кинорежим «Дня»: закреплённая дорожка со сценой (как в CSS: sections.module.css). */
-function cinematicTrack(): boolean {
-  const html = document.documentElement;
-  return (
-    html.dataset.cinematic !== undefined &&
-    html.dataset.quality !== "fallback" &&
-    html.dataset.mode !== "brief"
-  );
-}
-
-/** Сколько ждать, пока прокрутка по клику доедет до состояния, прежде чем снова слушать скролл. */
-const SCROLL_SETTLE_MS = 1800;
+/** Свайп по фото: сдвиг пальца по горизонтали, px (и больше, чем по вертикали). */
+const SWIPE_PX = 48;
 
 /*
- * Шесть форматов главы «День».
+ * Шесть форматов главы «День» — фото настоящих событий (CLAUDE.md, раздел 2).
  * Без JS (и до гидрации) — список всех форматов с оглавлением-ссылками.
- * С JS — табы по паттерну WAI-ARIA: стрелки, Home/End, фокус на активном табе.
- * В кинорежиме (дорожка 300vh со сценой) табы синхронизированы со скроллом: состояние сцены
- * выбирает таб, а клик по табу (или стрелки) прокручивает к своему состоянию.
- * Порядок — по развилке главы 2; тот же порядок получает сцена (dayControl).
+ * С JS — табы по паттерну WAI-ARIA: клик, стрелки, Home/End, фокус на активном табе;
+ * на фото — свайп. Скролл формат не меняет: глава обычная, не закреплённая.
+ * Порядок — по развилке главы 2 (выбранная аудитория первой).
  */
 export function FormatTabs({ label, formatPageLabel, items: allItems, presentation }: Props) {
   // Порядок форматов — по развилке главы 2: выбранная аудитория первой (порядок DOM = порядок Tab).
@@ -67,6 +62,13 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
         );
   const [enhanced, setEnhanced] = useState(false);
   const [active, setActive] = useState(0);
+  // Сменился порядок (выбор в развилке) — показываем первый формат выбранной аудитории.
+  const orderKey = items.map((i) => i.slug).join(",");
+  const [shownOrder, setShownOrder] = useState(orderKey);
+  if (shownOrder !== orderKey) {
+    setShownOrder(orderKey);
+    setActive(0);
+  }
   // Панель анимируется только после первой смены формата (не при загрузке страницы).
   const [switched, setSwitched] = useState(false);
   const firstActive = useRef(true);
@@ -78,47 +80,14 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
     setSwitched(true);
   }, [active]);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const root = useRef<HTMLDivElement>(null);
   const baseId = useId();
-  const pending = useRef<{ index: number; until: number } | null>(null);
-  const order = items.map((i) => i.slug).join(",");
+  const swipe = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     // Прогрессивное улучшение: после гидрации список превращается в табы.
     // eslint-disable-next-line react-hooks/set-state-in-effect -- включаем табы только в браузере с JS
     setEnhanced(true);
   }, []);
-
-  // Порядок — сцене и камере (площадки и путь по слотам).
-  useEffect(() => {
-    setDayOrder(order.split(",") as Parameters<typeof setDayOrder>[0]);
-  }, [order]);
-
-  // Кинорежим: состояние сцены (прогресс дорожки) выбирает таб. Пишем только при смене.
-  useEffect(() => {
-    let last = -1;
-    return ticker.add("timeline", (_dt, time) => {
-      if (progress.chapterId !== "day" || !cinematicTrack()) return;
-      const index = Math.min(
-        items.length - 1,
-        Math.floor(Math.min(progress.track, 0.9999) * items.length),
-      );
-      // Фокус клавиатуры внутри табов — формат меняют стрелки, а не скролл. Иначе браузер,
-      // подкручивая страницу к сфокусированной ссылке, переключал формат, панель со ссылкой
-      // скрывалась и фокус терялся (WCAG 2.4.3).
-      if (root.current?.contains(document.activeElement)) return;
-      const p = pending.current;
-      if (p) {
-        // Прокрутка по клику ещё едет — не перебиваем выбранный таб промежуточными состояниями.
-        if (index !== p.index && time * 1000 < p.until) return;
-        pending.current = null;
-      }
-      if (index !== last) {
-        last = index;
-        setActive(index);
-      }
-    });
-  }, [items.length]);
 
   // Полоса табов на телефоне прокручивается сама: активный таб — в видимой части полосы.
   // (Только горизонтально, страница не двигается; размеры читаются лишь при смене таба.)
@@ -128,21 +97,26 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
     if (!tab || !strip || strip.scrollWidth <= strip.clientWidth) return;
     const left = tab.offsetLeft - strip.offsetLeft - 16;
     strip.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
-  }, [active]);
-
-  const scrollToState = (index: number) => {
-    const track = chapterTrack("day");
-    if (!track || !cinematicTrack()) return;
-    const run = track.height - progress.viewportHeight;
-    pending.current = { index, until: ticker.time * 1000 + SCROLL_SETTLE_MS };
-    scrollToY(track.top + ((index + 0.5) / items.length) * run);
-  };
+  }, [active, enhanced]);
 
   const select = (index: number, focus = true) => {
     const next = (index + items.length) % items.length;
     setActive(next);
     if (focus) tabRefs.current[next]?.focus();
-    scrollToState(next);
+  };
+
+  // Свайп по фото — соседний формат (на тач; мышью тоже работает, перетаскиванием).
+  const onPointerDown = (event: ReactPointerEvent) => {
+    swipe.current = { x: event.clientX, y: event.clientY };
+  };
+  const onPointerUp = (event: ReactPointerEvent) => {
+    const start = swipe.current;
+    swipe.current = null;
+    if (!start) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy)) return;
+    select(active + (dx < 0 ? 1 : -1), false);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
@@ -166,7 +140,6 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
 
   return (
     <div
-      ref={root}
       className={styles.tabs}
       data-day-state={enhanced ? active : undefined}
       data-switched={switched ? "" : undefined}
@@ -260,15 +233,28 @@ export function FormatTabs({ label, formatPageLabel, items: allItems, presentati
                 </a>
               </div>
             </div>
-            <SceneImage
-              sceneSlot
-              className={styles.panelImage}
-              src={item.image}
-              alt={item.alt}
-              width={1600}
-              height={900}
-              sizes="(min-width: 768px) 50vw, 100vw"
-            />
+            {/* Фото формата: свайп — соседний формат; при смене — проявление светом (CSS). */}
+            <div
+              className={styles.photo}
+              onPointerDown={enhanced ? onPointerDown : undefined}
+              onPointerUp={enhanced ? onPointerUp : undefined}
+              onPointerCancel={() => (swipe.current = null)}
+            >
+              <SceneImage
+                className={styles.panelImage}
+                src={item.image}
+                srcSet={item.srcSet}
+                alt={item.alt}
+                width={1500}
+                height={1000}
+                sizes="(min-width: 768px) 58vw, 100vw"
+              />
+              {item.pending && (
+                <p className={styles.pending} aria-hidden="true">
+                  {item.pending}
+                </p>
+              )}
+            </div>
           </Panel>
         ))}
       </div>

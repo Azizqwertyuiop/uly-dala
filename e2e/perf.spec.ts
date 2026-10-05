@@ -30,7 +30,7 @@ test.describe("производительность", () => {
     );
     await expect.poll(async () => (await stage(page)).idle, { timeout: 10_000 }).toBe(true);
     await page.evaluate(() => {
-      const t = document.querySelector<HTMLElement>("[data-track='day']")!;
+      const t = document.querySelector<HTMLElement>("[data-track='fire']")!;
       window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY);
     });
     await expect.poll(async () => (await stage(page)).idle, { timeout: 10_000 }).toBe(false);
@@ -42,7 +42,8 @@ test.describe("производительность", () => {
       .poll(async () => (await stage(page)).dawn.decoding, { timeout: 15_000 })
       .toBe(true);
     await page.evaluate(() => {
-      const t = document.querySelector<HTMLElement>("[data-track='day']")!;
+      // «День» — фото, без 3D: коня там нет.
+      const t = document.getElementById("day")!;
       window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY);
     });
     await expect

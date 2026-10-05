@@ -7,6 +7,7 @@ import { chapterIds } from "./pages";
  */
 
 type Stage = {
+  idle: boolean;
   quality: string;
   context: string;
   current: string | null;
@@ -91,7 +92,13 @@ test.describe("холст сцены", () => {
       await scrollToChapter(page, id);
       await expect.poll(async () => (await stage(page)).current, { timeout: 10_000 }).toBe(id);
       // Программный WebGL под параллельной нагрузкой — медленный: запас по времени.
-      await expect.poll(async () => (await stage(page)).loaded, { timeout: 15_000 }).toContain(id);
+      // У «Дня» сцены нет (фото событий): там холст стоит.
+      if (id === "day")
+        await expect.poll(async () => (await stage(page)).idle, { timeout: 10_000 }).toBe(true);
+      else
+        await expect
+          .poll(async () => (await stage(page)).loaded, { timeout: 15_000 })
+          .toContain(id);
       // Камера у своей главы (якоря глав через 60 м по −Z).
       await expect
         .poll(async () => Math.abs((await stage(page)).camera.z + i * CHAPTER_SPACING), {
@@ -102,7 +109,7 @@ test.describe("холст сцены", () => {
       expect(s.camera.roll).toBe(0);
       expect(s.camera.y).toBeLessThanOrEqual(1.8);
       // Дальше двух глав ничего не держим — кроме мира, в котором стоит глава
-      // (степь рассвета нужна «Сборке», «Дню», «Огню» и финалу; финал грузится уже в «Мире»).
+      // (степь рассвета нужна «Сборке», «Огню» и финалу; финал грузится уже в «Мире»).
       const world = ["assembly", "day", "fire", "world", "return"].includes(id) ? ["dawn"] : [];
       for (const loaded of s.loaded) {
         if (world.includes(loaded)) continue;
@@ -177,14 +184,7 @@ test.describe("потеря контекста WebGL", () => {
 });
 
 test.describe("уровни качества", () => {
-  test("программный WebGL (headless) → fallback: Canvas не монтируется", async ({ page }) => {
-    await page.goto("/ru");
-    await expect(page.locator("html")).toHaveAttribute("data-quality", "fallback", {
-      timeout: 10_000,
-    });
-    await expect(page.locator("html")).toHaveAttribute("data-canvas", "off");
-    await expect(page.locator("[data-canvas-root] canvas")).toHaveCount(0);
-  });
+  // «Программный WebGL → fallback» — e2e/quality-detect.spec.ts (всегда без видеокарты).
 
   test("?quality=fallback и режим «Коротко» — без Canvas", async ({ page }) => {
     await page.goto("/ru?quality=fallback");

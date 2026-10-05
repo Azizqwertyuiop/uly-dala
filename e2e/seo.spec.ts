@@ -162,7 +162,7 @@ test.describe("запросы — в видимом тексте, без скр�
       ["", "Алматы"],
       ["/services/conference", "Организация конференций"],
       ["/services/kudalyk", "Кудалык"],
-      ["/services/wedding", "площадке в степи под Алматы"],
+      ["/services/wedding", "площадке у подножия гор под Алматы"],
       ["/services/team-building", "Тимбилдинг"],
     ],
     en: [
@@ -170,7 +170,7 @@ test.describe("запросы — в видимом тексте, без скр�
       ["", "Almaty"],
       ["/services/conference", "Conference organization"],
       ["/services/kudalyk", "Kudalyk"],
-      ["/services/wedding", "venue in the steppe near Almaty"],
+      ["/services/wedding", "venue at the foot of the mountains near Almaty"],
       ["/services/team-building", "Team building"],
     ],
   } as const;
