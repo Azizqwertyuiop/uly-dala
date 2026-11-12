@@ -7,6 +7,7 @@ const HOME_SECTIONS = [
   "assembly",
   "services",
   "gallery",
+  "reviews",
   "why",
   "steps",
   "fazenda",
@@ -128,4 +129,14 @@ test("каждое изображение: размеры и описание (�
     expect(img.w && img.h).toBeTruthy();
     if (!img.hidden) expect(img.alt?.length ?? 0).toBeGreaterThan(10);
   }
+});
+
+test("«Нам доверяют»: клиенты названиями и рамки для фото отзывов", async ({ page }) => {
+  await page.goto("/ru?quality=fallback");
+  const block = page.locator("#reviews");
+  await expect(block.getByRole("heading", { level: 2 })).toHaveText("Нам доверяют");
+  for (const name of ["БЦ Promenade", "Freedom Broker", "Hero’s Journey", "Клиника Aston"])
+    await expect(block.getByText(name, { exact: true })).toBeVisible();
+  await expect(block.getByText("и ещё более 10 клиентов")).toBeVisible();
+  await expect(block.getByText("Фото отзыва скоро")).toHaveCount(3);
 });

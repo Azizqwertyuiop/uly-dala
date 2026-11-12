@@ -108,7 +108,16 @@ test.describe("меню", () => {
     await page.goto("/ru");
     await menuButton(page).click();
     const menu = dialog(page);
-    for (const id of ["services", "gallery", "why", "steps", "fazenda", "team", "brief"]) {
+    for (const id of [
+      "services",
+      "gallery",
+      "reviews",
+      "why",
+      "steps",
+      "fazenda",
+      "team",
+      "brief",
+    ]) {
       await expect(menu.locator(`a[href="/ru#${id}"]`)).toHaveCount(1);
     }
     await expect(menu.locator('a[href="/ru/services/kudalyk"]')).toHaveCount(1);

@@ -61,6 +61,7 @@ export async function SiteHeader() {
             chapters={[
               { id: "services", name: nav("services") },
               { id: "gallery", name: nav("gallery") },
+              { id: "reviews", name: nav("reviews") },
               { id: "why", name: nav("why") },
               { id: "steps", name: nav("steps") },
               { id: "fazenda", name: nav("fazenda") },

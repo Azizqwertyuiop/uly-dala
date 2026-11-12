@@ -5,7 +5,6 @@ import {
   Contact,
   Fazenda,
   Gallery,
-  Reviews,
   Services,
   Stats,
   Steps,
@@ -65,13 +64,12 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
       <AssemblySection />
       <Stats />
       <Services />
-      <Clients />
       <Gallery />
+      <Clients />
       <Why />
       <Steps />
       <Fazenda />
       <Team />
-      <Reviews />
       <Contact />
     </main>
   );

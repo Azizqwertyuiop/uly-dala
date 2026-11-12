@@ -85,6 +85,7 @@ const en: Messages = {
       label: "Sections",
       services: "Services",
       gallery: "Gallery",
+      reviews: "Reviews",
       why: "Why us",
       steps: "How we work",
       fazenda: "Our venue",
@@ -120,6 +121,12 @@ const en: Messages = {
     },
     clients: {
       title: "Trusted by",
+      lead: "Companies we have already run events for, and what they say.",
+      clientsLabel: "Our clients",
+      more: "and more than {n} other clients",
+      reviewsLabel: "Reviews",
+      reviewPending: "Review photo coming soon",
+      reviewAlt: "Client review {n}",
     },
     gallery: {
       title: "Our team building events",
@@ -175,12 +182,9 @@ const en: Messages = {
       title: "Team",
       lead: "The people who run your event from the first call to the last guest.",
       photoPending: "Photo coming soon",
-      one: { name: "Name Surname", role: "Founder" },
-      two: { name: "Name Surname", role: "Event manager" },
+      one: { name: "Aziz Zhussipov", role: "Founder" },
+      two: { name: "Temirlan Zhumabekov", role: "Event manager" },
       three: { name: "Name Surname", role: "Event manager" },
-    },
-    reviews: {
-      title: "Reviews",
     },
     contact: {
       title: "Let’s discuss your event",

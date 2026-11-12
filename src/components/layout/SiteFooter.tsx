@@ -31,13 +31,15 @@ export async function SiteFooter() {
               {nav("label")}
             </h2>
             <ul className={styles.links}>
-              {(["services", "gallery", "why", "steps", "fazenda", "team"] as const).map((id) => (
-                <li key={id}>
-                  <Link href={`/#${id}`} className={type.link}>
-                    {nav(id)}
-                  </Link>
-                </li>
-              ))}
+              {(["services", "gallery", "reviews", "why", "steps", "fazenda", "team"] as const).map(
+                (id) => (
+                  <li key={id}>
+                    <Link href={`/#${id}`} className={type.link}>
+                      {nav(id)}
+                    </Link>
+                  </li>
+                ),
+              )}
               <li>
                 <Link href="/#brief" className={type.link}>
                   {nav("contact")}

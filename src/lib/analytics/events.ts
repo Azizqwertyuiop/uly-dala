@@ -23,6 +23,7 @@ export const places = [
   // Разделы главной-визитки (решение заказчика 12.11.2026).
   "services",
   "gallery",
+  "reviews",
   "why",
   "steps",
   "fazenda",

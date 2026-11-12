@@ -4,7 +4,7 @@ import { BriefLink } from "@/components/brief/BriefLink";
 import { briefFallbackHref, getBriefProps } from "@/components/brief/briefProps";
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
-import { clientLogos, pickReviews, reviews } from "@/content/clients";
+import { MORE_CLIENTS, clientLogos, clientNames, reviewShots } from "@/content/clients";
 import { contacts, formatPhone, telHref, whatsappHref } from "@/content/contacts";
 import { FAZENDA_EXTRAS } from "@/content/fazenda";
 import { formatImage, formatSrcSet, formats, hasFormatPhoto } from "@/content/formats";
@@ -140,20 +140,57 @@ export async function Services() {
   );
 }
 
-/** Логотипы клиентов — только с разрешения; пока их нет, блок скрыт. */
+/**
+ * Нам доверяют: клиенты и отзывы — один блок (решение заказчика 12.11.2026).
+ * Клиенты — логотипы, если есть разрешение, иначе названия; отзывы — фото, пока пустые рамки.
+ */
 export async function Clients() {
-  if (clientLogos.length === 0) return null;
   const t = await getTranslations("home.clients");
+  const locale = (await getLocale()) as Locale;
   return (
-    <Section id="clients" title={t("title")}>
-      <ul className={styles.logos}>
-        {clientLogos.map((logo) => (
-          <li key={logo.name}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- одноцветный SVG */}
-            <img src={logo.src} alt={logo.name} width={logo.width} height={logo.height} />
-          </li>
-        ))}
-      </ul>
+    <Section id="reviews" title={t("title")} lead={t("lead")}>
+      <div className={styles.proof}>
+        <h3 className={styles.subTitle}>{t("clientsLabel")}</h3>
+        {clientLogos.length > 0 && (
+          <ul className={styles.logos}>
+            {clientLogos.map((logo) => (
+              <li key={logo.name}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- одноцветный SVG */}
+                <img src={logo.src} alt={logo.name} width={logo.width} height={logo.height} />
+              </li>
+            ))}
+          </ul>
+        )}
+        <ul className={styles.tags}>
+          {clientNames.map((c) => (
+            <li key={c.ru} className={styles.clientTag}>
+              {c[locale] ?? c.ru}
+            </li>
+          ))}
+          <li className={styles.clientMore}>{t("more", { n: MORE_CLIENTS })}</li>
+        </ul>
+      </div>
+      <div className={styles.proof}>
+        <h3 className={styles.subTitle}>{t("reviewsLabel")}</h3>
+        <ul className={styles.reviewShots}>
+          {reviewShots.map((src, i) => (
+            <li key={i} className={styles.memberPhoto}>
+              {src ? (
+                // eslint-disable-next-line @next/next/no-img-element -- фото отзыва
+                <img
+                  src={src}
+                  alt={t("reviewAlt", { n: i + 1 })}
+                  width={800}
+                  height={1000}
+                  loading="lazy"
+                />
+              ) : (
+                <span className={styles.memberPending}>{t("reviewPending")}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </Section>
   );
 }
@@ -287,31 +324,6 @@ export async function Team() {
             </div>
             <h3 className={styles.featureTitle}>{t(`${m.key}.name`)}</h3>
             <p className={type.body}>{t(`${m.key}.role`)}</p>
-          </li>
-        ))}
-      </ul>
-    </Section>
-  );
-}
-
-/** Отзывы — только согласованные с клиентами; пока их нет, блок скрыт. */
-export async function Reviews() {
-  if (reviews.length === 0) return null;
-  const t = await getTranslations("home.reviews");
-  const locale = (await getLocale()) as Locale;
-  return (
-    <Section id="reviews" title={t("title")}>
-      <ul className={styles.reviews}>
-        {pickReviews(reviews, locale).map((r) => (
-          <li key={r.author}>
-            <figure className={styles.review}>
-              <blockquote className={type.lead}>
-                <p>{r.quote}</p>
-              </blockquote>
-              <figcaption className={type.caption}>
-                {r.author}, {r.role}
-              </figcaption>
-            </figure>
           </li>
         ))}
       </ul>

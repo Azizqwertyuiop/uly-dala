@@ -60,7 +60,6 @@
 .features,
 .steps,
 .team,
-.reviews,
 .gallery,
 .logos {
   display: grid;
@@ -364,11 +363,44 @@
   border-radius: 999px;
 }
 
-/* ---------- Отзывы ---------- */
-.review {
+/* ---------- Нам доверяют: клиенты и отзывы ---------- */
+.proof {
   display: grid;
   gap: var(--space-2);
+}
+
+.subTitle {
+  font-family: var(--font-family-heading);
+  font-size: clamp(24px, 2vw, 30px);
+  line-height: 1.15;
+  font-weight: 400;
+}
+
+.clientTag {
+  padding: 10px 20px;
+  border: 1px solid var(--tone-line);
+  border-radius: 999px;
+  font-size: clamp(17px, 1.2vw, 20px);
+}
+
+.clientMore {
+  padding: 10px 4px;
+  color: var(--tone-muted);
+  font-size: clamp(17px, 1.2vw, 20px);
+}
+
+.reviewShots {
+  display: grid;
+  gap: var(--grid-gutter);
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .reviewShots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 /* ---------- Контакты и заявка ---------- */
