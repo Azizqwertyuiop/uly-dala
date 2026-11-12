@@ -23,7 +23,8 @@ const SIZES = [
   { name: "альбом", width: 844, height: 390, mobile: true },
 ] as const;
 
-const TRACKS = ["assembly", "day", "fire", "world", "return"] as const;
+/** Первый экран (сборка юрты) и разделы визитки. */
+const TRACKS = ["assembly", "services", "gallery", "why", "fazenda", "team"] as const;
 
 /** Прокрутка к доле p дорожки главы; у «Дня» дорожки нет (фото-глава) — к доле самой главы. */
 async function scrollTrack(page: Page, id: string, p: number) {
@@ -61,7 +62,7 @@ test.describe("адаптивность: нет горизонтального �
         timeout: 20_000,
       });
       expect(await overflow(page)).toBe(0);
-      await shot(page, info, `${size.name}-рассвет`);
+      await shot(page, info, `${size.name}-первый-экран`);
       for (const id of TRACKS) {
         await scrollTrack(page, id, 0.5);
         await page.waitForTimeout(600);
@@ -95,19 +96,12 @@ test.describe("телефон: одной рукой", () => {
     expect(box.y + box.height, `${name}: снизу`).toBeLessThanOrEqual(PHONE.height);
   }
 
-  test("CTA закреплённых экранов — в зоне большого пальца", async ({ page }) => {
+  test("CTA первого экрана — в зоне большого пальца", async ({ page }) => {
     await page.goto("/ru?quality=medium");
     await expect(page.locator("html")).toHaveAttribute("data-canvas", "ready", {
       timeout: 20_000,
     });
-    await expectThumb(page, /^Обсудить событие$/, page.locator("[data-hero-text]"));
-    // «День» — обычная глава (фото), не закреплённый экран: CTA в потоке текста.
-    await scrollTrack(page, "fire", 0.9);
-    await page.waitForTimeout(800);
-    await expectThumb(page, /^Запросить меню$/);
-    await scrollTrack(page, "world", 0.4);
-    await page.waitForTimeout(800);
-    await expectThumb(page, /^Приехать на просмотр$/, page.locator("[data-world-stage]"));
+    await expectThumb(page, /^Обсудить мероприятие$/, page.locator("[data-home-hero]"));
   });
 
   test("адресная строка не дёргает прогресс: высота — из svh, ресайз без смены ширины — без перемера", async ({
@@ -117,7 +111,7 @@ test.describe("телефон: одной рукой", () => {
     // меняет и svh — поэтому проверяем механизм: высота экрана для прогресса — пробник 100svh,
     // а событие resize с той же шириной границы глав не пересчитывает.
     await page.goto("/ru?quality=medium");
-    await scrollTrack(page, "fire", 0.5);
+    await scrollTrack(page, "assembly", 0.5);
     const read = () =>
       page.evaluate(() => {
         const p = (
@@ -133,27 +127,22 @@ test.describe("телефон: одной рукой", () => {
           probe,
         };
       });
-    await expect.poll(async () => (await read()).chapter, { timeout: 10_000 }).toBe("fire");
+    await expect.poll(async () => (await read()).chapter, { timeout: 10_000 }).toBe("assembly");
     const before = await read();
     expect(before.vh).toBe(before.probe);
     // Адресная строка спряталась: браузер шлёт resize, ширина та же.
     await page.evaluate(() => window.dispatchEvent(new Event("resize")));
     await page.waitForTimeout(300);
     const after = await read();
-    expect(after.chapter).toBe("fire");
+    expect(after.chapter).toBe("assembly");
     expect(Math.abs(after.track - before.track)).toBeLessThan(0.005);
   });
 
-  test("касание и свайп — ветер (скорость указателя), камера за пальцем не поворачивается", async ({
-    page,
-  }) => {
+  test("касание и свайп — ветер (скорость указателя), крен камеры 0", async ({ page }) => {
     await page.goto("/ru?quality=medium");
     await expect(page.locator("html")).toHaveAttribute("data-canvas", "ready", {
       timeout: 20_000,
     });
-    const yaw0 = await page.evaluate(
-      () => (window as unknown as { __stage: { camera: { yaw: number } } }).__stage.camera.yaw,
-    );
     // Свайп: серия касаний (touchmove) — как прокрутка пальцем.
     const cdp = await page.context().newCDPSession(page);
     const point = (x: number, y: number) => [{ x, y, id: 1 }];
@@ -177,10 +166,13 @@ test.describe("телефон: одной рукой", () => {
     }
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     expect(speed).toBeGreaterThan(0.5);
-    const yaw1 = await page.evaluate(
-      () => (window as unknown as { __stage: { camera: { yaw: number } } }).__stage.camera.yaw,
-    );
-    expect(Math.abs(yaw1 - yaw0)).toBeLessThan(0.002);
+    // Камера здесь едет по скроллу (сборка юрты), а не за пальцем: смещение от указателя на тач
+    // выключено — камера стоит на пути сборки (крен 0).
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { __stage: { camera: { roll: number } } }).__stage.camera.roll,
+      ),
+    ).toBe(0);
   });
 });
 
@@ -188,12 +180,10 @@ test.describe("fallback: видео-секвенции по скроллу", () 
   test.setTimeout(90_000);
 
   for (const [name, viewport, suffix] of [
-    ["телефон", PHONE, ".portrait.mp4"],
-    ["десктоп", { width: 1280, height: 800 }, "dawn.mp4"],
+    ["телефон", PHONE, "assembly.portrait.mp4"],
+    ["десктоп", { width: 1280, height: 800 }, "assembly.mp4"],
   ] as const) {
-    test(`${name}: клип «Рассвета» с волной по времени, дальше — скролл`, async ({
-      browser,
-    }, info) => {
+    test(`${name}: клип сборки юрты — по скроллу; других клипов нет`, async ({ browser }, info) => {
       const context = await browser.newContext({ viewport });
       const page = await context.newPage();
       const requests: string[] = [];
@@ -201,31 +191,18 @@ test.describe("fallback: видео-секвенции по скроллу", () 
         if (r.url().includes("/assets/video/fallback/")) requests.push(unhash(r.url()));
       });
       await page.goto("/ru?quality=fallback");
-      const dawn = page.locator("video[data-fallback-clip='dawn']");
-      await expect(dawn).toHaveAttribute("data-ready", "", { timeout: 20_000 });
+      const clip = page.locator("video[data-fallback-clip='assembly']");
+      await clip.scrollIntoViewIfNeeded();
+      await expect(clip).toHaveAttribute("data-ready", "", { timeout: 20_000 });
       expect(requests.some((u) => u.endsWith(suffix))).toBe(true);
-      // Интро идёт по времени — без автоплея (перемотка), волна вшита в клип.
-      const t0 = await dawn.evaluate((v: HTMLVideoElement) => v.currentTime);
-      await page.waitForTimeout(1500);
-      const t1 = await dawn.evaluate((v: HTMLVideoElement) => v.currentTime);
-      expect(t1).toBeGreaterThan(t0);
-      await shot(page, info, `fallback-${name}-рассвет`);
-      // Дальние главы не грузятся заранее (за экран до показа).
-      expect(requests.some((u) => u.includes("/return"))).toBe(false);
-      // Скролл ведёт клип «Огня».
-      // Кадр «Огня» входит в экран снизу — начало клипа.
-      await page.evaluate(() =>
-        document
-          .querySelector("#fire [class*='fireFrame']")!
-          .scrollIntoView({ block: "end", behavior: "instant" }),
-      );
-      const fire = page.locator("video[data-fallback-clip='fire']");
-      await expect(fire).toHaveAttribute("data-ready", "", { timeout: 20_000 });
-      const a = await fire.evaluate((v: HTMLVideoElement) => v.currentTime);
+      const a = await clip.evaluate((v: HTMLVideoElement) => v.currentTime);
       await page.mouse.wheel(0, 300);
       await expect
-        .poll(() => fire.evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 5_000 })
-        .toBeGreaterThan(a);
+        .poll(() => clip.evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 5_000 })
+        .not.toBe(a);
+      await shot(page, info, `fallback-${name}-сборка`);
+      // На главной — только клип сборки (других глав нет).
+      expect(requests.every((u) => u.includes("/assembly"))).toBe(true);
       expect(await overflow(page)).toBe(0);
       await context.close();
     });

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageShell, pageStyles } from "@/components/layout/PageShell";
-import { zones } from "@/components/sections/WorldSection";
+import { WORLD_ZONES as zones } from "@/canvas/world/timeline";
 import { extrasCapacity, FAZENDA_EXTRAS } from "@/content/fazenda";
 import { BriefLink } from "@/components/brief/BriefLink";
 import { briefFallbackHref } from "@/components/brief/briefProps";

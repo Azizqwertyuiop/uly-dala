@@ -1,5 +1,4 @@
 import { expect, test, type Page } from "@playwright/test";
-import { chapterIds } from "./pages";
 
 /*
  * 3D-сцена (CLAUDE.md, разделы 6–7). В headless Chromium WebGL программный (SwiftShader) —
@@ -25,17 +24,6 @@ async function openStage(page: Page, path = "/ru?quality=high") {
   await expect(page.locator("html")).toHaveAttribute("data-canvas", "ready", { timeout: 15_000 });
 }
 
-/** Прокрутить так, чтобы верх главы оказался на середине экрана (глава стала текущей). */
-async function scrollToChapter(page: Page, id: string, extra = 40) {
-  await page.evaluate(
-    ({ id, extra }) => {
-      const top = document.getElementById(id)!.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo(0, top - window.innerHeight / 2 + extra);
-    },
-    { id, extra },
-  );
-}
-
 const CHAPTER_SPACING = 60;
 
 test.describe("холст сцены", () => {
@@ -52,14 +40,14 @@ test.describe("холст сцены", () => {
     });
     expect(style).toEqual({ position: "fixed", z: "0", events: "none" });
     // Кадр уступает место прозрачностью — описание сцены остаётся для скринридера (WCAG 1.1.1).
-    await expect(page.locator("#dawn [data-scene-slot]")).toHaveCSS("opacity", "0");
+    await expect(page.locator("#assembly [data-scene-slot]").first()).toHaveCSS("opacity", "0");
     // Текст — над холстом: клик по CTA доходит до ссылки.
     await expect(
-      page.locator("#dawn").getByRole("link", { name: "Смотреть фазенду" }),
+      page.locator("[data-home-hero]").getByRole("link", { name: "Обсудить мероприятие" }),
     ).toBeVisible();
     const s = await stage(page);
     expect(s.quality).toBe("high");
-    expect(s.current).toBe("dawn");
+    expect(s.current).toBe("assembly");
     expect(s.camera.roll).toBe(0);
   });
 
@@ -82,61 +70,56 @@ test.describe("холст сцены", () => {
     await expect.poll(async () => (await stage(page)).loaded).toEqual([]);
   });
 
-  test("камера проходит весь сайт: каждая глава — своя сцена и своя точка пути", async ({
+  test("камера: сборка юрты на первом экране, в конце — внутри юрты; ниже — холст стоит", async ({
     page,
   }) => {
-    // Шесть глав подряд на программном WebGL под параллельной нагрузкой — с запасом.
     test.setTimeout(90_000);
     await openStage(page);
-    for (const [i, id] of chapterIds.entries()) {
-      await scrollToChapter(page, id);
-      await expect.poll(async () => (await stage(page)).current, { timeout: 10_000 }).toBe(id);
-      // Программный WebGL под параллельной нагрузкой — медленный: запас по времени.
-      // У «Дня» сцены нет (фото событий): там холст стоит.
-      if (id === "day")
-        await expect.poll(async () => (await stage(page)).idle, { timeout: 10_000 }).toBe(true);
-      else
-        await expect
-          .poll(async () => (await stage(page)).loaded, { timeout: 15_000 })
-          .toContain(id);
-      // Камера у своей главы (якоря глав через 60 м по −Z).
-      await expect
-        .poll(async () => Math.abs((await stage(page)).camera.z + i * CHAPTER_SPACING), {
-          timeout: 10_000,
-        })
-        .toBeLessThan(CHAPTER_SPACING * 0.6);
-      const s = await stage(page);
-      expect(s.camera.roll).toBe(0);
-      expect(s.camera.y).toBeLessThanOrEqual(1.8);
-      // Дальше двух глав ничего не держим — кроме мира, в котором стоит глава
-      // (степь рассвета нужна «Сборке», «Огню» и финалу; финал грузится уже в «Мире»).
-      const world = ["assembly", "day", "fire", "world", "return"].includes(id) ? ["dawn"] : [];
-      for (const loaded of s.loaded) {
-        if (world.includes(loaded)) continue;
-        expect(
-          Math.abs(chapterIds.indexOf(loaded as (typeof chapterIds)[number]) - i),
-        ).toBeLessThanOrEqual(2);
-      }
-    }
+    const s0 = await stage(page);
+    expect(s0.current).toBe("assembly");
+    expect(s0.loaded).toEqual(expect.arrayContaining(["dawn", "assembly"]));
+    // Конец дорожки сборки — камера внутри юрты (якорь z = −60, радиус 3 м), крен 0.
+    await page.evaluate(() => {
+      const t = document.querySelector<HTMLElement>("[data-track='assembly']")!;
+      window.scrollTo(
+        0,
+        t.getBoundingClientRect().top + window.scrollY + t.offsetHeight - innerHeight,
+      );
+    });
+    await expect
+      .poll(
+        async () => {
+          const c = (await stage(page)).camera;
+          return Math.hypot(c.x, c.z + CHAPTER_SPACING);
+        },
+        { timeout: 15_000 },
+      )
+      .toBeLessThan(2.5);
+    expect((await stage(page)).camera.roll).toBe(0);
+    // Разделы визитки — без 3D: рендер стоит.
+    await page.locator("#services").scrollIntoViewIfNeeded();
+    await expect
+      .poll(async () => ((await stage(page)) as unknown as { idle: boolean }).idle, {
+        timeout: 10_000,
+      })
+      .toBe(true);
   });
 
-  test("обновление посреди страницы: сразу нужная сцена и камера, интро пропущено", async ({
-    page,
-  }) => {
+  test("обновление посреди сборки: сразу нужная сцена и камера", async ({ page }) => {
     await openStage(page);
-    await scrollToChapter(page, "fire", 200);
-    await expect.poll(async () => (await stage(page)).current).toBe("fire");
+    await page.evaluate(() => {
+      const t = document.querySelector<HTMLElement>("[data-track='assembly']")!;
+      window.scrollTo(
+        0,
+        t.getBoundingClientRect().top + window.scrollY + (t.offsetHeight - innerHeight) * 0.6,
+      );
+    });
+    await page.waitForTimeout(800);
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-canvas", "ready", { timeout: 15_000 });
     const s = await stage(page);
-    expect(s.current).toBe("fire");
-    expect(s.loaded).toContain("fire");
-    // Мир «Огня» — степь рассвета — загружен сразу; глав между ними нет.
-    expect(s.loaded).toContain("dawn");
-    expect(s.loaded).not.toContain("assembly");
+    expect(s.current).toBe("assembly");
     expect(s.introSkipped).toBe(true);
-    // Камера уже у «Огня» с первого кадра — без облёта от начала сайта.
-    expect(Math.abs(s.camera.z + 3 * CHAPTER_SPACING)).toBeLessThan(CHAPTER_SPACING * 0.6);
     expect(s.frames).toBeLessThan(30);
   });
 });
@@ -157,7 +140,7 @@ test.describe("потеря контекста WebGL", () => {
     await expect(page.locator("html")).toHaveAttribute("data-canvas", "off", { timeout: 8_000 });
     await expect(page.locator("html")).toHaveAttribute("data-quality", "fallback");
     await expect(page.locator("[data-canvas-root] canvas")).toHaveCount(0);
-    await expect(page.locator("#dawn [data-scene-slot]")).toHaveCSS("visibility", "visible");
+    await expect(page.locator("#assembly [data-scene-slot]").first()).toHaveCSS("opacity", "1");
     // Страница не перезагружалась.
     expect(await page.evaluate(() => (window as unknown as { __marker?: number }).__marker)).toBe(
       42,

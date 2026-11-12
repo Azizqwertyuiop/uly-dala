@@ -1,8 +1,20 @@
 import { expect, test } from "@playwright/test";
 import { contentLanguage } from "../src/content/messages";
-import { allPaths, chapterIds, formatSlugs, locales } from "./pages";
+import { allPaths, locales } from "./pages";
 
-test.describe("главная: все главы на трёх языках", () => {
+/** Разделы главной-визитки (решение заказчика 12.11.2026) — в порядке страницы. */
+const HOME_SECTIONS = [
+  "assembly",
+  "services",
+  "gallery",
+  "why",
+  "steps",
+  "fazenda",
+  "team",
+  "brief",
+];
+
+test.describe("главная-визитка на трёх языках", () => {
   for (const locale of locales) {
     test(`/${locale}`, async ({ page }) => {
       await page.goto(`/${locale}`);
@@ -11,23 +23,16 @@ test.describe("главная: все главы на трёх языках", ()
       await expect(page.locator('a[href="#main"]')).toHaveCount(1);
       await expect(page.locator("main#main")).toHaveCount(1);
 
-      const sections = page.locator("section[data-chapter]");
-      await expect(sections).toHaveCount(chapterIds.length);
-
-      for (const [i, id] of chapterIds.entries()) {
-        const section = sections.nth(i);
-        await expect(section).toHaveAttribute("id", id);
-        await expect(section).toHaveAttribute("data-chapter", id);
+      const ids = await page
+        .locator("main > section[aria-labelledby]")
+        .evaluateAll((els) => els.map((el) => el.id));
+      expect(ids).toEqual(HOME_SECTIONS);
+      for (const id of HOME_SECTIONS) {
+        const section = page.locator(`#${id}`);
         await expect(section).toHaveAttribute("data-tone", /^(light|dark)$/);
         const labelledBy = await section.getAttribute("aria-labelledby");
-        expect(labelledBy).toBe(`${id}-title`);
         await expect(page.locator(`#${labelledBy}`)).not.toBeEmpty();
       }
-
-      for (const slug of formatSlugs) {
-        await expect(page.locator(`#format-${slug}`)).toHaveCount(1);
-      }
-      await expect(page.locator("#brief")).toHaveCount(1);
       await expect(page.locator("footer#contacts")).toHaveCount(1);
     });
   }
@@ -59,74 +64,68 @@ test("своя 404 внутри языка", async ({ page }) => {
 test.describe("без JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("главная читается целиком, форматы — списком", async ({ page }) => {
+  test("главная читается целиком; «Обсудить мероприятие» ведёт к форме", async ({ page }) => {
     await page.goto("/ru");
-    for (const id of chapterIds) {
-      await expect(page.locator(`#${id}-title`)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      /Организуем мероприятия под\sключ в\sАлматы/,
+    );
+    for (const id of HOME_SECTIONS.slice(1)) {
+      await expect(page.locator(`#${id === "brief" ? "brief" : id}-title`)).toBeVisible();
     }
-    await expect(page.getByRole("tablist")).toHaveCount(0);
-    for (const slug of formatSlugs) {
-      await expect(page.locator(`#format-${slug} h3`)).toBeVisible();
-    }
-    // Оглавление форматов ведёт к якорям.
-    await page.locator('a[href="#format-kudalyk"]').click();
-    await expect(page).toHaveURL(/#format-kudalyk$/);
+    await expect(page.getByRole("link", { name: "Обсудить мероприятие" })).toHaveAttribute(
+      "href",
+      /#brief$/,
+    );
+    // Галерея без JS — ссылки на крупные фото.
+    await expect(page.locator("#gallery a[href$='.jpg']").first()).toBeVisible();
   });
 
   test("HTML содержит полный текст без JS", async ({ request }) => {
     // Неразрывные пробелы от типографики приводим к обычным.
     const html = (await (await request.get("/ru")).text()).replace(/\u00a0|&nbsp;/g, " ");
-    expect(html).toContain("Мы ставим мир.");
-    expect(html).toContain("Шаңырақ был первым прожектором.");
-    expect(html).toContain("Две семьи. Один дастархан.");
-    expect(html).toContain("Свой огонь. Свой шеф.");
-    expect(html).toContain("Этот мир существует.");
-    expect(html).toContain("И снимаем его, не оставив следа.");
+    for (const text of [
+      "Организуем мероприятия под ключ в Алматы",
+      "Что мы делаем",
+      "Аренда техники",
+      "Фотобудка",
+      "Наши тимбилдинги",
+      "Почему выбирают нас",
+      "Как мы работаем",
+      "Наша фазенда",
+      "Команда",
+      "Обсудим ваше мероприятие",
+    ])
+      expect(html, text).toContain(text);
   });
 });
 
-test("табы форматов управляются с клавиатуры", async ({ page }) => {
+test("галерея: фото открывается крупно, Esc закрывает, фокус возвращается", async ({ page }) => {
   await page.goto("/ru");
-  const tabs = page.getByRole("tab");
-  await expect(tabs).toHaveCount(formatSlugs.length);
-  await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator("#format-conference")).toBeVisible();
-  await expect(page.locator("#format-kudalyk")).toBeHidden();
-
-  await tabs.first().focus();
-  await page.keyboard.press("ArrowRight");
-  await expect(tabs.nth(1)).toBeFocused();
-  await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
-  await expect(page.locator("#format-coffee-break")).toBeVisible();
-
-  await page.keyboard.press("End");
-  await expect(tabs.last()).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("ArrowRight");
-  await expect(tabs.first()).toHaveAttribute("aria-selected", "true");
+  const thumb = page.locator("#gallery a").first();
+  await thumb.click();
+  const dialog = page.getByRole("dialog", { name: "Фото тимбилдинга" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("img")).toHaveAttribute("alt", /Тимбилдинг ULY DALA/);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(thumb).toBeFocused();
 });
 
-test("каждое изображение имеет alt и размеры", async ({ page }) => {
+test("каждое изображение: размеры и описание (оформление — скрыто от скринридера)", async ({
+  page,
+}) => {
   await page.goto("/ru");
-  const images = page.locator("img");
-  const count = await images.count();
-  expect(count).toBeGreaterThan(5);
-  for (let i = 0; i < count; i++) {
-    const img = images.nth(i);
-    expect((await img.getAttribute("alt"))?.length ?? 0).toBeGreaterThan(10);
-    expect(await img.getAttribute("width")).toBeTruthy();
-    expect(await img.getAttribute("height")).toBeTruthy();
+  const images = await page.locator("main img").evaluateAll((els) =>
+    els.map((el) => ({
+      alt: el.getAttribute("alt"),
+      w: el.getAttribute("width"),
+      h: el.getAttribute("height"),
+      hidden: el.closest("[aria-hidden='true']") !== null,
+    })),
+  );
+  expect(images.length).toBeGreaterThan(3);
+  for (const img of images) {
+    expect(img.w && img.h).toBeTruthy();
+    if (!img.hidden) expect(img.alt?.length ?? 0).toBeGreaterThan(10);
   }
 });
-
-for (const width of [360, 768, 1280, 1920]) {
-  test(`нет горизонтального скролла на ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 });
-    for (const path of ["/ru", "/kk/services/private-party", "/en/cases/evening-wedding"]) {
-      await page.goto(path);
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      );
-      expect(overflow, path).toBeLessThanOrEqual(0);
-    }
-  });
-}

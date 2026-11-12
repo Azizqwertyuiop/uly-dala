@@ -1,6 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { chapterIds } from "./pages";
 
 /** Дождаться, пока плавная прокрутка (Lenis) доедет: scrollY перестал меняться. */
 async function waitScrollSettled(page: Page) {
@@ -53,10 +52,9 @@ test.describe("хедер", () => {
         const top = document.getElementById(id)!.getBoundingClientRect().top + scrollY;
         window.scrollTo(0, top + 10);
       }, id);
-    await expect(header).toHaveAttribute("data-tone", "dark");
-    await underHeader("assembly");
+    await underHeader("services");
     await expect(header).toHaveAttribute("data-tone", "light");
-    await underHeader("fire");
+    await underHeader("why");
     await expect(header).toHaveAttribute("data-tone", "dark");
     await underHeader("contacts");
     await expect(header).toHaveAttribute("data-tone", "dark");
@@ -106,11 +104,11 @@ test.describe("меню", () => {
     await expect(page.locator("html")).not.toHaveAttribute("data-menu-open", /.*/);
   });
 
-  test("содержит главы, страницы, языки, звук, «Коротко», контакты", async ({ page }) => {
+  test("содержит разделы, страницы, языки, звук, «Коротко», контакты", async ({ page }) => {
     await page.goto("/ru");
     await menuButton(page).click();
     const menu = dialog(page);
-    for (const id of chapterIds) {
+    for (const id of ["services", "gallery", "why", "steps", "fazenda", "team", "brief"]) {
       await expect(menu.locator(`a[href="/ru#${id}"]`)).toHaveCount(1);
     }
     await expect(menu.locator('a[href="/ru/services/kudalyk"]')).toHaveCount(1);
@@ -124,12 +122,12 @@ test.describe("меню", () => {
     await expect(menu.getByText("Алматы")).toBeVisible();
   });
 
-  test("ссылка на главу закрывает меню и ведёт к главе", async ({ page }) => {
+  test("ссылка на раздел закрывает меню и ведёт к разделу", async ({ page }) => {
     await page.goto("/ru");
     await menuButton(page).click();
-    await dialog(page).getByRole("link", { name: "Огонь" }).click();
+    await dialog(page).getByRole("link", { name: "Галерея" }).click();
     await expect(dialog(page)).toBeHidden();
-    await expect(page).toHaveURL(/#fire$/);
+    await expect(page).toHaveURL(/#gallery$/);
   });
 
   test("звук по умолчанию выключен и не запоминается", async ({ page }) => {
@@ -186,55 +184,13 @@ test.describe("режим «Коротко» (uiMode)", () => {
   });
 });
 
-test.describe("навигация-горизонт", () => {
-  test("<nav> со ссылками на все главы, работает с клавиатуры", async ({ page }) => {
-    await page.goto("/ru");
-    const nav = page.getByRole("navigation", { name: "Главы сайта" });
-    const links = nav.getByRole("link");
-    await expect(links).toHaveCount(chapterIds.length);
-    for (const [i, id] of chapterIds.entries()) {
-      await expect(links.nth(i)).toHaveAttribute("href", `#${id}`);
-    }
-    await expect(links.first()).toHaveAttribute("aria-current", "step");
-
-    await links.nth(3).focus();
-    await expectVisibleFocus(page);
-    await expect(links.nth(3).locator("span")).toHaveCSS("opacity", "1");
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/#fire$/);
-    await expect(links.nth(3)).toHaveAttribute("aria-current", "step");
-  });
-
-  test("солнце двигается по прогрессу, в конце страницы — на последней главе", async ({ page }) => {
-    await page.goto("/ru");
-    const sun = page.locator("[data-horizon] span[style]");
-    await page.locator("#day").evaluate((el) => el.scrollIntoView());
-    await expect(page.locator('[data-horizon] a[aria-current="step"]')).toHaveAttribute(
-      "href",
-      "#day",
-    );
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect(page.locator('[data-horizon] a[aria-current="step"]')).toHaveAttribute(
-      "href",
-      "#return",
-    );
-    await expect(sun).toHaveAttribute("style", /translateX\(100%\)/);
-  });
-
-  test("есть только на главной", async ({ page }) => {
-    await page.goto("/ru/fazenda");
-    await expect(page.locator("[data-horizon]")).toHaveCount(0);
-  });
-});
-
 test.describe("без JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("«Меню» — ссылка на навигацию в футере, горизонт — список ссылок", async ({ page }) => {
+  test("«Меню» — ссылка на навигацию в футере", async ({ page }) => {
     await page.goto("/ru");
     await expect(page.locator('header a[href="#site-nav"]')).toHaveText("Меню");
     await expect(page.locator("#site-nav")).toHaveCount(1);
-    await expect(page.locator("[data-horizon] a")).toHaveCount(chapterIds.length);
   });
 });
 
@@ -246,19 +202,21 @@ test.describe("WhatsApp", () => {
     await expect(page.locator('a[href^="https://wa.me/"]')).toHaveCount(0);
   });
 
-  test("с номером: только мобильные, после главы 2, в зоне большого пальца", async ({ page }) => {
+  test("с номером: только мобильные, после первого экрана, в зоне большого пальца", async ({
+    page,
+  }) => {
     test.skip(!process.env.NEXT_PUBLIC_WHATSAPP_PHONE, "номер не задан при сборке");
     const button = page.locator('a[href^="https://wa.me/"]');
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/ru");
-    await page.locator("#fire").evaluate((el) => el.scrollIntoView());
-    await expect(button).toBeHidden();
+    await page.locator("#services").evaluate((el) => el.scrollIntoView());
+    await expect(button.last()).toBeHidden();
 
     await page.setViewportSize({ width: 360, height: 740 });
     await page.goto("/ru");
     await expect(button).toBeHidden();
-    await page.locator("#day").evaluate((el) => el.scrollIntoView());
+    await page.locator("#services").evaluate((el) => el.scrollIntoView());
     await page.mouse.wheel(0, 600);
     await expect(button).toBeVisible();
     await expect(button).toHaveAccessibleName("Написать в WhatsApp");
@@ -304,9 +262,8 @@ test.describe("360px: ничего не перекрывает контент и
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const lastText = page.locator("footer p").last();
     const box = (await lastText.boundingBox())!;
-    const navTop = await page
-      .locator("[data-horizon]")
-      .evaluate((el) => el.getBoundingClientRect().top);
-    expect(box.y + box.height).toBeLessThanOrEqual(navTop);
+    // Внизу страницы последний текст футера виден целиком (ничего фиксированного поверх).
+    const viewport = page.viewportSize()!;
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
   });
 });

@@ -38,17 +38,19 @@ test.describe("curl: главная без JS", () => {
       const m = getMessages(locale);
       const body = text(await html(request, `/${locale}`));
       for (const s of [
-        m.hero.title,
-        m.hero.subtitle,
+        m.home.hero.title,
+        m.home.hero.lead,
         m.hero.proof,
-        m.assembly.manifest,
+        m.home.services.title,
+        ...formats.map((f) => m.formats[f.key].title),
+        m.home.why.title,
+        m.home.why.chef.text,
+        m.home.steps.title,
+        m.home.fazenda.title,
+        m.home.team.title,
+        m.home.contact.title,
         m.assembly.parts.kerege.text,
         m.assembly.pillar,
-        m.day.title,
-        ...formats.map((f) => m.formats[f.key].phrase),
-        m.fire.title,
-        m.world.title,
-        m.return.title,
         m.brief.submit,
       ])
         expect(body, s.slice(0, 40)).toContain(norm(s));
@@ -61,7 +63,7 @@ test.describe("curl: главная без JS", () => {
     const doc = await html(request, "/");
     expect(attr(doc, /<html lang="([^"]+)"/)).toBe("ru");
     expect(attr(doc, /<link rel="canonical" href="([^"]+)"/)).toMatch(/\/ru$/);
-    expect(text(doc)).toContain(norm(getMessages("ru").hero.title));
+    expect(text(doc)).toContain(norm(getMessages("ru").home.hero.title));
   });
 });
 

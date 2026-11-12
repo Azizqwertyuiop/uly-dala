@@ -65,6 +65,7 @@ export default function AssemblyScene({ anchor, data }: SceneProps) {
         x: -1,
         y: -1,
         rotatable: null as boolean | null,
+        building: null as boolean | null,
       },
     }),
     [],
@@ -132,6 +133,7 @@ export default function AssemblyScene({ anchor, data }: SceneProps) {
       d.phase = "";
       d.x = d.y = -1;
       d.rotatable = null;
+      d.building = null;
     }
     d.stage ??= document.querySelector<HTMLElement>(STAGE_SELECTOR);
     d.rotate ??= document.querySelector<HTMLElement>(ROTATE_SELECTOR);
@@ -161,6 +163,12 @@ export default function AssemblyScene({ anchor, data }: SceneProps) {
         d.x = x;
         d.y = y;
         d.stage.style.setProperty("--caption-xy", `${x}px, ${y}px`);
+      }
+      // Юрта начала собираться: до этого первый экран — только текст (подписи этапов скрыты).
+      const building = p > 0.04;
+      if (d.building !== building) {
+        d.building = building;
+        d.stage.dataset.building = String(building);
       }
       if (d.rotatable !== rotatable) {
         d.rotatable = rotatable;

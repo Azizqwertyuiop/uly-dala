@@ -61,9 +61,11 @@ test.describe("аналитика: события видны в отладке �
     await page.goto("/ru?debug&quality=fallback");
     await expect(page.locator("html")).toHaveAttribute("data-quality", "fallback");
 
-    // Развилка и CTA «Обсудить событие» главы «Сборка».
-    await page.locator("#assembly").getByRole("link", { name: "Семейное торжество" }).click();
-    await page.locator("#fire").getByRole("link", { name: /меню/i }).first().click();
+    // CTA первого экрана — бриф в окне (закрываем), карточка услуги — страница услуги.
+    await page
+      .locator("[data-home-hero]")
+      .getByRole("link", { name: "Обсудить мероприятие" })
+      .click();
     await page
       .getByRole("dialog")
       .getByRole("button", { name: /Закрыть/ })
@@ -79,7 +81,6 @@ test.describe("аналитика: события видны в отладке �
 
     // Бриф: начало, поля, отправка с ошибкой.
     const form = page.locator("#brief");
-    // «Семейное торжество» уже предзаполнило тип события — выбираем другой.
     await form.getByRole("radio", { name: "Конференция" }).check();
     await form.getByLabel(/Как\s+вас\s+зовут/).fill("Айгерим");
     await form.getByLabel(/Ваш\s+номер\s+телефона/).fill("7011234567");
@@ -91,7 +92,6 @@ test.describe("аналитика: события видны в отладке �
       .toEqual(
         expect.arrayContaining([
           "quality",
-          "fork",
           "cta",
           "menu_open",
           "sound",
@@ -102,8 +102,7 @@ test.describe("аналитика: события видны в отладке �
         ]),
       );
     const list = await events(page);
-    expect(list.find((e) => e.name === "fork")?.props).toEqual({ audience: "family" });
-    expect(list.find((e) => e.name === "cta")?.props).toEqual({ cta: "menu", place: "fire" });
+    expect(list.find((e) => e.name === "cta")?.props).toEqual({ cta: "brief", place: "assembly" });
     expect(list.find((e) => e.name === "brief_mode")?.props).toEqual({ on: true });
     expect(list.filter((e) => e.name === "brief_field").map((e) => e.props)).toEqual(
       expect.arrayContaining([
@@ -120,7 +119,7 @@ test.describe("аналитика: события видны в отладке �
     for (const e of list) expect(e.quality).toBe("fallback");
 
     // В консоли с ?debug.
-    expect(debugLines.some((l) => l.includes("fork"))).toBe(true);
+    expect(debugLines.some((l) => l.includes("cta"))).toBe(true);
 
     // Сервер принял пакет; ни имени, ни телефона в отправленном нет.
     await hide(page);
@@ -131,13 +130,11 @@ test.describe("аналитика: события видны в отладке �
     expect(body).not.toMatch(/701\D?123/);
   });
 
-  test("Core Web Vitals с уровнем качества; максимальная глава при уходе", async ({ page }) => {
+  test("Core Web Vitals с уровнем качества; самый дальний раздел при уходе", async ({ page }) => {
     await collect(page);
     await page.goto("/ru?quality=fallback");
-    await page.evaluate(() => {
-      const top = document.getElementById("fire")!.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo(0, top);
-    });
+    await page.locator("#why").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500);
     await expect.poll(() => names(page), { timeout: 10_000 }).toContain("web_vital");
     await page.mouse.click(5, 300); // взаимодействие — для INP
     await hide(page);
@@ -148,14 +145,15 @@ test.describe("аналитика: события видны в отладке �
       expect.arrayContaining(["FCP", "TTFB", "LCP"]),
     );
     for (const v of vitals) expect(v.quality).toBe("fallback");
+    // Самый дальний раздел, попавший на экран: «Почему мы» или следующий под ним.
     expect(list.find((e) => e.name === "scroll_depth")?.props).toMatchObject({
-      chapter: "fire",
-      of: 6,
+      chapter: expect.stringMatching(/^(why|steps)$/),
+      of: 8,
     });
     await expect.poll(async () => JSON.stringify(await sent(page, "/api/t"))).toContain('"LCP"');
   });
 
-  test("WhatsApp, скачивание презентации, запрос просмотра", async ({ page }) => {
+  test("запрос просмотра и карточка услуги", async ({ page }) => {
     await page.goto("/ru/request/visit");
     const form = page.locator("form");
     await form.getByLabel(/Как\s+вас\s+зовут/).fill("Тест просмотра");
@@ -167,13 +165,15 @@ test.describe("аналитика: события видны в отладке �
       .poll(() => names(page))
       .toEqual(expect.arrayContaining(["brief_start", "brief_submit", "visit_request"]));
 
+    // Карточка услуги на главной — событие CTA с разделом.
     await page.goto("/ru?quality=fallback");
-    const download = page.locator("#day a[download]").first();
-    await download.evaluate((a) => a.addEventListener("click", (e) => e.preventDefault()));
-    await download.click();
-    await expect.poll(() => names(page)).toContain("presentation_download");
-    expect((await events(page)).find((e) => e.name === "presentation_download")?.props).toEqual({
-      place: "day",
+    const card = page.locator('#services a[href="/ru/services/photo-booth"]');
+    await card.evaluate((a) => a.addEventListener("click", (e) => e.preventDefault()));
+    await card.click();
+    await expect.poll(() => names(page)).toContain("cta");
+    expect((await events(page)).find((e) => e.name === "cta")?.props).toEqual({
+      cta: "format",
+      place: "services",
     });
   });
 
@@ -302,7 +302,7 @@ test.describe("заголовки безопасности", () => {
     );
   });
 
-  test("CSP не ломает 3D: шейдеры, воркеры KTX2/meshopt, сплаты, видео — без нарушений", async ({
+  test("CSP не ломает 3D: шейдеры, воркеры KTX2/meshopt, видео — без нарушений", async ({
     page,
   }) => {
     // Проход всего сайта с 3D на процессоре (CI без видеокарты) — с запасом.
@@ -334,9 +334,8 @@ test.describe("заголовки безопасности", () => {
     }
     await page.waitForTimeout(1500);
     (await stage()).compiled.forEach((id) => compiled.add(id));
-    // Все сцены собрались — у «Дня» сцены нет, там фото (KTX2-текстуры декодированы воркером), фазенда — сплатами (воркер Spark).
-    expect([...compiled].sort()).toEqual(["assembly", "dawn", "fire", "return", "world"]);
-    expect([...modes]).toContain("splats");
+    // Главная-визитка: сцены сборки юрты и её мира (KTX2-текстуры — воркером, шейдеры — без CSP).
+    expect([...compiled].sort()).toEqual(["assembly", "dawn"]);
     expect(await page.locator("html").getAttribute("data-quality")).toBe("high");
     expect(problems).toEqual([]);
   });

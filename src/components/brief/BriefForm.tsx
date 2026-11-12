@@ -38,6 +38,8 @@ type Props = {
   whatsappHref: string | null;
   /** Показывать бриф-предложение над формой (только большой бриф). */
   withSentence?: boolean;
+  /** Свой набор вопросов (короткая форма на главной); по умолчанию — набор формы variant. */
+  fields?: readonly (keyof BriefValues)[];
 };
 
 /** Какие вопросы в какой форме (CLAUDE.md, раздел 9: мини-формы — те же компоненты). */
@@ -100,6 +102,7 @@ export function BriefForm({
   privacyHref,
   whatsappHref,
   withSentence,
+  fields,
 }: Props) {
   const [state, formAction, pending] = useActionState<BriefFormState, FormData>(
     submitBrief,
@@ -124,7 +127,7 @@ export function BriefForm({
 
   // До гидрации — значения, которые вернул сервер (важно для формы без JS), потом — черновик.
   const values: BriefValues = storeReady ? draft : (state.values ?? {});
-  const show = (field: keyof BriefValues) => FIELDS[variant].includes(field);
+  const show = (field: keyof BriefValues) => (fields ?? FIELDS[variant]).includes(field);
 
   useEffect(() => {
     useBriefStore.getState().hydrate();

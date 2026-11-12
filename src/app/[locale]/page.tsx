@@ -1,12 +1,17 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { HorizonNav } from "@/components/layout/HorizonNav";
-import { chapterIds } from "@/components/sections/chapters";
 import { AssemblySection } from "@/components/sections/AssemblySection";
-import { DawnSection } from "@/components/sections/DawnSection";
-import { DaySection } from "@/components/sections/DaySection";
-import { FireSection } from "@/components/sections/FireSection";
-import { ReturnSection } from "@/components/sections/ReturnSection";
-import { WorldSection } from "@/components/sections/WorldSection";
+import {
+  Clients,
+  Contact,
+  Fazenda,
+  Gallery,
+  Reviews,
+  Services,
+  Stats,
+  Steps,
+  Team,
+  Why,
+} from "@/components/home/HomeSections";
 import { resolveLocale } from "@/lib/intl/locale";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { localBusinessLd, organizationLd, placeLd } from "@/lib/seo/jsonld";
@@ -14,20 +19,21 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import type { Metadata } from "next";
 
 /*
- * Главная: один день события, шесть глав (CLAUDE.md, раздел 2).
- * Это семантический базовый слой и одновременно режим «Коротко»: всё читается без JS и WebGL.
+ * Главная-визитка (решение заказчика 12.11.2026, CLAUDE.md, раздел 2):
+ * первый экран — сборка юрты на скролле (3D), дальше — простые продающие блоки.
+ * Всё читается без JS и WebGL; блоки без подтверждённых данных скрыты.
  */
 export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
   const locale = resolveLocale((await params).locale);
   const t = await getTranslations({ locale, namespace: "meta" });
-  const hero = await getTranslations({ locale, namespace: "hero" });
+  const assembly = await getTranslations({ locale, namespace: "assembly" });
   return pageMetadata({
     locale,
     path: "",
     title: t("title"),
     description: t("description"),
-    image: "dawn",
-    imageAlt: hero("sceneAlt"),
+    image: "assembly",
+    imageAlt: assembly("sceneAlt"),
   });
 }
 
@@ -35,16 +41,14 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const locale = resolveLocale((await params).locale);
   setRequestLocale(locale);
   const meta = await getTranslations("meta");
-  const hero = await getTranslations("hero");
+  const home = await getTranslations("home.hero");
   const fazendaPage = await getTranslations("fazendaPage");
-  const horizon = await getTranslations("horizon");
-  const chapters = await getTranslations("chapters");
 
   return (
     <main id="main" tabIndex={-1}>
       <JsonLd
         data={[
-          organizationLd({ locale, description: meta("description"), slogan: hero("title") }),
+          organizationLd({ locale, description: meta("description"), slogan: home("title") }),
           localBusinessLd({ locale, description: meta("description") }),
           placeLd({
             locale,
@@ -53,16 +57,22 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
           }),
         ]}
       />
-      <HorizonNav
-        label={horizon("label")}
-        chapters={chapterIds.map((id) => ({ id, name: chapters(id) }))}
-      />
-      <DawnSection />
+      {/*
+       * Точка отсчёта 3D: глава «Рассвет» нулевой высоты. Её сцена — мир (небо, степь, трава),
+       * в котором стоит юрта; камера и прогресс считают главы по порядку сюжета (src/motion/progress.ts).
+       */}
+      <section data-chapter="dawn" aria-hidden="true" style={{ height: 0, overflow: "hidden" }} />
       <AssemblySection />
-      <DaySection />
-      <FireSection />
-      <WorldSection />
-      <ReturnSection />
+      <Stats />
+      <Services />
+      <Clients />
+      <Gallery />
+      <Why />
+      <Steps />
+      <Fazenda />
+      <Team />
+      <Reviews />
+      <Contact />
     </main>
   );
 }

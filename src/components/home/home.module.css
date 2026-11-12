@@ -1,0 +1,441 @@
+/*
+ * Главная-визитка (решение заказчика 12.11.2026): простые понятные блоки.
+ * Палитра и шрифты — те же токены (CLAUDE.md, раздел 4); фон и контраст — по data-tone секции.
+ */
+
+.section {
+  padding-block: clamp(64px, 10vh, 120px);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.head {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 62ch;
+}
+
+.title {
+  font-family: var(--font-family-heading);
+  font-size: clamp(34px, 4vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  font-weight: 400;
+}
+
+/* ---------- Цифры ---------- */
+.stats {
+  display: grid;
+  gap: var(--grid-gutter);
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--tone-line);
+}
+
+.statValue {
+  margin: 0;
+  font-family: var(--font-family-heading);
+  font-size: clamp(48px, 6vw, 88px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Услуги ---------- */
+.cards,
+.features,
+.steps,
+.team,
+.reviews,
+.gallery,
+.logos {
+  display: grid;
+  gap: var(--grid-gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .cards,
+  .team,
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .cards,
+  .team,
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .features {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.cardLink {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.cardMedia {
+  display: block;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  margin-bottom: var(--space-1);
+  /* Пока снимка услуги нет — спокойная плашка в цветах бренда, без «фото скоро». */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--indigo) 88%, var(--willow)) 0%,
+    var(--willow) 100%
+  );
+}
+
+/* Пока снимка нет — подпись «Фото скоро» (заказчик пришлёт фото, CLAUDE.md, раздел 17). */
+.cardMedia {
+  position: relative;
+}
+
+.cardPending {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  color: color-mix(in srgb, var(--kumys) 80%, transparent);
+  font-size: var(--text-caption);
+}
+
+.cardMedia img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-steppe);
+}
+
+@media (hover: hover) {
+  .cardLink:hover .cardMedia img {
+    transform: scale(1.03);
+  }
+}
+
+.cardTitle {
+  font-family: var(--font-family-heading);
+  font-size: clamp(24px, 2vw, 32px);
+  line-height: 1.15;
+}
+
+.cardMore {
+  margin-top: var(--space-1);
+  font-weight: 600;
+}
+
+.cardLink:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+/* ---------- Логотипы ---------- */
+.logos {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  align-items: center;
+}
+
+.logos img {
+  max-width: 100%;
+  height: auto;
+  opacity: 0.8;
+}
+
+/* ---------- Галерея ---------- */
+.gallery {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .gallery {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.galleryItem {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.galleryItem img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-steppe);
+}
+
+@media (hover: hover) {
+  .galleryItem:hover img {
+    transform: scale(1.03);
+  }
+}
+
+.galleryItem:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.lightbox {
+  width: min(96vw, 1600px);
+  max-width: none;
+  max-height: 96svh;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--kumys);
+}
+
+.lightbox::backdrop {
+  background: color-mix(in srgb, var(--indigo) 94%, transparent);
+}
+
+.lightboxFigure {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.lightboxFigure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(96svh - 72px);
+  object-fit: contain;
+}
+
+.lightboxBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.lightboxButtons {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.lightboxButtons button {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--kumys) 40%, transparent);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.lightboxButtons button:focus-visible {
+  outline: 2px solid var(--kumys);
+  outline-offset: 2px;
+}
+
+/* ---------- Почему мы, шаги, команда ---------- */
+.feature,
+.step,
+.member {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--tone-line);
+}
+
+.featureTitle {
+  font-family: var(--font-family-heading);
+  font-size: clamp(24px, 2vw, 30px);
+  line-height: 1.15;
+  font-weight: 400;
+}
+
+.stepNumber {
+  font-family: var(--font-family-heading);
+  font-size: 48px;
+  line-height: 1;
+  color: var(--ember);
+  font-variant-numeric: tabular-nums;
+}
+
+.member {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.memberPhoto {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 5;
+  margin-bottom: var(--space-1);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--indigo) 8%, var(--felt));
+  border: 1px dashed var(--tone-line);
+}
+
+.memberPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.memberPending {
+  color: var(--tone-muted);
+  font-size: var(--text-caption);
+}
+
+/* ---------- Фазенда ---------- */
+.fazenda {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .fazenda {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    column-gap: var(--grid-gutter);
+  }
+}
+
+.fazendaImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.fazendaText {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  padding: 6px 14px;
+  border: 1px solid var(--tone-line);
+  border-radius: 999px;
+}
+
+/* ---------- Отзывы ---------- */
+.review {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+/* ---------- Контакты и заявка ---------- */
+@media (min-width: 1024px) {
+  .contact {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--grid-gutter);
+    align-items: start;
+  }
+}
+
+.direct {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+}
+
+.directList {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: clamp(19px, 1.4vw, 24px);
+}
+
+.form {
+  min-width: 0;
+}
+
+/* ---------- Кнопки первого экрана ---------- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.cta,
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 var(--space-4);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform var(--duration-instant) var(--ease-steppe);
+}
+
+.cta {
+  background: var(--indigo);
+  color: var(--kumys);
+}
+
+.ctaSecondary {
+  border: 1px solid currentColor;
+  color: var(--indigo);
+}
+
+.cta:active,
+.ctaSecondary:active {
+  transform: translateY(1px);
+}
+
+.cta:focus-visible,
+.ctaSecondary:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 3px;
+}

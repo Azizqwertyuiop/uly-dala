@@ -20,6 +20,14 @@ export const places = [
   "fire",
   "world",
   "return",
+  // Разделы главной-визитки (решение заказчика 12.11.2026).
+  "services",
+  "gallery",
+  "why",
+  "steps",
+  "fazenda",
+  "team",
+  "brief",
   "header",
   "menu",
   "footer",
@@ -30,7 +38,7 @@ export const places = [
 export type Place = (typeof places)[number];
 
 /** Какой CTA: бриф и мини-формы (source) + переходы. */
-export const ctas = [...sources, "fazenda", "home", "format"] as const;
+export const ctas = [...sources, "fazenda", "home", "format", "service"] as const;
 
 /** Поля брифа, о заполнении которых сообщается (только имя поля). */
 export const briefFields = [

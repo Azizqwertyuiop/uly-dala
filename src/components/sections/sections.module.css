@@ -318,6 +318,11 @@
   display: none;
 }
 
+/* Без 3D (fallback, «Коротко», без JS): кто мы и кнопки — первыми, кадры юрты — ниже. */
+.assemblyText {
+  order: -1;
+}
+
 /* fallback: общий кадр «Сборки» — с видео-секвенцией сборки юрты (FallbackClip). */
 :global(html[data-quality="fallback"]:not([data-mode="brief"])) .assemblyFrame {
   display: block;
@@ -520,6 +525,13 @@
   transition: opacity var(--duration-base) var(--ease-steppe);
 }
 
+/* Первый экран главной: пока юрта не начала собираться, подписей этапов нет — только текст. */
+:global(html[data-canvas="ready"]) .assemblyStage[data-building="false"] .part[data-part],
+:global(html[data-canvas="ready"]) .assemblyStage[data-building="false"] .rotate {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Финал: фраза под столпом света; внутри юрты темно — светлый текст на тёмной подложке. */
 :global(html[data-cinematic]:not([data-quality="fallback"])) .pillar {
   position: absolute;
@@ -645,6 +657,41 @@
     var(--felt)
   );
   pointer-events: none;
+}
+
+/* «День» → услуги на любой площадке: три ссылки на страницы услуг. */
+.dayServices {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.dayServicesList {
+  display: grid;
+  gap: var(--grid-gutter);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .dayServicesList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.dayService {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--tone-line);
+}
+
+.dayServiceLink {
+  justify-self: start;
+  font-family: var(--font-family-heading);
+  font-size: clamp(24px, 2vw, 32px);
+  line-height: 1.15;
 }
 
 /* ---------- Огонь ---------- */

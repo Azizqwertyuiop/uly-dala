@@ -1,31 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hasChapters, onChapterChange } from "@/motion/progress";
+import { hasChapters } from "@/motion/progress";
 import layout from "@/components/ui/layout.module.css";
 import styles from "./WhatsAppButton.module.css";
 
 type Props = {
   href: string;
   label: string;
-  /** Номер главы (с 0), начиная с которой кнопка видна. По умолчанию — после главы 2. */
-  fromChapter?: number;
 };
 
 /*
- * Плавающая кнопка WhatsApp: только на мобильных, после главы 2 (CLAUDE.md, раздел 8).
- * Видимость — от текущей главы из progress. На страницах без глав — видна сразу.
+ * Плавающая кнопка WhatsApp: только на мобильных (CLAUDE.md, раздел 8); на главной —
+ * после первого экрана, на остальных страницах — сразу.
  */
-export function WhatsAppButton({ href, label, fromChapter = 2 }: Props) {
+export function WhatsAppButton({ href, label }: Props) {
   const [visible, setVisible] = useState(false);
 
-  useEffect(
-    () =>
-      onChapterChange((index) => {
-        setVisible(!hasChapters() || index >= fromChapter);
-      }),
-    [fromChapter],
-  );
+  // На главной — после первого экрана (там свои кнопки); на остальных страницах — сразу.
+  useEffect(() => {
+    const update = () => setVisible(!hasChapters() || window.scrollY > window.innerHeight * 0.8);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
 
   return (
     <a

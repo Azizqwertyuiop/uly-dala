@@ -12,6 +12,9 @@ export const formatSlugs = [
   "private-party",
 ] as const;
 
+/** Услуги без события целиком (src/content/services.ts). */
+export const serviceSlugs = ["catering", "equipment-rental", "photo-booth"] as const;
+
 export const caseSlugs = [
   "conference-in-the-steppe",
   "kudalyk-two-families",
@@ -20,6 +23,7 @@ export const caseSlugs = [
 
 export const innerPaths = [
   ...formatSlugs.map((slug) => `/services/${slug}`),
+  ...serviceSlugs.map((slug) => `/services/${slug}`),
   "/fazenda",
   ...caseSlugs.map((slug) => `/cases/${slug}`),
   "/privacy",

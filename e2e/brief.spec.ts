@@ -42,8 +42,11 @@ test.describe("бриф с JS", () => {
   test("проходит до экрана успеха; заявка в базе, уведомления (мок) доставлены, ответ ≤ 2 с", async ({
     page,
   }) => {
-    await page.goto("/ru#brief");
-    const form = brief(page);
+    // Полный бриф — окно по кнопке первого экрана (на главной внизу — короткая форма).
+    await page.goto("/ru");
+    await page.getByRole("link", { name: "Обсудить мероприятие" }).first().click();
+    const form = page.getByRole("dialog", { name: "Расскажите о событии" });
+    await expect(form).toBeVisible();
     const name = uniqueName();
 
     await form.getByRole("radio", { name: "Кудалык" }).check();
@@ -118,11 +121,36 @@ test.describe("бриф с JS", () => {
 });
 
 test.describe("скринридер", () => {
-  test("форма читается как последовательность вопросов; визуальное предложение скрыто", async ({
-    page,
-  }) => {
+  test("короткая форма на главной: только нужные вопросы, без предложения", async ({ page }) => {
     await page.goto("/ru#brief");
     const form = brief(page).locator("form");
+    const questions = await form.evaluate((el) =>
+      [...el.querySelectorAll("fieldset > legend, label[for]")].map((node) =>
+        node.textContent?.replace(/\s+/g, " ").trim(),
+      ),
+    );
+    expect(questions).toEqual([
+      "Какое событие вы планируете? (необязательно)",
+      "Как вас зовут? (обязательно)",
+      "Ваш номер телефона (обязательно)",
+      "Комментарий (необязательно)",
+      "Я согласен на обработку персональных данных. (обязательно)",
+    ]);
+    await expect(form.locator("[data-brief-sentence]")).toHaveCount(0);
+    // Отправка короткой формы — заявка в базе.
+    const name = uniqueName();
+    await form.getByRole("radio", { name: "Аренда техники" }).check();
+    await fillRequired(brief(page), name);
+    await form.getByRole("button", { name: "Отправить бриф" }).click();
+    await expect(brief(page).getByRole("status")).toContainText("Спасибо");
+    expect(findLead(E2E_DB, name)?.event_type).toBe("equipment-rental");
+  });
+
+  test("полный бриф в окне читается как последовательность вопросов", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/ru");
+    await page.getByRole("link", { name: "Обсудить мероприятие" }).first().click();
+    const form = page.getByRole("dialog").locator("form");
     const questions = await form.evaluate((el) =>
       [...el.querySelectorAll("fieldset > legend, label[for]")]
         .filter((node) => !node.closest('[aria-hidden="true"]'))
@@ -139,7 +167,6 @@ test.describe("скринридер", () => {
       "Комментарий (необязательно)",
       "Я согласен на обработку персональных данных. (обязательно)",
     ]);
-    await expect(form.locator("[data-brief-sentence]")).toHaveAttribute("aria-hidden", "true");
     await expect(form.getByRole("group", { name: /Какое событие/ })).toBeVisible();
   });
 
@@ -156,26 +183,6 @@ test.describe("скринридер", () => {
 });
 
 test.describe("раскладки", () => {
-  test("≥ 600px: бриф-предложение с выбором синхронно с формой", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/ru#brief");
-    const sentence = brief(page).locator("[data-brief-sentence]");
-    await expect(sentence).toBeVisible();
-    await sentence.getByRole("button", { name: "[событие]", includeHidden: true }).click();
-    await sentence.getByRole("button", { name: "Свадьба", includeHidden: true }).click();
-    await expect(sentence).toContainText("свадьбу");
-    await expect(brief(page).getByRole("radio", { name: "Свадьба" })).toBeChecked();
-
-    await sentence.getByRole("button", { name: "[когда]", includeHidden: true }).click();
-    await sentence.getByRole("button", { name: "Июнь", includeHidden: true }).click();
-    await expect(sentence).toContainText("в июне");
-    await expect(brief(page).getByLabel("Месяц", { exact: true })).toHaveValue("6");
-
-    // Выбор в форме отражается в предложении.
-    await brief(page).getByRole("radio", { name: "Больше 500" }).check();
-    await expect(sentence).toContainText("больше чем на 500 гостей");
-  });
-
   test("< 600px: «строка + поле», предложения нет", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 740 });
     await page.goto("/ru#brief");
@@ -186,12 +193,11 @@ test.describe("раскладки", () => {
 });
 
 test.describe("модальное окно и предзаполнение", () => {
-  test("«Обсудить кудалык» в главе «День» открывает бриф с выбранным кудалыком", async ({
+  test("«Обсудить кудалык» на странице формата открывает бриф с выбранным кудалыком", async ({
     page,
   }) => {
-    await page.goto("/ru");
-    await page.getByRole("tab", { name: "Кудалык" }).click();
-    const cta = page.locator("#format-kudalyk").getByRole("link", { name: "Обсудить кудалык" });
+    await page.goto("/ru/services/kudalyk");
+    const cta = page.getByRole("link", { name: "Обсудить кудалык" });
     await cta.click();
     const dialog = page.getByRole("dialog", { name: "Расскажите о событии" });
     await expect(dialog).toBeVisible();
@@ -201,11 +207,9 @@ test.describe("модальное окно и предзаполнение", () 
     await expect(cta).toBeFocused();
   });
 
-  test("«Запросить меню» — мини-форма в окне, тот же эндпоинт", async ({ page }) => {
-    await page.goto("/ru");
-    await page.getByRole("link", { name: "Запросить меню" }).click();
-    const dialog = page.getByRole("dialog", { name: "Запросить меню" });
-    await expect(dialog).toBeVisible();
+  test("«Запросить меню» — мини-форма, тот же эндпоинт", async ({ page }) => {
+    await page.goto("/ru/request/menu");
+    const dialog = page.locator("main");
     await expect(dialog.getByRole("group", { name: /Где провести/ })).toHaveCount(0);
     const name = uniqueName();
     await fillRequired(dialog, name);
@@ -230,7 +234,7 @@ test.describe("модальное окно и предзаполнение", () 
 
   test("окно брифа без ошибок доступности", async ({ page }) => {
     await page.goto("/ru");
-    await page.getByRole("link", { name: "Запросить меню" }).click();
+    await page.getByRole("link", { name: "Обсудить мероприятие" }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
     // Контраст проверяем после анимации появления (во время неё окно полупрозрачно).
     await page

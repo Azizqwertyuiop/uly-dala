@@ -76,6 +76,12 @@ export const CAMERA_KEYS: Record<(typeof chapterIds)[number], CameraKey> = {
 export const trackT = (chapter: number, p: number) =>
   (chapter + TRACK_CAMERA_SHARE * p) / (chapterIds.length - 1);
 
+/** До какого t камера стоит внутри юрты: почти начало «Дня» (там холст уже не рисует). */
+const INSIDE_HOLD_T = trackT(1, 1) + (2 / (chapterIds.length - 1) - trackT(1, 1)) * 0.9;
+
+/** medium: до этой доли дорожки «Сборки» камера стоит; дальше — подход к проёму и вход. */
+export const MEDIUM_ENTRY_FROM = 0.8;
+
 export const EXTRA_KEYS: { t: number; chapter: number; key: CameraKey }[] = [
   {
     t: 0.16,
@@ -104,6 +110,13 @@ export const EXTRA_KEYS: { t: number; chapter: number; key: CameraKey }[] = [
     chapter: 1,
     key: { position: [0, 1.45, 1.9], target: [0, 1.7, -2.4], focal: 24, focus: 3.5 },
   },
+  // Остаётся внутри — медленный наезд к столпу, пока «Сборка» уходит с экрана. Переезд к следующим
+  // главам — уже за кадром (у «Дня» нет 3D): камера не проходит юрту насквозь.
+  {
+    t: INSIDE_HOLD_T,
+    chapter: 1,
+    key: { position: [0, 1.45, 1.1], target: [0, 1.7, -2.4], focal: 24, focus: 2.8 },
+  },
 ];
 
 /**
@@ -125,9 +138,10 @@ const PORTRAIT_EXTRA: Record<number, CameraKey> = {
 
 /** Ключи «Сборки» (глава 1) по набору: облёт, портрет или неподвижная камера. */
 function assemblyKeys(layout: PathLayout): { t: number; chapter: number; key: CameraKey }[] {
-  const inAssembly = (t: number) => t > trackT(1, 0) && t <= trackT(1, 1);
-  // Без облёта: внутренних ключей нет, камера стоит (holdAssembly), затем — дальше по пути.
-  if (!layout.flyover) return EXTRA_KEYS.filter((e) => !inAssembly(e.t));
+  const flyoverOnly = (t: number) => t > trackT(1, 0) && t < trackT(1, 0.9);
+  // Без облёта: промежуточных ключей облёта нет — камера стоит (hold в buildCameraPath),
+  // но вход остаётся: проём (0,9) и внутрь (1,0), затем — внутри до ухода главы.
+  if (!layout.flyover) return EXTRA_KEYS.filter((e) => !flyoverOnly(e.t));
   if (!layout.portrait) return EXTRA_KEYS;
   return EXTRA_KEYS.map((e) => ({ ...e, key: PORTRAIT_EXTRA[e.t] ?? e.key }));
 }
@@ -238,13 +252,14 @@ export function buildCameraPath(
     false,
     "centripetal",
   );
-  // medium: всю дорожку «Сборки» камера стоит на ключе главы, а в хвосте главы проходит
-  // весь путь до «Дня» (непрерывно — без скачка в конце дорожки).
-  const holdEnd = trackT(1, 1);
+  // medium: бо́льшую часть дорожки «Сборки» камера стоит на ключе главы (юрта собирается в кадре),
+  // в последней доле дорожки — подходит к проёму и входит внутрь (непрерывно, без скачка).
+  const entryFrom = trackT(1, MEDIUM_ENTRY_FROM);
+  const entryTo = trackT(1, 1);
   const hold = (t: number) => {
-    if (layout.flyover || t <= keyT(1) || t >= keyT(2)) return t;
-    if (t <= holdEnd) return keyT(1);
-    return keyT(1) + ((t - holdEnd) / (keyT(2) - holdEnd)) * (keyT(2) - keyT(1));
+    if (layout.flyover || t <= keyT(1) || t > entryTo) return t;
+    if (t <= entryFrom) return keyT(1);
+    return keyT(1) + ((t - entryFrom) / (entryTo - entryFrom)) * (entryTo - keyT(1));
   };
   const scalar = (pick: (k: CameraKey) => number) => (raw: number) => {
     const { k, frac } = map(hold(raw));

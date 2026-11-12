@@ -1,4 +1,5 @@
 import { ticker } from "./ticker";
+import { chapterIds } from "@/components/sections/chapters";
 
 /*
  * Единый источник прогресса (CLAUDE.md, раздел 7): глобальный прогресс, текущая глава,
@@ -88,6 +89,11 @@ export function computeProgress(
   maxScroll: number,
   dt: number,
   tracks: readonly ChapterTrack[] = [],
+  /**
+   * Сколько глав у пути камеры (CLAUDE.md, раздел 6: t = i/(n−1)). На главной сейчас
+   * только часть глав (рассвет нулевой высоты + «Сборка»), а путь камеры — по всем шести.
+   */
+  chapterCount: number = bounds.length,
 ): void {
   const previous = out.scrollY;
   out.scrollY = scrollY;
@@ -157,7 +163,7 @@ export function computeProgress(
   } else {
     out.track = out.local;
   }
-  out.camera = n > 1 ? clamp01((index + cameraLocal) / (n - 1)) : out.global;
+  out.camera = chapterCount > 1 ? clamp01((index + cameraLocal) / (chapterCount - 1)) : out.global;
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +252,7 @@ export function startProgress(): () => void {
       progress.maxScroll,
       dt,
       tracks,
+      chapterIds.length,
     );
     if (progress.chapterIndex !== lastIndex) {
       lastIndex = progress.chapterIndex;

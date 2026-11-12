@@ -4,10 +4,10 @@ import { briefFallbackHref } from "@/components/brief/briefProps";
 import type { Locale } from "@/lib/i18n";
 import { SceneImage } from "@/components/ui/SceneImage";
 import type from "@/components/ui/type.module.css";
+import { contacts, telHref, whatsappHref } from "@/content/contacts";
+import home from "@/components/home/home.module.css";
 import { AssemblyRotate } from "./AssemblyRotate";
-import { AudienceText } from "./AudienceText";
-import { Chapter, ChapterTime } from "./Chapter";
-import { ForkLinks } from "./ForkLinks";
+import { Chapter } from "./Chapter";
 import { FallbackClip } from "./FallbackClip";
 import styles from "./sections.module.css";
 import { assetUrl } from "@/lib/assets/url";
@@ -15,7 +15,8 @@ import { assetUrl } from "@/lib/assets/url";
 const parts = ["kerege", "uyki", "shanyrak", "kiiz"] as const;
 
 /*
- * Глава 2. Сборка (CLAUDE.md, раздел 2). Детали юрты = службы агентства.
+ * Первый экран главной-визитки (решение заказчика 12.11.2026): юрта собирается на скролле,
+ * поверх — кто мы, что делаем и две кнопки (заявка, WhatsApp/звонок). Детали юрты = службы.
  *
  * Кинорежим (html[data-cinematic], есть 3D): дорожка 300vh (data-track), экран закреплён (sticky);
  * юрта собирается на скролле, подпись текущего этапа стоит у своей детали (сцена пишет data-phase
@@ -26,6 +27,8 @@ const parts = ["kerege", "uyki", "shanyrak", "kiiz"] as const;
 export async function AssemblySection() {
   const t = await getTranslations("assembly");
   const chapters = await getTranslations("chapters");
+  const hero = await getTranslations("home.hero");
+  const proof = await getTranslations("hero");
   // Названия деталей юрты — казахские слова; в en они даны транслитерацией.
   const locale = (await getLocale()) as Locale;
   const partLang = locale === "en" ? undefined : "kk";
@@ -51,17 +54,35 @@ export async function AssemblySection() {
             />
           </FallbackClip>
 
-          <div className={`${styles.textBlock} ${styles.assemblyText}`}>
-            <ChapterTime time={t("time")} name={chapters("assembly")} />
-            <h2 id="assembly-title" className={type.chapterTitle} data-reveal="">
-              {t("title")}
-            </h2>
-            <p className={type.lead} data-reveal="">
-              {t("manifest")}
-            </p>
+          <div className={`${styles.textBlock} ${styles.assemblyText}`} data-home-hero="">
+            <p className={type.eyebrow}>{hero("eyebrow")}</p>
+            <h1 id="assembly-title" className={type.chapterTitle}>
+              {hero("title")}
+            </h1>
+            <p className={type.lead}>{hero("lead")}</p>
+            <div className={home.actions}>
+              <BriefLink
+                href={briefFallbackHref(locale, "brief")}
+                source="brief"
+                variant="link"
+                className={home.cta}
+              >
+                {hero("ctaBrief")}
+              </BriefLink>
+              {contacts.whatsapp ? (
+                <a href={whatsappHref(contacts.whatsapp)} className={home.ctaSecondary}>
+                  {hero("ctaWhatsapp")}
+                </a>
+              ) : contacts.phone ? (
+                <a href={telHref(contacts.phone)} className={home.ctaSecondary}>
+                  {hero("ctaCall")}
+                </a>
+              ) : null}
+            </div>
+            <p className={type.proof}>{proof("proof")}</p>
           </div>
 
-          <h3 className={`${type.eyebrow} ${styles.partsLabel}`}>{t("partsLabel")}</h3>
+          <h2 className={`${type.eyebrow} ${styles.partsLabel}`}>{t("partsLabel")}</h2>
           <ol className={styles.parts}>
             {parts.map((part) => (
               <li key={part} className={styles.part} data-part={part}>
@@ -103,29 +124,6 @@ export async function AssemblySection() {
             hint={t("rotateHint")}
             hintTouch={t("rotateHintTouch")}
           />
-        </div>
-      </div>
-
-      <div className={styles.assemblyAfter}>
-        <nav className={styles.fork} aria-labelledby="assembly-fork">
-          <h3 id="assembly-fork" className={type.subTitle}>
-            {t("forkQuestion")}
-          </h3>
-          <ForkLinks
-            labels={{
-              corporate: t("fork.corporate"),
-              family: t("fork.family"),
-              all: t("fork.all"),
-            }}
-          />
-        </nav>
-
-        <div>
-          <BriefLink href={briefFallbackHref(locale, "brief")} source="brief">
-            <AudienceText
-              labels={{ all: t("cta"), corporate: t("ctaCorporate"), family: t("ctaFamily") }}
-            />
-          </BriefLink>
         </div>
       </div>
     </Chapter>

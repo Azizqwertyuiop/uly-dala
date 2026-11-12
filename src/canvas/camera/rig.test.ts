@@ -2,7 +2,7 @@ import { Euler, MathUtils, Quaternion, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { chapterIds } from "@/components/sections/chapters";
 import { DAY_FRAMING, DEFAULT_ORDER, slotCenter, STATE_SPAN } from "../day/timeline";
-import { buildCameraPath, focalToFov, MAX_CAMERA_HEIGHT, trackT } from "./path";
+import { buildCameraPath, focalToFov, MAX_CAMERA_HEIGHT, MEDIUM_ENTRY_FROM, trackT } from "./path";
 import { CameraRigState, MAX_ANGULAR_SPEED } from "./rig";
 
 /** Крен: насколько «правый» вектор камеры отклонён от горизонтали. Ноль — горизонт ровный. */
@@ -249,11 +249,33 @@ describe("наборы ключей: портрет и уровень качес
     expect(aimError(wide, trackT(1, 0.45))).toBeGreaterThan(0.05);
   });
 
-  it("medium: «Сборка» без облёта — камера стоит всю дорожку", () => {
+  it("medium: «Сборка» без облёта — камера стоит, а в конце дорожки входит в юрту", () => {
     const still = buildCameraPath(undefined, { portrait: false, flyover: false });
     const a = still.positionAt(trackT(1, 0));
-    for (const p of [0.25, 0.5, 0.75, 1]) {
+    for (const p of [0.25, 0.5, 0.75, MEDIUM_ENTRY_FROM]) {
       expect(still.positionAt(trackT(1, p)).distanceTo(a)).toBeLessThan(0.01);
+    }
+    // Конец дорожки — внутри юрты (якорь z = −60, радиус 3 м), 24 мм — как на high.
+    const inside = still.positionAt(trackT(1, 1));
+    expect(Math.hypot(inside.x, inside.z + 60)).toBeLessThan(2.5);
+    expect(still.focal(trackT(1, 1))).toBe(24);
+  });
+
+  it("после входа камера остаётся в юрте, пока глава не уйдёт, — не проходит насквозь", () => {
+    for (const layout of [
+      { portrait: false, flyover: true },
+      { portrait: false, flyover: false },
+      { portrait: true, flyover: true },
+    ]) {
+      const path = buildCameraPath(undefined, layout);
+      const end = trackT(1, 1);
+      const dayStart = path.keyT(2);
+      for (let i = 0; i <= 10; i++) {
+        const t = end + ((dayStart - end) * 0.9 * i) / 10;
+        const p = path.positionAt(t);
+        // Внутри круга юрты (радиус 3 м) весь хвост главы.
+        expect(Math.hypot(p.x, p.z + 60), `${JSON.stringify(layout)} t=${t}`).toBeLessThan(2.5);
+      }
     }
   });
 

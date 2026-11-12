@@ -30,25 +30,16 @@ test.describe("производительность", () => {
     );
     await expect.poll(async () => (await stage(page)).idle, { timeout: 10_000 }).toBe(true);
     await page.evaluate(() => {
-      const t = document.querySelector<HTMLElement>("[data-track='fire']")!;
+      const t = document.querySelector<HTMLElement>("[data-track='assembly']")!;
       window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY);
     });
     await expect.poll(async () => (await stage(page)).idle, { timeout: 10_000 }).toBe(false);
   });
 
-  test("видео коня декодируется, только пока коня видно", async ({ page }) => {
+  test("видео коня не декодируется: на главной-визитке коня в кадре нет", async ({ page }) => {
     await openStage(page);
-    await expect
-      .poll(async () => (await stage(page)).dawn.decoding, { timeout: 15_000 })
-      .toBe(true);
-    await page.evaluate(() => {
-      // «День» — фото, без 3D: коня там нет.
-      const t = document.getElementById("day")!;
-      window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY);
-    });
-    await expect
-      .poll(async () => (await stage(page)).dawn.decoding, { timeout: 15_000 })
-      .toBe(false);
+    await page.waitForTimeout(3000);
+    expect((await stage(page)).dawn.decoding).toBe(false);
   });
 
   test("INP ≤ 200 мс сразу после загрузки (телефон, CPU ×4)", async ({ browser }) => {

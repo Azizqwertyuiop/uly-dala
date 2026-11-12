@@ -3,7 +3,10 @@
  * чтобы не тянуть валидатор в клиентский бандл. Серверная схема — src/server/leads/schema.ts.
  */
 
-/** Тип события: шесть форматов + «другое» — 7 вариантов. */
+/**
+ * Тип заявки: шесть форматов, две услуги без события целиком (кейтеринг, аренда техники —
+ * в т. ч. фотобудка; решение заказчика 16.10.2026) и «другое» — 9 вариантов.
+ */
 export const eventTypes = [
   "conference",
   "coffee-break",
@@ -11,6 +14,8 @@ export const eventTypes = [
   "kudalyk",
   "wedding",
   "private-party",
+  "catering",
+  "equipment-rental",
   "other",
 ] as const;
 export type EventType = (typeof eventTypes)[number];

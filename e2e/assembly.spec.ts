@@ -136,66 +136,19 @@ test.describe("сборка юрты (3D)", () => {
   });
 });
 
-test.describe("развилка: порядок форматов, CTA, предзаполнение брифа", () => {
-  const paths = [
-    {
-      choice: "Событие для компании",
-      firstTab: "Конференция",
-      cta: "Обсудить событие для компании",
-      eventType: "Конференция",
-    },
-    {
-      choice: "Семейное торжество",
-      firstTab: "Кудалык",
-      cta: "Обсудить семейное торжество",
-      eventType: "Кудалык",
-    },
-  ];
-
-  for (const path of paths) {
-    test(`«${path.choice}»`, async ({ page }) => {
-      await page.goto("/ru");
-      const fork = page.getByRole("navigation", { name: "Какое у вас событие?" });
-      await fork.getByRole("link", { name: path.choice }).click();
-      // Якорь работает: переход к главе «День».
-      await expect(page).toHaveURL(/#day$/);
-      await expect(page.getByRole("tab").first()).toHaveText(path.firstTab);
-      await expect(page.getByRole("tab").first()).toHaveAttribute("aria-selected", "true");
-      // Выбор отмечен в развилке.
-      await expect(fork.getByRole("link", { name: path.choice })).toHaveAttribute(
-        "aria-current",
-        "true",
-      );
-      // Формулировка CTA главы и предзаполнение брифа.
-      const cta = page.locator("#assembly").getByRole("link", { name: path.cta });
-      await expect(cta).toBeVisible();
-      await cta.click();
-      const dialog = page.getByRole("dialog", { name: "Расскажите о событии" });
-      await expect(dialog).toBeVisible();
-      await expect(dialog.getByRole("radio", { name: path.eventType })).toBeChecked();
-      await page.keyboard.press("Escape");
-
-      // После перезагрузки выбор сохраняется (до закрытия вкладки).
-      await page.reload();
-      await expect(page.getByRole("tab").first()).toHaveText(path.firstTab);
-    });
-  }
-
-  test("«Посмотреть всё» — исходный порядок и нейтральный CTA; якоря форматов на месте", async ({
-    page,
-  }) => {
-    await page.goto("/ru");
-    const fork = page.getByRole("navigation", { name: "Какое у вас событие?" });
-    await fork.getByRole("link", { name: "Семейное торжество" }).click();
-    await fork.getByRole("link", { name: "Посмотреть всё" }).click();
-    await expect(page.getByRole("tab").first()).toHaveText("Конференция");
-    await expect(
-      page.locator("#assembly").getByRole("link", { name: "Обсудить событие" }),
-    ).toBeVisible();
-    for (const slug of ["conference", "kudalyk", "private-party"]) {
-      await expect(page.locator(`#format-${slug}`)).toHaveCount(1);
-    }
-  });
+test("первый экран: кто мы и заявка видны сразу; подписи этапов — когда юрта начала собираться", async ({
+  page,
+}) => {
+  await page.goto("/ru?quality=high");
+  await expect(page.locator("html")).toHaveAttribute("data-canvas", "ready", { timeout: 20_000 });
+  const hero = page.locator("[data-home-hero]");
+  await expect(hero.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(hero.getByRole("link", { name: "Обсудить мероприятие" })).toBeVisible();
+  const stage = page.locator("[data-assembly-stage]");
+  await expect(stage).toHaveAttribute("data-building", "false");
+  await expect(page.locator("[data-part='kerege']")).toHaveCSS("opacity", "0");
+  await scrollTrack(page, 0.2);
+  await expect(stage).toHaveAttribute("data-building", "true", { timeout: 10_000 });
 });
 
 test("режим «Коротко»: четыре статичных кадра этапов, без закреплённого экрана", async ({

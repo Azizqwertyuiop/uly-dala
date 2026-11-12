@@ -1,6 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 import { BUDGETS, MB } from "../src/canvas/budgets";
-import { chapterIds } from "./pages";
 
 /*
  * Бюджеты по реальному трафику (раздел 12): байты по сети (encodedDataLength, со сжатием).
@@ -55,28 +54,18 @@ for (const [tier, viewport] of [
     expect(firstLoad, "первая загрузка").toBeLessThanOrEqual(BUDGETS.firstLoad);
     expect(firstScene, "первая сцена").toBeLessThanOrEqual(BUDGETS.firstScene);
 
-    for (const id of chapterIds.slice(1)) {
-      const mark = net.total();
-      await page.evaluate((id) => {
-        const top = document.getElementById(id)!.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo(0, top - window.innerHeight / 2 + 80);
-      }, id);
-      // У «Дня» сцены нет (фото событий) — меряем то, что глава догружает (фото).
-      if (id !== "day")
-        await expect
-          .poll(
-            () =>
-              page.evaluate(
-                () => (window as unknown as { __stage: { loaded: string[] } }).__stage.loaded,
-              ),
-            { timeout: 15_000 }, // программный WebGL под параллельной нагрузкой — медленный
-          )
-          .toContain(id);
-      await net.idle();
-      const bytes = net.since(mark);
-      console.log(`[${tier}] ${id}: ${kb(bytes)}`);
-      expect(bytes, id).toBeLessThanOrEqual(BUDGETS.chapter);
+    // Остальная главная-визитка (услуги, галерея, фазенда, команда…) — без 3D:
+    // всё, что догружается при прокрутке до конца, — в бюджете главы.
+    const mark = net.total();
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (let y = 0; y < height; y += viewport.height) {
+      await page.evaluate((y) => window.scrollTo(0, y), y);
+      await page.waitForTimeout(150);
     }
+    await net.idle();
+    const rest = net.since(mark);
+    console.log(`[${tier}] остальная страница: ${kb(rest)}`);
+    expect(rest, "остальная страница").toBeLessThanOrEqual(BUDGETS.chapter);
     expect(MB).toBe(1048576);
   });
 }

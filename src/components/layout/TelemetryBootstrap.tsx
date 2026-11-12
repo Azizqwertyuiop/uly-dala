@@ -7,7 +7,6 @@ import { flush, track } from "@/lib/analytics/track";
 import { eventTypes } from "@/lib/brief/model";
 import { whenIdle } from "@/lib/idle";
 import { describe, reportError } from "@/lib/monitoring/report";
-import { chapterBounds, onChapterChange } from "@/motion/progress";
 import { useUiStore } from "@/store/ui";
 
 /*
@@ -89,15 +88,23 @@ export function TelemetryBootstrap() {
         track("brief_mode", { on: s.uiMode === "brief" });
     });
 
-    // ---------- Глубина: максимальная глава, отправляется при уходе со страницы ----------
-    // Глава запоминается в момент достижения: при переходе на другую страницу границы уже другие.
+    // ---------- Глубина: самый дальний просмотренный раздел, отправляется при уходе ----------
     let deepest: EventMap["scroll_depth"] | null = null;
     let reported = -1;
-    const offChapter = onChapterChange((index, id) => {
-      if (!isOneOf(places, id)) return;
-      if (deepest && index <= deepest.index) return;
-      deepest = { chapter: id, index, of: chapterBounds().length };
-    });
+    const sections = [...document.querySelectorAll<HTMLElement>("main > section[id]")];
+    const seen = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = entry.target.id;
+          const index = sections.indexOf(entry.target as HTMLElement);
+          if (!isOneOf(places, id) || (deepest && index <= deepest.index)) continue;
+          deepest = { chapter: id, index, of: sections.length };
+        }
+      },
+      { threshold: 0.25 },
+    );
+    sections.forEach((el) => seen.observe(el));
     const onHide = (event: Event) => {
       if (event.type === "visibilitychange" && document.visibilityState !== "hidden") return;
       if (!deepest || deepest.index <= reported) return;
@@ -140,7 +147,7 @@ export function TelemetryBootstrap() {
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("pagehide", onHide);
       offUi();
-      offChapter();
+      seen.disconnect();
     };
   }, []);
 

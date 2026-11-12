@@ -40,12 +40,15 @@ test.describe("доступность: состояния с 3D", () => {
   test("axe — 0 нарушений в каждой главе с готовым 3D", async ({ page }) => {
     await openStage(page, "/ru");
     const all: string[] = [];
-    for (const id of ["assembly", "day", "fire", "world", "return"]) {
+    // Первый экран, сборка юрты (середина и внутри), затем разделы визитки.
+    for (const id of ["assembly@0", "assembly@0.5", "assembly@1", "services", "why", "brief"]) {
       await page.evaluate((id) => {
+        const [el, p] = id.split("@");
         const t =
-          document.querySelector<HTMLElement>(`[data-track='${id}']`) ??
-          document.getElementById(id)!;
-        window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY);
+          document.querySelector<HTMLElement>(`[data-track='${el}']`) ??
+          document.getElementById(el!)!;
+        const top = t.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo(0, top + (t.offsetHeight - window.innerHeight) * Number(p ?? 0));
       }, id);
       await page.waitForTimeout(800);
       all.push(...(await axe(page)).map((v) => `${id} → ${v}`));
@@ -72,33 +75,9 @@ test.describe("доступность: состояния с 3D", () => {
       .filter((n) => n.role?.value === "image" && !n.ignored)
       .map((n) => n.name?.value ?? "");
     const m = getMessages("ru");
-    for (const alt of [m.hero.sceneAlt, m.assembly.sceneAlt, m.fire.sceneAlt, m.world.sceneAlt]) {
+    for (const alt of [m.assembly.sceneAlt]) {
       expect(images, alt.slice(0, 30)).toContain(alt);
     }
-  });
-
-  test("табы «Дня» с клавиатуры: фокус не теряется, из панели — дальше по странице", async ({
-    page,
-  }) => {
-    await openStage(page, "/ru");
-    const m = getMessages("ru");
-    const tab = page.getByRole("tab", { name: m.formats.conference.title });
-    await tabTo(page, tab);
-    // Стрелки — между форматами; Tab — в панель, по её ссылкам и дальше.
-    await page.keyboard.press("ArrowRight");
-    await expect(page.getByRole("tab", { selected: true })).toHaveText(m.formats.coffeeBreak.title);
-    const panel = page.getByRole("tabpanel");
-    for (let i = 0; i < 5; i++) {
-      await page.keyboard.press("Tab");
-      await page.waitForTimeout(250);
-      const where = await page.evaluate(() => ({
-        body: document.activeElement === document.body,
-        inDay: !!document.activeElement?.closest("#day"),
-      }));
-      expect(where.body, `шаг ${i}: фокус потерян`).toBe(false);
-      if (!where.inDay) break;
-    }
-    await expect(panel).toHaveCount(1);
   });
 });
 
@@ -122,40 +101,24 @@ test.describe("доступность: увеличение и язык", () => 
 });
 
 for (const locale of locales) {
-  test.describe(`путь «найти формат → отправить бриф» — только клавиатура (${locale})`, () => {
+  test.describe(`путь «первый экран → отправить бриф» — только клавиатура (${locale})`, () => {
     test.setTimeout(150_000);
 
-    test("Tab и стрелки до кудалыка, Enter — бриф, ошибки озвучены, отправка — успех озвучен", async ({
+    test("Tab до «Обсудить мероприятие», Enter — бриф, ошибки озвучены, отправка — успех озвучен", async ({
       page,
     }) => {
       const m = getMessages(locale);
       await openStage(page, `/${locale}`);
 
-      // 1. Найти формат: навигация-горизонт (первая в <main>) — Tab до главы «День», Enter;
-      // браузер переносит точку фокуса к главе, следующий Tab — табы «Дня», стрелками — кудалык.
-      // Так ходит пользователь клавиатуры (раздел 8: горизонт работает с клавиатуры), а не 80 Tab
-      // через все главы: на CI без видеокарты каждый Tab перерисовывает 3D процессором (~1–2 с).
-      const horizon = page.getByRole("navigation", { name: m.horizon.label });
-      await tabTo(page, horizon.getByRole("link", { name: m.chapters.day }), 30);
-      await page.keyboard.press("Enter");
-      await tabTo(page, page.getByRole("tab", { selected: true }), 15);
-      const kudalyk = page.getByRole("tab", { name: m.formats.kudalyk.title });
-      for (
-        let i = 0;
-        i < 6 && !(await kudalyk.getAttribute("aria-selected"))?.includes("true");
-        i++
-      )
-        await page.keyboard.press("ArrowRight");
-      await expect(kudalyk).toHaveAttribute("aria-selected", "true");
-
-      // 2. CTA формата — Enter: открывается бриф (диалог) с кудалыком.
-      await tabTo(page, page.getByRole("link", { name: m.formats.kudalyk.cta }), 10);
+      // 1–2. Первая ссылка-кнопка первого экрана — «Обсудить мероприятие»: Enter — бриф в окне.
+      await tabTo(
+        page,
+        page.locator("[data-home-hero]").getByRole("link", { name: m.home.hero.ctaBrief }),
+        20,
+      );
       await page.keyboard.press("Enter");
       const dialog = page.getByRole("dialog", { name: m.brief.variants.brief.title });
       await expect(dialog).toBeVisible();
-      await expect(
-        dialog.getByRole("radio", { name: m.brief.eventTypes.kudalyk.label }),
-      ).toBeChecked();
 
       // 3. Отправка без обязательных полей: ошибки — в живой области, фокус — на первом поле.
       await tabTo(page, dialog.getByRole("button", { name: m.brief.submit }));
@@ -311,31 +274,23 @@ test.describe("контраст над 3D", () => {
     ["десктоп", { width: 1280, height: 800 }],
     ["телефон", { width: 390, height: 844 }],
   ] as const) {
-    test(`${name}: первый экран ≥ 7:1, главы ≥ 4.5:1`, async ({ browser }) => {
+    test(`${name}: первый экран ≥ 7:1, подписи сборки ≥ 4.5:1`, async ({ browser }) => {
       const context = await browser.newContext({ viewport, deviceScaleFactor: 1 });
       const page = await context.newPage();
       await openStage(page, "/ru");
       await page.waitForTimeout(6000); // интро
-      const issues = [...(await contrastIssues(page, "[data-hero-text]"))];
-      for (const [track, p, scope] of [
-        ["day", 0.3, "#day"],
-        ["fire", 0.15, "[data-fire-stage]"],
-        ["fire", 0.9, "[data-fire-stage]"],
-        ["world", 0.42, "[data-world-stage]"],
-        ["return", 1, "[data-return-stage]"],
-      ] as const) {
-        await page.evaluate(
-          ([track, p]) => {
-            const t =
-              document.querySelector<HTMLElement>(`[data-track='${track}']`) ??
-              document.getElementById(track)!;
-            const top = t.getBoundingClientRect().top + window.scrollY;
-            window.scrollTo(0, top + (t.offsetHeight - window.innerHeight) * Number(p));
-          },
-          [track, String(p)] as const,
-        );
+      const issues = [...(await contrastIssues(page, "[data-home-hero]"))];
+      // Юрта собирается: подписи этапов и фраза в юрте — над 3D.
+      for (const p of [0.35, 0.65, 1]) {
+        await page.evaluate((p) => {
+          const t = document.querySelector<HTMLElement>("[data-track='assembly']")!;
+          const top = t.getBoundingClientRect().top + window.scrollY;
+          window.scrollTo(0, top + (t.offsetHeight - window.innerHeight) * p);
+        }, p);
         await page.waitForTimeout(2500);
-        issues.push(...(await contrastIssues(page, scope)).map((x) => `${track} ${p}: ${x}`));
+        issues.push(
+          ...(await contrastIssues(page, "[data-assembly-stage]")).map((x) => `сборка ${p}: ${x}`),
+        );
       }
       expect(issues).toEqual([]);
       await context.close();

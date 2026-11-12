@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { chapterIds } from "@/components/sections/chapters";
 import { contacts, formatPhone, telHref, whatsappHref } from "@/content/contacts";
 import { formats } from "@/content/formats";
+import { services } from "@/content/services";
 import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/intl/navigation";
 import layout from "@/components/ui/layout.module.css";
@@ -16,7 +16,8 @@ import styles from "./SiteFooter.module.css";
 export async function SiteFooter() {
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations("footer");
-  const chapters = await getTranslations("chapters");
+  const nav = await getTranslations("home.nav");
+  const servicesT = await getTranslations("services");
   const formatsT = await getTranslations("formats");
   const world = await getTranslations("world");
   const languages = await getTranslations("languages");
@@ -27,16 +28,21 @@ export async function SiteFooter() {
         <div id="site-nav" className={styles.columns}>
           <nav className={styles.column} aria-labelledby="footer-chapters">
             <h2 id="footer-chapters" className={type.eyebrow}>
-              {t("chapters")}
+              {nav("label")}
             </h2>
             <ul className={styles.links}>
-              {chapterIds.map((id) => (
+              {(["services", "gallery", "why", "steps", "fazenda", "team"] as const).map((id) => (
                 <li key={id}>
                   <Link href={`/#${id}`} className={type.link}>
-                    {chapters(id)}
+                    {nav(id)}
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link href="/#brief" className={type.link}>
+                  {nav("contact")}
+                </Link>
+              </li>
             </ul>
           </nav>
           <nav className={styles.column} aria-labelledby="footer-pages">
@@ -48,6 +54,13 @@ export async function SiteFooter() {
                 <li key={format.slug}>
                   <Link href={`/services/${format.slug}`} className={type.link}>
                     {formatsT(`${format.key}.title`)}
+                  </Link>
+                </li>
+              ))}
+              {services.map((s) => (
+                <li key={s.slug}>
+                  <Link href={`/services/${s.slug}`} className={type.link}>
+                    {servicesT(`${s.key}.title`)}
                   </Link>
                 </li>
               ))}

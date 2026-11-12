@@ -1,10 +1,11 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { chapterIds } from "@/components/sections/chapters";
 import { formats } from "@/content/formats";
+import { services } from "@/content/services";
 import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/intl/navigation";
 import layout from "@/components/ui/layout.module.css";
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { BriefLink } from "@/components/brief/BriefLink";
+import { briefFallbackHref } from "@/components/brief/briefProps";
 import { HeaderShell } from "./HeaderShell";
 import { SiteMenu } from "./SiteMenu";
 import { Wordmark } from "./Wordmark";
@@ -16,16 +17,18 @@ import styles from "./SiteHeader.module.css";
  */
 export async function SiteHeader() {
   const locale = (await getLocale()) as Locale;
-  const [common, brand, menu, footer, chapters, formatsT, world, languages] = await Promise.all([
-    getTranslations("common"),
-    getTranslations("brand"),
-    getTranslations("menu"),
-    getTranslations("footer"),
-    getTranslations("chapters"),
-    getTranslations("formats"),
-    getTranslations("world"),
-    getTranslations("languages"),
-  ]);
+  const [common, brand, menu, footer, nav, formatsT, world, languages, servicesT] =
+    await Promise.all([
+      getTranslations("common"),
+      getTranslations("brand"),
+      getTranslations("menu"),
+      getTranslations("footer"),
+      getTranslations("home.nav"),
+      getTranslations("formats"),
+      getTranslations("world"),
+      getTranslations("languages"),
+      getTranslations("services"),
+    ]);
 
   return (
     <HeaderShell>
@@ -40,7 +43,7 @@ export async function SiteHeader() {
               open: menu("open"),
               close: menu("close"),
               title: menu("title"),
-              chapters: menu("chapters"),
+              chapters: nav("label"),
               pages: menu("pages"),
               settings: menu("settings"),
               sound: menu("sound"),
@@ -55,18 +58,33 @@ export async function SiteHeader() {
               languages: languages("label"),
               home: brand("home"),
             }}
-            chapters={chapterIds.map((id) => ({ id, name: chapters(id) }))}
+            chapters={[
+              { id: "services", name: nav("services") },
+              { id: "gallery", name: nav("gallery") },
+              { id: "why", name: nav("why") },
+              { id: "steps", name: nav("steps") },
+              { id: "fazenda", name: nav("fazenda") },
+              { id: "team", name: nav("team") },
+              { id: "brief", name: nav("contact") },
+            ]}
             pages={[
               ...formats.map((f) => ({
                 href: `/services/${f.slug}`,
                 label: formatsT(`${f.key}.title`),
+              })),
+              ...services.map((s) => ({
+                href: `/services/${s.slug}`,
+                label: servicesT(`${s.key}.title`),
               })),
               { href: "/fazenda", label: world("fazendaLink") },
               { href: "/privacy", label: footer("privacy") },
             ]}
             languageNames={{ kk: languages("kk"), ru: languages("ru"), en: languages("en") }}
           />
-          <ButtonLink href="/#brief">{common("discuss")}</ButtonLink>
+          {/* Как кнопка первого экрана: бриф в окне; без JS — форма внизу главной. */}
+          <BriefLink href={briefFallbackHref(locale, "brief")} source="brief">
+            {common("discuss")}
+          </BriefLink>
         </div>
       </div>
     </HeaderShell>

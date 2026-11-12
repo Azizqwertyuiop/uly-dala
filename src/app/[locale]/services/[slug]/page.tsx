@@ -13,25 +13,41 @@ import { faqLd } from "@/lib/seo/jsonld";
 import { pageMetadata } from "@/lib/seo/metadata";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { resolveLocale } from "@/lib/intl/locale";
+import { findService, services, type Service } from "@/content/services";
+import type { Locale } from "@/lib/i18n";
 
 export const dynamicParams = false;
 
+/** Форматы событий и услуги без события целиком (src/content/services.ts) — один адрес /services. */
 export function generateStaticParams() {
-  return formats.map(({ slug }) => ({ slug }));
+  return [...formats, ...services].map(({ slug }) => ({ slug }));
 }
 
 async function load(params: PageProps<"/[locale]/services/[slug]">["params"]) {
   const { locale: raw, slug } = await params;
   const locale = resolveLocale(raw);
   const format = findFormat(slug);
-  if (!format) notFound();
-  return { locale, format };
+  const service = findService(slug);
+  if (!format && !service) notFound();
+  return { locale, format, service };
 }
 
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/services/[slug]">): Promise<Metadata> {
-  const { locale, format } = await load(params);
+  const { locale, format, service } = await load(params);
+  if (!format) {
+    const s = service!;
+    const t = await getTranslations({ locale, namespace: "services" });
+    return pageMetadata({
+      locale,
+      path: `/services/${s.slug}`,
+      title: t(`${s.key}.metaTitle`),
+      description: t(`${s.key}.metaDescription`),
+      image: s.og,
+      imageAlt: t(`${s.key}.title`),
+    });
+  }
   const t = await getTranslations({ locale, namespace: "formats" });
   return pageMetadata({
     locale,
@@ -43,10 +59,11 @@ export async function generateMetadata({
   });
 }
 
-/** Страница формата: /[locale]/services/[slug]. */
+/** Страница формата или услуги: /[locale]/services/[slug]. */
 export default async function ServicePage({ params }: PageProps<"/[locale]/services/[slug]">) {
-  const { locale, format } = await load(params);
+  const { locale, format, service } = await load(params);
   setRequestLocale(locale);
+  if (!format) return <ExtraServicePage locale={locale} service={service!} />;
   const t = await getTranslations("formats");
   const page = await getTranslations("servicePage");
   const day = await getTranslations("day");
@@ -130,6 +147,99 @@ export default async function ServicePage({ params }: PageProps<"/[locale]/servi
                 </Link>
               </li>
             ))}
+        </ul>
+      </nav>
+    </PageShell>
+  );
+}
+
+/**
+ * Услуга без события целиком (кейтеринг, аренда техники, фотобудка): что входит, CTA с типом
+ * заявки, частые вопросы (видимым текстом и в FAQPage), другие услуги и форматы.
+ */
+async function ExtraServicePage({ locale, service }: { locale: Locale; service: Service }) {
+  const t = await getTranslations("services");
+  const page = await getTranslations("servicePage");
+  const f = await getTranslations("formats");
+  const { key, slug } = service;
+  const faq = ([1, 2, 3] as const).map((n) => ({
+    q: t(`${key}.faq.q${n}`),
+    a: t(`${key}.faq.a${n}`),
+  }));
+
+  return (
+    <PageShell>
+      <div className={layout.grid}>
+        <div className={`${pageStyles.head} ${layout.main}`}>
+          <h1 className={type.chapterTitle} data-reveal="">
+            {t(`${key}.title`)}
+          </h1>
+          <p className={type.lead} data-reveal="">
+            {t(`${key}.phrase`)}
+          </p>
+          <p className={type.body}>{t(`${key}.lead`)}</p>
+        </div>
+      </div>
+
+      <section className={pageStyles.section} aria-labelledby="includes-title">
+        <h2 id="includes-title" className={type.subTitle}>
+          {page("includesLabel")}
+        </h2>
+        <ul className={type.list}>
+          {service.items.map((item) => (
+            <li key={item}>
+              {/* Пары услуга — пункт заданы в src/content/services.ts. */}
+              {t(`${key}.items.${item}` as Parameters<typeof t>[0])}
+            </li>
+          ))}
+        </ul>
+        <div>
+          <BriefLink
+            href={briefFallbackHref(locale, "brief")}
+            source="brief"
+            eventType={service.eventType}
+          >
+            {t(`${key}.cta`)}
+          </BriefLink>
+        </div>
+      </section>
+
+      <section className={pageStyles.section} aria-labelledby="faq-title">
+        <h2 id="faq-title" className={type.subTitle}>
+          {page("faqLabel")}
+        </h2>
+        <dl className={layout.stack}>
+          {faq.map(({ q, a }) => (
+            <div key={q} className={layout.stack}>
+              <dt className={type.lead}>{q}</dt>
+              <dd className={type.body}>{a}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <JsonLd data={faqLd(faq)} />
+
+      <nav className={pageStyles.section} aria-labelledby="other-services">
+        <h2 id="other-services" className={type.subTitle}>
+          {page("otherServices")}
+        </h2>
+        <ul className={type.list}>
+          {services
+            .filter((other) => other.slug !== slug)
+            .map((other) => (
+              <li key={other.slug}>
+                <Link href={`/services/${other.slug}`} className={type.link}>
+                  {t(`${other.key}.title`)}
+                </Link>
+              </li>
+            ))}
+          {formats.map((other) => (
+            <li key={other.slug}>
+              <Link href={`/services/${other.slug}`} className={type.link}>
+                {f(`${other.key}.title`)}
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
     </PageShell>
