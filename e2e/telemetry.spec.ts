@@ -167,7 +167,7 @@ test.describe("аналитика: события видны в отладке �
 
     // Карточка услуги на главной — событие CTA с разделом.
     await page.goto("/ru?quality=fallback");
-    const card = page.locator('#services a[href="/ru/services/photo-booth"]');
+    const card = page.locator('#services a[href="/ru/services/equipment-rental"]');
     await card.evaluate((a) => a.addEventListener("click", (e) => e.preventDefault()));
     await card.click();
     await expect.poll(() => names(page)).toContain("cta");

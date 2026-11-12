@@ -101,16 +101,21 @@ const en: Messages = {
       title: "What we do",
       lead: "We take on the whole event — or just the part you need.",
       more: "Learn more",
+      titles: {
+        "wedding-kudalyk": "Wedding and kudalyk",
+        "coffee-catering": "Coffee breaks and catering",
+        "equipment-booth": "Equipment and photo booth rental",
+      },
       cards: {
         conference: "Business events for companies of any size.",
         "team-building": "A programme built around your team — outdoors or in the city.",
-        "coffee-break": "Coffee, pastries and snacks for breaks.",
-        catering: "Buffets, banquets and dastarkhan by our chef.",
-        wedding: "A turnkey wedding: decor, sound, light, banquet.",
-        kudalyk: "We know the traditions and the order of the day.",
+        "coffee-catering":
+          "Coffee breaks, buffets, banquets and dastarkhan by our chef — at any venue.",
+        "wedding-kudalyk":
+          "Turnkey weddings and kudalyk: we know the traditions and handle decor, sound, light and banquet.",
         "private-party": "Anniversaries, birthdays and family celebrations.",
-        "equipment-rental": "Sound, light, LED screens and coffee machines for rent.",
-        "photo-booth": "For weddings, corporate parties and celebrations.",
+        "equipment-booth":
+          "Sound, light, LED screens, coffee machines and a photo booth — for any event.",
       },
     },
     clients: {

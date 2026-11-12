@@ -5,11 +5,11 @@ import { expect, test } from "@playwright/test";
  * Карточки «Что мы делаем» на главной → страницы /services/<slug> → бриф с типом заявки.
  */
 
-test("главная: девять карточек «Что мы делаем» ведут на страницы услуг", async ({ page }) => {
+test("главная: шесть карточек «Что мы делаем» ведут на страницы услуг", async ({ page }) => {
   await page.goto("/ru?quality=fallback");
   const cards = page.locator("#services li a");
-  await expect(cards).toHaveCount(9);
-  for (const slug of ["conference", "team-building", "catering", "equipment-rental", "photo-booth"])
+  await expect(cards).toHaveCount(6);
+  for (const slug of ["conference", "team-building", "catering", "wedding", "equipment-rental"])
     await expect(page.locator(`#services a[href="/ru/services/${slug}"]`)).toHaveCount(1);
   await page.locator('#services a[href="/ru/services/equipment-rental"]').click();
   await expect(page).toHaveURL(/\/ru\/services\/equipment-rental$/);

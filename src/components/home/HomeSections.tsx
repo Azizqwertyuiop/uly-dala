@@ -10,7 +10,6 @@ import { FAZENDA_EXTRAS } from "@/content/fazenda";
 import { formatImage, formatSrcSet, formats, hasFormatPhoto } from "@/content/formats";
 import gallery from "@/content/gallery.json";
 import { instagramHref, stats } from "@/content/home";
-import { services } from "@/content/services";
 import { team } from "@/content/team";
 import { assetUrl } from "@/lib/assets/url";
 import type { Locale } from "@/lib/i18n";
@@ -74,34 +73,38 @@ export async function Stats() {
   );
 }
 
-/** Услуги: шесть форматов и три услуги на любой площадке — карточками со ссылкой. */
+/**
+ * Услуги карточками со ссылкой. Свадьба и кудалык, кофе-брейк и кейтеринг, аренда техники и фотобудка — по одной карточке
+ * (решение заказчика 12.11.2026); отдельные страницы этих услуг остаются (SEO, раздел 11).
+ */
+const SERVICE_CARDS = [
+  { key: "conference", href: "conference", photo: "conference" },
+  { key: "team-building", href: "team-building", photo: "team-building" },
+  { key: "coffee-catering", href: "catering", photo: "coffee-break" },
+  { key: "wedding-kudalyk", href: "wedding", photo: "wedding" },
+  { key: "private-party", href: "private-party", photo: "private-party" },
+  { key: "equipment-booth", href: "equipment-rental", photo: null },
+] as const;
+
+type CombinedKey = "coffee-catering" | "wedding-kudalyk" | "equipment-booth";
+const isCombined = (key: string): key is CombinedKey =>
+  key === "coffee-catering" || key === "wedding-kudalyk" || key === "equipment-booth";
+
 export async function Services() {
   const t = await getTranslations("home.services");
   const f = await getTranslations("formats");
-  const sv = await getTranslations("services");
   const pending = (await getTranslations("home.team"))("photoPending");
-  const order = [
-    "conference",
-    "team-building",
-    "coffee-break",
-    "catering",
-    "wedding",
-    "kudalyk",
-    "private-party",
-    "equipment-rental",
-    "photo-booth",
-  ] as const;
-  const cards = order.map((slug) => {
-    const format = formats.find((x) => x.slug === slug);
-    const service = services.find((x) => x.slug === slug);
-    const title = format ? f(`${format.key}.title`) : sv(`${service!.key}.title`);
-    const photo = format && hasFormatPhoto(format.slug);
+  const cards = SERVICE_CARDS.map(({ key, href, photo }) => {
+    const title = isCombined(key)
+      ? t(`titles.${key}`)
+      : f(`${formats.find((x) => x.slug === key)!.key}.title`);
+    const shown = photo !== null && hasFormatPhoto(photo);
     return {
-      slug,
+      slug: href,
       title,
-      text: t(`cards.${slug}`),
-      image: photo ? formatImage(format.slug) : null,
-      srcSet: photo ? formatSrcSet(format.slug) : undefined,
+      text: t(`cards.${key}`),
+      image: shown ? formatImage(photo) : null,
+      srcSet: shown ? formatSrcSet(photo) : undefined,
     };
   });
   return (
