@@ -140,3 +140,26 @@ test("«Нам доверяют»: клиенты названиями и рам
   await expect(block.getByText("и ещё более 10 клиентов")).toBeVisible();
   await expect(block.getByText("Фото отзыва скоро")).toHaveCount(3);
 });
+
+test("контакты: WhatsApp, два телефона, почта, два Instagram — в заявке, футере и меню", async ({
+  page,
+}) => {
+  await page.goto("/ru?quality=fallback");
+  const hrefs = [
+    "https://wa.me/77006434084",
+    "tel:+77006434084",
+    "tel:+77771882255",
+    "mailto:info@uly.dala.events",
+    "https://www.instagram.com/uly_dala_event/",
+    "https://www.instagram.com/ulydala_kz/",
+  ];
+  for (const scope of ["#brief", "footer"])
+    for (const href of hrefs)
+      await expect(page.locator(`${scope} a[href="${href}"]`).first()).toBeAttached();
+  await expect(
+    page.locator("[data-home-hero]").getByRole("link", { name: "Написать в WhatsApp" }),
+  ).toHaveAttribute("href", "https://wa.me/77006434084");
+  await page.locator('header button[aria-haspopup="dialog"]').click();
+  for (const href of hrefs)
+    await expect(page.getByRole("dialog").locator(`a[href="${href}"]`)).toHaveCount(1);
+});

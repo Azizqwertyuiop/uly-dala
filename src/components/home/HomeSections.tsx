@@ -5,11 +5,17 @@ import { briefFallbackHref, getBriefProps } from "@/components/brief/briefProps"
 import layout from "@/components/ui/layout.module.css";
 import type from "@/components/ui/type.module.css";
 import { MORE_CLIENTS, clientLogos, clientNames, reviewShots } from "@/content/clients";
-import { contacts, formatPhone, telHref, whatsappHref } from "@/content/contacts";
+import {
+  contacts,
+  formatPhone,
+  instagramHref,
+  mailtoHref,
+  telHref,
+  whatsappHref,
+} from "@/content/contacts";
 import { FAZENDA_EXTRAS } from "@/content/fazenda";
 import { formatImage, formatSrcSet, formats, hasFormatPhoto } from "@/content/formats";
 import gallery from "@/content/gallery.json";
-import { instagramHref, stats } from "@/content/home";
 import { team } from "@/content/team";
 import { assetUrl } from "@/lib/assets/url";
 import type { Locale } from "@/lib/i18n";
@@ -51,25 +57,6 @@ function Section({
         {children}
       </div>
     </section>
-  );
-}
-
-/** Цифры доверия — только подтверждённые; пока их нет, блок скрыт. */
-export async function Stats() {
-  const t = await getTranslations("home.stats");
-  const items = (["years", "events", "guests"] as const).filter((k) => stats[k] !== null);
-  if (items.length === 0) return null;
-  return (
-    <Section id="stats" title={t("title")}>
-      <dl className={styles.stats}>
-        {items.map((k) => (
-          <div key={k} className={styles.stat}>
-            <dt className={type.body}>{t(k)}</dt>
-            <dd className={styles.statValue}>{stats[k]}+</dd>
-          </div>
-        ))}
-      </dl>
-    </Section>
   );
 }
 
@@ -336,7 +323,6 @@ export async function Contact() {
   const t = await getTranslations("home.contact");
   const locale = (await getLocale()) as Locale;
   const brief = getBriefProps(locale);
-  const instagram = instagramHref();
   return (
     <section id="brief" aria-labelledby="brief-title" data-tone="dark" className={styles.section}>
       <div className={`${layout.container} ${styles.inner} ${styles.contact}`}>
@@ -345,34 +331,39 @@ export async function Contact() {
             {t("title")}
           </h2>
           <p className={type.lead}>{t("lead")}</p>
-          {(contacts.whatsapp || contacts.phone || instagram) && (
-            <div className={styles.direct}>
-              <p className={type.eyebrow}>{t("directLabel")}</p>
-              <ul className={styles.directList}>
-                {contacts.whatsapp && (
-                  <li>
-                    <a href={whatsappHref(contacts.whatsapp)} className={type.link}>
-                      {t("whatsapp")}
-                    </a>
-                  </li>
-                )}
-                {contacts.phone && (
-                  <li>
-                    <a href={telHref(contacts.phone)} className={type.link}>
-                      {formatPhone(contacts.phone)}
-                    </a>
-                  </li>
-                )}
-                {instagram && (
-                  <li>
-                    <a href={instagram} className={type.link} rel="noopener noreferrer">
-                      {t("instagram")}
-                    </a>
-                  </li>
-                )}
-              </ul>
-            </div>
-          )}
+          <div className={styles.direct}>
+            <p className={type.eyebrow}>{t("directLabel")}</p>
+            <ul className={styles.directList}>
+              <li>
+                <a href={whatsappHref(contacts.whatsapp)} className={type.link}>
+                  {t("whatsapp")}
+                </a>
+              </li>
+              {contacts.phones.map((phone) => (
+                <li key={phone}>
+                  <a href={telHref(phone)} className={type.link}>
+                    {formatPhone(phone)}
+                  </a>
+                </li>
+              ))}
+              <li>
+                <a href={mailtoHref(contacts.email)} className={type.link}>
+                  {contacts.email}
+                </a>
+              </li>
+              {contacts.instagram.map((ig) => (
+                <li key={ig.handle}>
+                  <a
+                    href={instagramHref(ig.handle)}
+                    className={type.link}
+                    rel="noopener noreferrer"
+                  >
+                    {t(`instagram.${ig.key}`)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
         <div className={styles.form}>
           {/* Короткая форма: обязательны только имя, телефон и согласие. */}

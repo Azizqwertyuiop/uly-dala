@@ -1,5 +1,12 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { contacts, formatPhone, telHref, whatsappHref } from "@/content/contacts";
+import {
+  contacts,
+  formatPhone,
+  instagramHref,
+  mailtoHref,
+  telHref,
+  whatsappHref,
+} from "@/content/contacts";
 import { formats } from "@/content/formats";
 import { services } from "@/content/services";
 import type { Locale } from "@/lib/i18n";
@@ -90,26 +97,36 @@ export async function SiteFooter() {
           <div className={styles.column}>
             <h2 className={type.eyebrow}>{t("contacts")}</h2>
             <p>{t("city")}</p>
-            {contacts.phone || contacts.whatsapp ? (
-              <ul className={styles.contactLinks}>
-                {contacts.phone && (
-                  <li>
-                    <a href={telHref(contacts.phone)} className={type.link}>
-                      {formatPhone(contacts.phone)}
-                    </a>
-                  </li>
-                )}
-                {contacts.whatsapp && (
-                  <li>
-                    <a href={whatsappHref(contacts.whatsapp)} className={type.link}>
-                      {t("whatsapp")}
-                    </a>
-                  </li>
-                )}
-              </ul>
-            ) : (
-              <p className={type.caption}>{t("contactsPending")}</p>
-            )}
+            <ul className={styles.contactLinks}>
+              {contacts.phones.map((phone) => (
+                <li key={phone}>
+                  <a href={telHref(phone)} className={type.link}>
+                    {formatPhone(phone)}
+                  </a>
+                </li>
+              ))}
+              <li>
+                <a href={whatsappHref(contacts.whatsapp)} className={type.link}>
+                  {t("whatsapp")}
+                </a>
+              </li>
+              <li>
+                <a href={mailtoHref(contacts.email)} className={type.link}>
+                  {contacts.email}
+                </a>
+              </li>
+              {contacts.instagram.map((ig) => (
+                <li key={ig.handle}>
+                  <a
+                    href={instagramHref(ig.handle)}
+                    className={type.link}
+                    rel="noopener noreferrer"
+                  >
+                    @{ig.handle}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
         <p className={`${type.caption} ${styles.bottom}`}>© {t("rights")}</p>

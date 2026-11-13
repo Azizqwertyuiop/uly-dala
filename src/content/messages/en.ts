@@ -58,7 +58,6 @@ const en: Messages = {
     pages: "Pages",
     contacts: "Contacts",
     city: "Almaty",
-    contactsPending: "Phone and messengers will appear here once confirmed.",
     whatsapp: "Message on WhatsApp",
     privacy: "Privacy policy",
     rights: "ULY DALA",
@@ -91,12 +90,6 @@ const en: Messages = {
       fazenda: "Our venue",
       team: "Team",
       contact: "Contacts",
-    },
-    stats: {
-      title: "ULY DALA in numbers",
-      years: "years of running events",
-      events: "events held",
-      guests: "guests hosted",
     },
     services: {
       title: "What we do",
@@ -172,7 +165,7 @@ const en: Messages = {
     },
     fazenda: {
       title: "Our venue",
-      lead: "An out-of-town venue at the foot of the mountains near Almaty — for team building, weddings, corporate parties and celebrations.",
+      lead: "An out-of-town venue at the foot of the mountains near Almaty — for team building, weddings, corporate parties and celebrations. We have been hosting guests here for 7\u00a0years, and running events at any venue as an agency for 2\u00a0years.",
       imageAlt:
         "A celebration in the venue yard: guests by a gazebo with curtains and a string of flags.",
       more: "About the venue",
@@ -192,7 +185,10 @@ const en: Messages = {
       directLabel: "Contact us directly",
       whatsapp: "WhatsApp",
       call: "Call",
-      instagram: "Instagram",
+      instagram: {
+        agency: "Agency Instagram",
+        fazenda: "Venue Instagram",
+      },
     },
   },
   hero: {
@@ -201,7 +197,7 @@ const en: Messages = {
     subtitle:
       "Full-cycle event agency in Almaty. Conferences, coffee breaks, catering, weddings, kudalyk — at any venue or at our own venue at the foot of the mountains.",
     proof:
-      "6+ years · any\u00a0venue · our\u00a0own\u00a0venue · our\u00a0own\u00a0equipment · in-house\u00a0chef",
+      "venue for 7\u00a0years · agency for 2\u00a0years · any\u00a0venue · our\u00a0own\u00a0equipment · in-house\u00a0chef",
     ctaPrimary: "Discuss your event",
     scrollHint: "Scroll",
     ctaSecondary: "See the venue",

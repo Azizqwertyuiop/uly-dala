@@ -30,13 +30,14 @@ export type SiteMenuProps = {
     off: string;
     contacts: string;
     city: string;
-    contactsPending: string;
     languages: string;
     home: string;
   };
   chapters: { id: string; name: string }[];
   pages: { href: string; label: string }[];
   languageNames: Record<Locale, string>;
+  /** Телефоны, WhatsApp, почта, Instagram — готовые ссылки. */
+  contactLinks: { href: string; label: string; external?: boolean }[];
 };
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -46,7 +47,14 @@ const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1
  * роль dialog, остальная страница inert, Esc закрывает. Поверх — явная ловушка Tab
  * и возврат фокуса на кнопку «Меню». Без JS «Меню» — ссылка на навигацию в футере.
  */
-export function SiteMenu({ locale, labels, chapters, pages, languageNames }: SiteMenuProps) {
+export function SiteMenu({
+  locale,
+  labels,
+  chapters,
+  pages,
+  languageNames,
+  contactLinks,
+}: SiteMenuProps) {
   const hydrated = useHydrated();
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -235,7 +243,19 @@ export function SiteMenu({ locale, labels, chapters, pages, languageNames }: Sit
             <div className={styles.group}>
               <h3 className={type.eyebrow}>{labels.contacts}</h3>
               <p>{labels.city}</p>
-              <p className={type.caption}>{labels.contactsPending}</p>
+              <ul className={styles.contactLinks}>
+                {contactLinks.map((c) => (
+                  <li key={c.href}>
+                    <a
+                      href={c.href}
+                      className={type.link}
+                      {...(c.external ? { rel: "noopener noreferrer" } : {})}
+                    >
+                      {c.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>

@@ -148,7 +148,7 @@ test.describe("аналитика: события видны в отладке �
     // Самый дальний раздел, попавший на экран: «Почему мы» или следующий под ним.
     expect(list.find((e) => e.name === "scroll_depth")?.props).toMatchObject({
       chapter: expect.stringMatching(/^(why|steps)$/),
-      of: 8,
+      of: 9,
     });
     await expect.poll(async () => JSON.stringify(await sent(page, "/api/t"))).toContain('"LCP"');
   });

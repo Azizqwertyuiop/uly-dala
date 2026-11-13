@@ -26,35 +26,6 @@
   font-weight: 400;
 }
 
-/* ---------- Цифры ---------- */
-.stats {
-  display: grid;
-  gap: var(--grid-gutter);
-  margin: 0;
-}
-
-@media (min-width: 768px) {
-  .stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.stat {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: var(--space-1);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--tone-line);
-}
-
-.statValue {
-  margin: 0;
-  font-family: var(--font-family-heading);
-  font-size: clamp(48px, 6vw, 88px);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
 /* ---------- Услуги ---------- */
 .cards,
 .features,

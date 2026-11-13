@@ -6,7 +6,7 @@ import type {
   Place,
   WithContext,
 } from "schema-dts";
-import { contacts } from "@/content/contacts";
+import { contacts, instagramHref } from "@/content/contacts";
 import { fazenda } from "@/content/fazenda";
 import type { Locale } from "@/lib/i18n";
 import { localePath, siteUrl, type PagePath } from "./site";
@@ -42,7 +42,9 @@ export function organizationLd(opts: {
     slogan: opts.slogan,
     description: opts.description,
     areaServed: almaty(opts.locale).addressLocality,
-    ...(contacts.phone ? { telephone: `+${contacts.phone}` } : {}),
+    telephone: `+${contacts.phone}`,
+    email: contacts.email,
+    sameAs: contacts.instagram.map((ig) => instagramHref(ig.handle)),
   };
 }
 
@@ -62,7 +64,8 @@ export function localBusinessLd(opts: {
     areaServed: almaty(opts.locale).addressLocality,
     parentOrganization: { "@id": id("organization") },
     location: { "@id": id("fazenda") },
-    ...(contacts.phone ? { telephone: `+${contacts.phone}` } : {}),
+    telephone: `+${contacts.phone}`,
+    email: contacts.email,
   };
 }
 

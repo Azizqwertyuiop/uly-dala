@@ -6,7 +6,6 @@ import {
   Fazenda,
   Gallery,
   Services,
-  Stats,
   Steps,
   Team,
   Why,
@@ -62,7 +61,6 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
        */}
       <section data-chapter="dawn" aria-hidden="true" style={{ height: 0, overflow: "hidden" }} />
       <AssemblySection />
-      <Stats />
       <Services />
       <Gallery />
       <Clients />

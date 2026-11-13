@@ -20,7 +20,7 @@ describe("messages", () => {
 
   it("к строкам применяется типографика", () => {
     expect(getMessages("ru").hero.proof).toBe(
-      `6+${NBSP}лет · любая${NBSP}площадка · своя${NBSP}фазенда · своя${NBSP}техника · штатный${NBSP}шеф`,
+      `фазенда 7${NBSP}лет · агентство 2${NBSP}года · любая${NBSP}площадка · своя${NBSP}техника · штатный${NBSP}шеф`,
     );
     expect(getMessages("ru").notFound.title).toBe(`Здесь пока ничего не${NBSP}поставлено.`);
   });

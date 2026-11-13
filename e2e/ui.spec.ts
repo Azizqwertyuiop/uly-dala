@@ -204,26 +204,18 @@ test.describe("без JavaScript", () => {
 });
 
 test.describe("WhatsApp", () => {
-  test("без подтверждённого номера кнопки нет", async ({ page }) => {
-    test.skip(Boolean(process.env.NEXT_PUBLIC_WHATSAPP_PHONE), "номер задан");
-    await page.setViewportSize({ width: 360, height: 740 });
-    await page.goto("/ru");
-    await expect(page.locator('a[href^="https://wa.me/"]')).toHaveCount(0);
-  });
-
-  test("с номером: только мобильные, после первого экрана, в зоне большого пальца", async ({
-    page,
-  }) => {
-    test.skip(!process.env.NEXT_PUBLIC_WHATSAPP_PHONE, "номер не задан при сборке");
-    const button = page.locator('a[href^="https://wa.me/"]');
+  test("только мобильные, после первого экрана, в зоне большого пальца", async ({ page }) => {
+    const button = page.locator('a[data-place="float"][href^="https://wa.me/"]');
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/ru");
     await page.locator("#services").evaluate((el) => el.scrollIntoView());
-    await expect(button.last()).toBeHidden();
+    await expect(button).toBeHidden();
 
     await page.setViewportSize({ width: 360, height: 740 });
     await page.goto("/ru");
+    // Браузер восстанавливает прокрутку той же страницы — начинаем с первого экрана.
+    await page.evaluate(() => window.scrollTo(0, 0));
     await expect(button).toBeHidden();
     await page.locator("#services").evaluate((el) => el.scrollIntoView());
     await page.mouse.wheel(0, 600);

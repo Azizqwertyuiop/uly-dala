@@ -1,4 +1,12 @@
 import { getLocale, getTranslations } from "next-intl/server";
+import {
+  contacts,
+  formatPhone,
+  instagramHref,
+  mailtoHref,
+  telHref,
+  whatsappHref,
+} from "@/content/contacts";
 import { formats } from "@/content/formats";
 import { services } from "@/content/services";
 import type { Locale } from "@/lib/i18n";
@@ -54,7 +62,6 @@ export async function SiteHeader() {
               off: menu("off"),
               contacts: footer("contacts"),
               city: footer("city"),
-              contactsPending: footer("contactsPending"),
               languages: languages("label"),
               home: brand("home"),
             }}
@@ -81,6 +88,16 @@ export async function SiteHeader() {
               { href: "/privacy", label: footer("privacy") },
             ]}
             languageNames={{ kk: languages("kk"), ru: languages("ru"), en: languages("en") }}
+            contactLinks={[
+              ...contacts.phones.map((p) => ({ href: telHref(p), label: formatPhone(p) })),
+              { href: whatsappHref(contacts.whatsapp), label: footer("whatsapp") },
+              { href: mailtoHref(contacts.email), label: contacts.email },
+              ...contacts.instagram.map((ig) => ({
+                href: instagramHref(ig.handle),
+                label: `@${ig.handle}`,
+                external: true,
+              })),
+            ]}
           />
           {/* Как кнопка первого экрана: бриф в окне; без JS — форма внизу главной. */}
           <BriefLink href={briefFallbackHref(locale, "brief")} source="brief">

@@ -1,9 +1,9 @@
 /*
- * Контакты ULY DALA. TODO(client-data): подтверждённые телефон, WhatsApp, Telegram, email
- * (CLAUDE.md, раздел 17). Пока значения не заданы, соответствующие кнопки не показываются.
+ * Контакты ULY DALA — подтверждены заказчиком 12.11.2026: два телефона (WhatsApp — первый),
+ * почта, два Instagram (агентство и фазенда). Это публичные контакты, не секреты.
  *
- * WhatsApp и телефон можно задать при сборке через NEXT_PUBLIC_WHATSAPP_PHONE и NEXT_PUBLIC_PHONE
- * (цифры с кодом страны: 77010000000) — например, для проверки на стенде.
+ * Основной WhatsApp и телефон можно переопределить при сборке через NEXT_PUBLIC_WHATSAPP_PHONE
+ * и NEXT_PUBLIC_PHONE (цифры с кодом страны: 77010000000) — например, для проверки на стенде.
  *
  * Ссылки — обычные `https://wa.me/…` и `tel:+…`: их открывают и встроенные браузеры
  * (WhatsApp, Telegram, Instagram) — системным переходом в приложение / набор номера.
@@ -14,10 +14,29 @@ function digits(value: string | undefined): string | null {
   return clean.length >= 10 ? clean : null;
 }
 
+const PHONES = ["77006434084", "77771882255"] as const;
+
 export const contacts = {
-  whatsapp: digits(process.env.NEXT_PUBLIC_WHATSAPP_PHONE),
-  phone: digits(process.env.NEXT_PUBLIC_PHONE),
+  whatsapp: digits(process.env.NEXT_PUBLIC_WHATSAPP_PHONE) ?? PHONES[0],
+  phone: digits(process.env.NEXT_PUBLIC_PHONE) ?? PHONES[0],
+  /** Все номера для показа: основной первым, без повторов. */
+  phones: [
+    ...new Set([digits(process.env.NEXT_PUBLIC_PHONE) ?? PHONES[0], ...PHONES]),
+  ] as readonly string[],
+  email: "info@uly.dala.events",
+  instagram: [
+    { key: "agency", handle: "uly_dala_event" },
+    { key: "fazenda", handle: "ulydala_kz" },
+  ],
 } as const;
+
+export function instagramHref(handle: string): string {
+  return `https://www.instagram.com/${handle}/`;
+}
+
+export function mailtoHref(email: string): string {
+  return `mailto:${email}`;
+}
 
 export function whatsappHref(phone: string): string {
   return `https://wa.me/${phone.replace(/\D/g, "")}`;

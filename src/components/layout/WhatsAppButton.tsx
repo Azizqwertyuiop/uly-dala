@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hasChapters } from "@/motion/progress";
 import layout from "@/components/ui/layout.module.css";
 import styles from "./WhatsAppButton.module.css";
 
@@ -19,7 +18,9 @@ export function WhatsAppButton({ href, label }: Props) {
 
   // На главной — после первого экрана (там свои кнопки); на остальных страницах — сразу.
   useEffect(() => {
-    const update = () => setVisible(!hasChapters() || window.scrollY > window.innerHeight * 0.8);
+    // Главы ищем в DOM, а не в progress: его границы считаются позже первого вызова.
+    const home = document.querySelector("[data-chapter]") !== null;
+    const update = () => setVisible(!home || window.scrollY > window.innerHeight * 0.8);
     update();
     window.addEventListener("scroll", update, { passive: true });
     return () => window.removeEventListener("scroll", update);

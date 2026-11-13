@@ -152,3 +152,11 @@
 .toggleHint {
   grid-column: 1 / -1;
 }
+
+.contactLinks {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
