@@ -397,7 +397,7 @@ const en: Messages = {
         a3: "Yes, come and see the venue — we will agree on a time.",
       },
       sceneAlt:
-        "An evening at the foot of the mountains, a long set table under strings of warm lights.",
+        "Two young women in Kazakh dress carry platters of meat to the guests, with the venue cabins behind.",
     },
     privateParty: {
       title: "Private celebration",

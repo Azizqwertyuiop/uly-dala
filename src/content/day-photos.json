@@ -1,6 +1,23 @@
 {
-  "coffee-break": [750, 1200, 1800],
-  "conference": [750, 1200],
-  "private-party": [750, 1200, 1800],
-  "team-building": [750, 1200]
+  "coffee-break": [
+    750,
+    1200,
+    1800
+  ],
+  "conference": [
+    750,
+    1200
+  ],
+  "private-party": [
+    750,
+    1200,
+    1800
+  ],
+  "team-building": [
+    750,
+    1200
+  ],
+  "wedding": [
+    750
+  ]
 }
