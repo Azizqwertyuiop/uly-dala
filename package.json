@@ -34,7 +34,8 @@
     "assets:hash": "node scripts/hash-assets.mjs",
     "assets:photos": "node scripts/optimize-photos.mjs && node scripts/hash-assets.mjs",
     "assets:gallery": "node scripts/optimize-gallery.mjs && node scripts/hash-assets.mjs",
-    "assets:team": "node scripts/optimize-team.mjs && node scripts/hash-assets.mjs"
+    "assets:team": "node scripts/optimize-team.mjs && node scripts/hash-assets.mjs",
+    "assets:fazenda": "node scripts/optimize-gallery.mjs fazenda && node scripts/hash-assets.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.8.1",

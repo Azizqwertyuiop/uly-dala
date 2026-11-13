@@ -181,6 +181,19 @@
   scroll-snap-align: start;
 }
 
+/* Фазенда: та же лента в колонке 7/12 — два кадра и край третьего. */
+.fazendaMedia {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .fazendaMedia .gallery {
+    grid-auto-columns: calc((100% - 2 * var(--grid-gutter)) / 2.3);
+  }
+}
+
 .galleryItem {
   display: block;
   /* Большинство снимков вертикальные — карточка 4:5, горизонтальные обрезаются по центру. */

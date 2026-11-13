@@ -15,6 +15,7 @@ import {
 } from "@/content/contacts";
 import { FAZENDA_EXTRAS } from "@/content/fazenda";
 import { formatImage, formatSrcSet, formats, hasFormatPhoto } from "@/content/formats";
+import fazendaPhotosJson from "@/content/fazenda-photos.json";
 import gallery from "@/content/gallery.json";
 import { team } from "@/content/team";
 import { assetUrl } from "@/lib/assets/url";
@@ -251,27 +252,57 @@ export async function Steps() {
   );
 }
 
+/** Фото фазенды для карусели (npm run assets:fazenda); пока пусто — один снимок праздника. */
+const fazendaPhotos = fazendaPhotosJson as { name: string; width: number; height: number }[];
+
 export async function Fazenda() {
   const t = await getTranslations("home.fazenda");
+  const g = await getTranslations("home.gallery");
   const w = await getTranslations("world");
   const locale = (await getLocale()) as Locale;
   const photo = hasFormatPhoto("private-party");
+  const total = fazendaPhotos.length;
   return (
     <Section id="fazenda" title={t("title")} lead={t("lead")}>
       <div className={styles.fazenda}>
-        {photo && (
-          // eslint-disable-next-line @next/next/no-img-element -- свои размеры и srcset
-          <img
-            className={styles.fazendaImage}
-            src={formatImage("private-party")}
-            srcSet={formatSrcSet("private-party")}
-            sizes="(min-width: 768px) 50vw, 100vw"
-            alt={t("imageAlt")}
-            width={1500}
-            height={1000}
-            loading="lazy"
-            decoding="async"
-          />
+        {total > 0 ? (
+          <div className={styles.fazendaMedia}>
+            <GalleryGrid
+              photos={fazendaPhotos.map((p, i) => ({
+                thumb: assetUrl(`/assets/photos/fazenda/${p.name}-thumb.jpg`),
+                full: assetUrl(`/assets/photos/fazenda/${p.name}-full.jpg`),
+                width: p.width,
+                height: p.height,
+                alt: t("photos.alt", { n: i + 1 }),
+                open: t("photos.open", { n: i + 1, total }),
+                counter: g("counter", { n: i + 1, total }),
+              }))}
+              labels={{
+                dialog: t("photos.dialog"),
+                close: g("close"),
+                prev: g("prev"),
+                next: g("next"),
+                carousel: t("photos.carousel"),
+                scrollPrev: g("scrollPrev"),
+                scrollNext: g("scrollNext"),
+              }}
+            />
+          </div>
+        ) : (
+          photo && (
+            // eslint-disable-next-line @next/next/no-img-element -- свои размеры и srcset
+            <img
+              className={styles.fazendaImage}
+              src={formatImage("private-party")}
+              srcSet={formatSrcSet("private-party")}
+              sizes="(min-width: 768px) 50vw, 100vw"
+              alt={t("imageAlt")}
+              width={1500}
+              height={1000}
+              loading="lazy"
+              decoding="async"
+            />
+          )
         )}
         <div className={styles.fazendaText}>
           <ul className={styles.tags}>

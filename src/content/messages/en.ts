@@ -168,6 +168,12 @@ const en: Messages = {
     },
     fazenda: {
       title: "Our venue",
+      photos: {
+        alt: "ULY DALA venue, photo {n}",
+        open: "Open venue photo {n} of {total}",
+        dialog: "Venue photos",
+        carousel: "Venue photos — scroll",
+      },
       lead: "An out-of-town venue at the foot of the mountains near Almaty — for team building, weddings, corporate parties and celebrations. We have been hosting guests here for 7\u00a0years, and running events at any venue as an agency for 2\u00a0years.",
       imageAlt:
         "A celebration in the venue yard: guests by a gazebo with curtains and a string of flags.",

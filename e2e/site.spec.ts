@@ -169,8 +169,9 @@ test("галерея — карусель: кнопки листают лент�
 }) => {
   await page.goto("/ru?quality=fallback");
   const track = page.getByRole("list", { name: "Фото тимбилдингов — листайте" });
-  const prev = page.getByRole("button", { name: "Предыдущие фото" });
-  const next = page.getByRole("button", { name: "Следующие фото" });
+  const gallery = page.locator("#gallery");
+  const prev = gallery.getByRole("button", { name: "Предыдущие фото" });
+  const next = gallery.getByRole("button", { name: "Следующие фото" });
   await expect(prev).toBeDisabled();
   await expect(next).toBeEnabled();
   await next.click();
@@ -181,4 +182,15 @@ test("галерея — карусель: кнопки листают лент�
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
     await page.evaluate(() => innerWidth),
   );
+});
+
+test("фазенда — карусель фото: листается, по клику крупно", async ({ page }) => {
+  await page.goto("/ru?quality=fallback");
+  const block = page.locator("#fazenda");
+  const track = block.getByRole("list", { name: "Фото фазенды — листайте" });
+  await expect(track.locator("li")).toHaveCount(15);
+  await block.getByRole("button", { name: "Следующие фото" }).click();
+  await expect.poll(() => track.evaluate((el) => el.scrollLeft)).toBeGreaterThan(100);
+  await track.locator("a").first().click();
+  await expect(page.getByRole("dialog", { name: "Фото фазенды" })).toBeVisible();
 });
