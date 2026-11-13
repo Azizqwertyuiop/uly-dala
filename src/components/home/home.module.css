@@ -31,7 +31,6 @@
 .features,
 .steps,
 .team,
-.gallery,
 .logos {
   display: grid;
   gap: var(--grid-gutter);
@@ -141,26 +140,51 @@
   opacity: 0.8;
 }
 
-/* ---------- Галерея ---------- */
+/* ---------- Галерея: карусель ---------- */
 .gallery {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: grid;
+  grid-auto-flow: column;
+  /* Видно 1,2 кадра на телефоне, 2,3 — на планшете, 3,2 — на десктопе: край следующего зовёт листать. */
+  grid-auto-columns: 82%;
+  gap: var(--grid-gutter);
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0;
 }
 
 @media (min-width: 768px) {
   .gallery {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-columns: calc((100% - 2 * var(--grid-gutter)) / 2.3);
   }
 }
 
 @media (min-width: 1280px) {
   .gallery {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-columns: calc((100% - 3 * var(--grid-gutter)) / 3.2);
   }
+}
+
+/* С JS листают кнопки и свайп — полосу прокрутки прячем; без JS она остаётся подсказкой. */
+.gallery[data-js] {
+  scrollbar-width: none;
+}
+
+.gallery[data-js]::-webkit-scrollbar {
+  display: none;
+}
+
+.gallery > li {
+  scroll-snap-align: start;
 }
 
 .galleryItem {
   display: block;
-  aspect-ratio: 1;
+  /* Большинство снимков вертикальные — карточка 4:5, горизонтальные обрезаются по центру. */
+  aspect-ratio: 4 / 5;
   overflow: hidden;
 }
 
@@ -178,9 +202,38 @@
   }
 }
 
+.carouselNav {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  margin-bottom: calc(-1 * var(--space-2));
+}
+
+.carouselNav button {
+  min-width: 48px;
+  min-height: 48px;
+  border: 1px solid var(--tone-line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  transition: opacity var(--duration-quick) var(--ease-steppe);
+}
+
+.carouselNav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.carouselNav button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 .galleryItem:focus-visible {
   outline: 2px solid currentColor;
-  outline-offset: 3px;
+  outline-offset: -3px; /* внутри ленты внешняя рамка обрезалась бы */
 }
 
 .lightbox {

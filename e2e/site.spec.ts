@@ -163,3 +163,22 @@ test("контакты: WhatsApp, два телефона, почта, два In
   for (const href of hrefs)
     await expect(page.getByRole("dialog").locator(`a[href="${href}"]`)).toHaveCount(1);
 });
+
+test("галерея — карусель: кнопки листают ленту, у краёв гаснут, страница не шире экрана", async ({
+  page,
+}) => {
+  await page.goto("/ru?quality=fallback");
+  const track = page.getByRole("list", { name: "Фото тимбилдингов — листайте" });
+  const prev = page.getByRole("button", { name: "Предыдущие фото" });
+  const next = page.getByRole("button", { name: "Следующие фото" });
+  await expect(prev).toBeDisabled();
+  await expect(next).toBeEnabled();
+  await next.click();
+  await expect.poll(() => track.evaluate((el) => el.scrollLeft)).toBeGreaterThan(100);
+  await expect(prev).toBeEnabled();
+  await track.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+  await expect(next).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+    await page.evaluate(() => innerWidth),
+  );
+});

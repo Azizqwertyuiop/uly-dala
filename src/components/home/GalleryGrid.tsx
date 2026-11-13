@@ -16,11 +16,21 @@ type Photo = {
 
 type Props = {
   photos: Photo[];
-  labels: { dialog: string; close: string; prev: string; next: string };
+  labels: {
+    dialog: string;
+    close: string;
+    prev: string;
+    next: string;
+    carousel: string;
+    scrollPrev: string;
+    scrollNext: string;
+  };
 };
 
 /*
- * Галерея: сетка превью. Без JS — ссылки на крупные файлы. С JS — просмотр в нативном <dialog>:
+ * Галерея — карусель (решение заказчика 13.11.2026): лента превью листается свайпом, колесом
+ * или кнопками ← →; кадры встают по сетке (scroll-snap). Без JS — та же лента с полосой прокрутки,
+ * превью — ссылки на крупные файлы. С JS — просмотр в нативном <dialog>:
  * стрелки ← →, Esc закрывает, фокус возвращается на превью (WCAG 2.4.3).
  */
 export function GalleryGrid({ photos, labels }: Props) {
@@ -28,6 +38,34 @@ export function GalleryGrid({ photos, labels }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const triggers = useRef<(HTMLAnchorElement | null)[]>([]);
   const [index, setIndex] = useState<number | null>(null);
+  const track = useRef<HTMLUListElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: false });
+
+  // Кнопки ленты гаснут у краёв. Читаем размеры только на прокрутке и ресайзе.
+  useEffect(() => {
+    const t = track.current;
+    if (!t) return;
+    const update = () =>
+      setEdges({
+        start: t.scrollLeft <= 2,
+        end: t.scrollLeft + t.clientWidth >= t.scrollWidth - 2,
+      });
+    update();
+    t.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      t.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
+  /** Листаем на ширину видимой части ленты; плавно, если пользователь не против движения. */
+  const scrollTrack = (dir: 1 | -1) => {
+    const t = track.current;
+    if (!t) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    t.scrollBy({ left: dir * t.clientWidth * 0.9, behavior: reduce ? "auto" : "smooth" });
+  };
 
   useEffect(() => {
     const d = dialog.current;
@@ -53,7 +91,32 @@ export function GalleryGrid({ photos, labels }: Props) {
 
   return (
     <>
-      <ul className={styles.gallery}>
+      {hydrated && photos.length > 1 && (
+        <div className={styles.carouselNav}>
+          <button
+            type="button"
+            onClick={() => scrollTrack(-1)}
+            disabled={edges.start}
+            aria-label={labels.scrollPrev}
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollTrack(1)}
+            disabled={edges.end}
+            aria-label={labels.scrollNext}
+          >
+            →
+          </button>
+        </div>
+      )}
+      <ul
+        ref={track}
+        className={styles.gallery}
+        aria-label={labels.carousel}
+        data-js={hydrated ? "" : undefined}
+      >
         {photos.map((p, i) => (
           <li key={p.full}>
             <a
@@ -73,8 +136,8 @@ export function GalleryGrid({ photos, labels }: Props) {
               <img
                 src={p.thumb}
                 alt={p.alt}
-                width={600}
-                height={400}
+                width={900}
+                height={1125}
                 loading="lazy"
                 decoding="async"
               />

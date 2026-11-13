@@ -131,6 +131,9 @@ const en: Messages = {
       prev: "Previous photo",
       next: "Next photo",
       counter: "{n} of {total}",
+      carousel: "Team building photos — scroll",
+      scrollPrev: "Previous photos",
+      scrollNext: "Next photos",
     },
     why: {
       title: "Why clients choose us",

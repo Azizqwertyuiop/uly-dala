@@ -200,7 +200,15 @@ export async function Gallery() {
     <Section id="gallery" title={t("title")} lead={t("lead")}>
       <GalleryGrid
         photos={photos}
-        labels={{ dialog: t("dialog"), close: t("close"), prev: t("prev"), next: t("next") }}
+        labels={{
+          dialog: t("dialog"),
+          close: t("close"),
+          prev: t("prev"),
+          next: t("next"),
+          carousel: t("carousel"),
+          scrollPrev: t("scrollPrev"),
+          scrollNext: t("scrollNext"),
+        }}
       />
     </Section>
   );
