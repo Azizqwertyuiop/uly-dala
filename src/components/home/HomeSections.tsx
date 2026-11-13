@@ -74,6 +74,14 @@ const SERVICE_CARDS = [
   { key: "equipment-booth", href: "equipment-rental", photo: null },
 ] as const;
 
+/**
+ * Свои снимки карточек услуг (не форматов): public/assets/photos/services/<slug>.jpg, 600×400.
+ * TODO(client-data): оригинал аренды техники крупнее (сейчас — 300×400 из мессенджера).
+ */
+const SERVICE_IMAGES: Partial<Record<string, string>> = {
+  "equipment-rental": assetUrl("/assets/photos/services/equipment-rental.jpg"),
+};
+
 type CombinedKey = "coffee-catering" | "wedding-kudalyk" | "equipment-booth";
 const isCombined = (key: string): key is CombinedKey =>
   key === "coffee-catering" || key === "wedding-kudalyk" || key === "equipment-booth";
@@ -87,11 +95,12 @@ export async function Services() {
       ? t(`titles.${key}`)
       : f(`${formats.find((x) => x.slug === key)!.key}.title`);
     const shown = photo !== null && hasFormatPhoto(photo);
+    const own = SERVICE_IMAGES[href];
     return {
       slug: href,
       title,
       text: t(`cards.${key}`),
-      image: shown ? formatImage(photo) : null,
+      image: shown ? formatImage(photo) : (own ?? null),
       srcSet: shown ? formatSrcSet(photo) : undefined,
     };
   });
