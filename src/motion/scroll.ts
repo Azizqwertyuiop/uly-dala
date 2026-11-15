@@ -59,7 +59,9 @@ export async function startScroll(): Promise<ScrollRuntime> {
     // Фокус с клавиатуры (WCAG 2.4.11): страница встаёт к элементу сразу, без плавного догона —
     // иначе Lenis на полсекунды уводит сфокусированный элемент за край экрана.
     let keyboard = false;
-    const onKey = (e: KeyboardEvent) => (keyboard = e.key === "Tab" || e.key.startsWith("Arrow"));
+    // Автозаполнение Chrome шлёт keydown без key (undefined) — не падать.
+    const onKey = (e: KeyboardEvent) =>
+      (keyboard = e.key === "Tab" || (e.key ?? "").startsWith("Arrow"));
     const onPointer = () => (keyboard = false);
     const onFocus = (e: FocusEvent) => {
       const el = e.target;
