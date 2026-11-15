@@ -55,6 +55,29 @@ GitHub ──(push в main, CI зелёный)──► Actions: сборка р
 | `scripts/verify-rollback.mjs`    | проверка выкладки и отката (в CI на каждый PR)           |
 | `scripts/measure-network.mjs`    | замер TTFB и загрузки на мобильном 4G                    |
 
+## Вариант: общий сервер с nginx (так работает production, 15.11.2026)
+
+Сайт стоит на сервере заказчика в РК, где уже работают другие проекты под nginx. Вместо Caddy —
+nginx соседей, остальное (слоты 3001/3002, `releases/`, `cdn/`, откат, копии базы) — как выше.
+
+| Файл                              | Что                                                          |
+| --------------------------------- | ------------------------------------------------------------ |
+| `deploy/setup-server-nginx.sh`    | подготовка (один раз): пользователь, Node.js в `/opt`, nginx |
+| `deploy/nginx/uly-dala-site.conf` | сайт → `/etc/nginx/sites-available/uly-dala`                 |
+| `deploy/nginx/uly-dala-http.conf` | upstream и журнал без IP → `/etc/nginx/conf.d/uly-dala.conf` |
+| `deploy/nginx/types.conf`         | MIME статики                                                 |
+
+- Соседей не трогаем: системный Node.js, файрвол и пакеты остаются как были; своя копия Node.js
+  (`/opt/uly-dala/node`, версия из `.nvmrc`), память слота ≤ 512 МБ.
+- Переключение слота — файл `/etc/nginx/uly-dala/upstream.conf` + `systemctl reload nginx`
+  (настройки — `/etc/uly-dala/proxy.env`, читает `deploy/bin/lib.sh`).
+- HTTPS — `sudo certbot --nginx -d <домен> -d www.<домен>` (certbot сам продлевает).
+- Превью для PR не настроены (preview.yml пропускается без `PREVIEW_DOMAIN`).
+
+```bash
+scp -r deploy .nvmrc <user>@<IP>:/tmp/ && ssh <user>@<IP> 'sudo bash /tmp/deploy/setup-server-nginx.sh <домен> "<публичный ключ GitHub Actions>"'
+```
+
 ## Окружения и переменные
 
 | Окружение      | Адрес                             | База заявок                       | Уведомления      | Поиск           |

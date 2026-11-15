@@ -21,7 +21,8 @@ env:
 
 jobs:
   deploy:
-    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    # Превью — только если настроен домен превью (на общем сервере с nginx их нет).
+    if: vars.PREVIEW_DOMAIN != '' && github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
@@ -69,7 +70,7 @@ jobs:
             else await github.rest.issues.createComment({ owner, repo, issue_number, body });
 
   remove:
-    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    if: vars.PREVIEW_DOMAIN != '' && github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Убрать превью

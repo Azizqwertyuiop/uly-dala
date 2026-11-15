@@ -13,9 +13,14 @@
 
 set -euo pipefail
 
+# Общий сервер с nginx (deploy/setup-server-nginx.sh) кладёт сюда свои ULY_PROXY_*.
+[ -r /etc/uly-dala/proxy.env ] && source /etc/uly-dala/proxy.env
+
 ULY_ROOT="${ULY_ROOT:-/srv/uly-dala}"
 ULY_PROXY_FILE="${ULY_PROXY_FILE:-/etc/caddy/uly-dala/upstream.caddy}"
 ULY_PROXY_RELOAD="${ULY_PROXY_RELOAD:-sudo systemctl reload caddy}"
+# Строка файла upstream: Caddy — reverse_proxy, nginx — «server 127.0.0.1:%s;».
+ULY_PROXY_LINE="${ULY_PROXY_LINE:-reverse_proxy 127.0.0.1:%s}"
 ULY_SERVICE="${ULY_SERVICE:-systemd}"
 KEEP_RELEASES="${KEEP_RELEASES:-5}"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-30}"
@@ -54,9 +59,10 @@ wait_healthy() { # wait_healthy <port> <release>
   return 1
 }
 
-# Направить Caddy на слот: файл с адресом сервера + мягкая перезагрузка (соединения не рвутся).
+# Направить прокси (Caddy или nginx) на слот: файл с адресом сервера + мягкая перезагрузка (соединения не рвутся).
 point_proxy() { # point_proxy <port>
-  printf 'reverse_proxy 127.0.0.1:%s\n' "$1" > "$ULY_PROXY_FILE.tmp"
+  # shellcheck disable=SC2059 # формат — из ULY_PROXY_LINE
+  printf "$ULY_PROXY_LINE\n" "$1" > "$ULY_PROXY_FILE.tmp"
   mv "$ULY_PROXY_FILE.tmp" "$ULY_PROXY_FILE"
   eval "$ULY_PROXY_RELOAD"
   echo "$1" > "$ULY_ROOT/active"

@@ -63,7 +63,7 @@ jobs:
             sleep 3
           done
           curl -fsS "$NEXT_PUBLIC_SITE_URL/api/health" | grep -q "\"release\":\"$RELEASE\""
-          curl -fsS "$NEXT_PUBLIC_SITE_URL/ru" | grep -q "Мы ставим мир"
+          curl -fsS "$NEXT_PUBLIC_SITE_URL/ru" | grep -q "Ивент-агентство ULY DALA"
       - name: Автооткат, если проверка не прошла
         if: failure()
         run: ssh "$SSH_TARGET" "/srv/uly-dala/bin/rollback.sh" || true
