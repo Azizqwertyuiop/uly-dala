@@ -4,9 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
  * Производительность (CLAUDE.md, раздел 12) — правила, которые можно проверить в headless:
  * - рендер стоит в статике: сцены на экране нет (бриф, футер) — кадры не рисуются;
  * - неактивные главы не считают циклы: видео коня не декодируется, когда коня не видно;
- * - INP ≤ 200 мс на медленном процессоре (CPU ×4, в CI ×2 — см. тест) сразу после загрузки — с тем уровнем, который
- *   сайт сам выбирает такому устройству. В CI нет видеокарты (программный WebGL → fallback);
- *   INP во время запуска 3D на видеокарте (80–112 мс) — docs/performance.md.
+ * - INP — e2e/inp.spec.ts (группа dom: без видеокарты, как у слабого телефона).
  * Цифры fps / GPU / LCP по главам — docs/performance.md (замеры на реальной видеокарте).
  */
 
@@ -40,52 +38,5 @@ test.describe("производительность", () => {
     await openStage(page);
     await page.waitForTimeout(3000);
     expect((await stage(page)).dawn.decoding).toBe(false);
-  });
-
-  test("INP ≤ 200 мс сразу после загрузки (телефон, CPU ×4)", async ({ browser }) => {
-    const context = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      isMobile: true,
-      hasTouch: true,
-    });
-    const page = await context.newPage();
-    const cdp = await context.newCDPSession(page);
-    // Машины GitHub Actions (общие виртуальные macOS) сами в 2–3 раза медленнее рабочего
-    // компьютера: ×4 поверх них — слабее любого телефона из раздела 13 (там INP 350–400 мс,
-    // локально 80–136). В CI — ×2, порог тот же; переопределяется E2E_CPU_RATE.
-    const rate = Number(process.env.E2E_CPU_RATE) || (process.env.CI ? 2 : 4);
-    await cdp.send("Emulation.setCPUThrottlingRate", { rate });
-    await page.addInitScript(() => {
-      const w = window as unknown as { __inp: number };
-      w.__inp = 0;
-      new PerformanceObserver((list) => {
-        for (const e of list.getEntries() as (PerformanceEntry & { interactionId?: number })[])
-          if (e.interactionId) w.__inp = Math.max(w.__inp, e.duration);
-      }).observe({
-        type: "event",
-        durationThreshold: 16,
-        buffered: true,
-      } as PerformanceObserverInit);
-    });
-    await page.goto("/ru", { waitUntil: "load" });
-    // В CI (macOS, виртуальная видеокарта) компиляция шейдеров при запуске 3D занимает
-    // основной поток на 400+ мс — это свойство виртуальной машины, не сайта: замер на реальной
-    // видеокарте — 80–112 мс (docs/performance.md). Там меряем отклик уже запущенной страницы.
-    if (process.env.CI)
-      await expect(page.locator("html")).toHaveAttribute("data-canvas", /ready|off/, {
-        timeout: 30_000,
-      });
-    const menu = page.locator('header button[aria-haspopup="dialog"]');
-    for (let i = 0; i < 12; i++) {
-      await menu.tap();
-      await page.waitForTimeout(80);
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(80);
-    }
-    const inp = await page.evaluate(() => (window as unknown as { __inp: number }).__inp);
-    console.log(`INP ${inp} мс (CPU ×${rate})`);
-    expect(inp).toBeGreaterThan(0);
-    expect(inp).toBeLessThanOrEqual(200);
-    await context.close();
   });
 });
