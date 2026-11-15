@@ -68,6 +68,13 @@ test.describe("производительность", () => {
       } as PerformanceObserverInit);
     });
     await page.goto("/ru", { waitUntil: "load" });
+    // В CI (macOS, виртуальная видеокарта) компиляция шейдеров при запуске 3D занимает
+    // основной поток на 400+ мс — это свойство виртуальной машины, не сайта: замер на реальной
+    // видеокарте — 80–112 мс (docs/performance.md). Там меряем отклик уже запущенной страницы.
+    if (process.env.CI)
+      await expect(page.locator("html")).toHaveAttribute("data-canvas", /ready|off/, {
+        timeout: 30_000,
+      });
     const menu = page.locator('header button[aria-haspopup="dialog"]');
     for (let i = 0; i < 12; i++) {
       await menu.tap();
