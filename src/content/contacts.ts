@@ -23,7 +23,7 @@ export const contacts = {
   phones: [
     ...new Set([digits(process.env.NEXT_PUBLIC_PHONE) ?? PHONES[0], ...PHONES]),
   ] as readonly string[],
-  email: "info@uly.dala.events",
+  email: "info@ulydala.events",
   instagram: [
     { key: "agency", handle: "uly_dala_event" },
     { key: "fazenda", handle: "ulydala_kz" },

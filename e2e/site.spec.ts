@@ -149,7 +149,7 @@ test("контакты: WhatsApp, два телефона, почта, два In
     "https://wa.me/77006434084",
     "tel:+77006434084",
     "tel:+77771882255",
-    "mailto:info@uly.dala.events",
+    "mailto:info@ulydala.events",
     "https://www.instagram.com/uly_dala_event/",
     "https://www.instagram.com/ulydala_kz/",
   ];
